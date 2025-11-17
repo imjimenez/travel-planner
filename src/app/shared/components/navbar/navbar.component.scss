@@ -1,0 +1,58 @@
+.navbar {
+  background: white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  padding: 16px 0;
+}
+
+.nav-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  font-size: 24px;
+  font-weight: 700;
+  text-decoration: none;
+  color: #1f2937;
+}
+
+.nav-links {
+  display: flex;
+  gap: 12px;
+}
+
+.btn {
+  padding: 8px 20px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s;
+  font-size: 14px;
+  border: 1px solid transparent;
+}
+
+// Botón blanco con borde
+.btn-outline {
+  background: white;
+  border: 1px solid #e5e5e5;
+  color: #0a0a0a;
+
+  &:hover {
+    background: #fafafa;
+  }
+}
+
+// Botón negro (primario)
+.btn-primary {
+  background: #0a0a0a;
+  color: white;
+  border: 1px solid #0a0a0a;
+
+  &:hover {
+    background: #1a1a1a;
+  }
+}
