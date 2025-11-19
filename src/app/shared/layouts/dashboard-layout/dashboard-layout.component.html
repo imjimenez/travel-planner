@@ -1,0 +1,11 @@
+<div class="dashboard-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <app-sidebar [user]="currentUser$ | async"></app-sidebar>
+    </aside>
+  
+    <!-- Main content -->
+    <main class="main-content">
+      <router-outlet />
+    </main>
+</div>

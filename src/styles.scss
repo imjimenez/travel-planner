@@ -1,1 +1,8 @@
-/* You can add global styles to this file, and also import other style files */
+/* Importamos la fuente global (ejemplo: Inter) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+html, body {
+    font-family: 'Inter', sans-serif; /* Fuente global */
+    margin: 0;                         /* Quitamos márgenes por defecto */
+    padding: 0;
+}
