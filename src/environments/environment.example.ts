@@ -1,12 +1,16 @@
-// Producción
+// src/environments/environment.example.ts
 export const environment = {
     production: false,
-    supabaseURL: 'https://PROJECT-ID.supabase.co', // Reemplazar PROJECT-ID
-    supabaseKey: 'SUPABASE_ANON_KEY', // Reemplazar
+    
+    // Config de Supabase
+    supabase: {
+        url: 'https://PROJECT-ID.supabase.co', // Reemplazar PROJECT-ID
+        anonKey: 'SUPABASE_ANON_KEY', // Reemplazar
+    },
 
     // URL base de la app en producción
-    appURL: 'https://tuapp.com',
+    appURL: 'http://localhost:4200',
     
     // Ruta donde OAuth redirigirá después de login
     oauthCallbackPath: '/auth/callback'
-}
+};

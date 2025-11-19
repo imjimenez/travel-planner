@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { supabaseClient } from '../../supabase/supabase.client';
+import { SupabaseService } from '../../supabase/supabase.service';
 import { 
   AuthResponse, 
   LoginCredentials, 
@@ -92,7 +92,9 @@ export class AuthService {
    * Constructor del servicio
    * Inicializa automáticamente el estado de autenticación
    */
-  constructor() { this.initializeAuth() }
+  constructor(private supabaseService: SupabaseService) { 
+    this.initializeAuth();
+  }
   
   /**
    * Inicializa el sistema de autenticación
@@ -105,7 +107,7 @@ export class AuthService {
    */
   private async initializeAuth() {
     // Intenta cargar usuario de la sesión existente (localStorage)
-    const { data: { user } } = await supabaseClient.auth.getUser();
+    const { data: { user } } = await this.supabaseService.auth.getUser();
     if (user) {
       const mappedUser = mapSupabaseUser(user);
       this.currentUserSubject.next(mappedUser);
@@ -113,10 +115,10 @@ export class AuthService {
 
     // Listener para cambios de autenticación
     // Se dispara en: login, logout, refresh de token, etc.
-    supabaseClient.auth.onAuthStateChange((event, session) => {
+    this.supabaseService.auth.onAuthStateChange((event, session) => {
       const user = session?.user ? mapSupabaseUser(session.user) : null;
       this.currentUserSubject.next(user);
-    });
+    })
   }
 
   // ==========================================
@@ -154,7 +156,7 @@ export class AuthService {
    * // Usar para peticiones HTTP manuales (normalmente no necesario)
    */
   async getAccessToken(): Promise<string | null> {
-    const { data: { session } } = await supabaseClient.auth.getSession();
+    const { data: { session } } = await this.supabaseService.auth.getSession();
     return session?.access_token || null;
   }
 
@@ -184,7 +186,7 @@ export class AuthService {
     this.loadingSubject.next(true);
     
     try {
-      const { data, error } = await supabaseClient.auth.signInWithPassword({
+      const { data, error } = await this.supabaseService.auth.signInWithPassword({
         email: credentials.email,
         password: credentials.password,
       });
@@ -246,7 +248,7 @@ export class AuthService {
     this.loadingSubject.next(true);
 
     try {
-      const { data, error } = await supabaseClient.auth.signUp({
+      const { data, error } = await this.supabaseService.auth.signUp({
         email: credentials.email,
         password: credentials.password,
         options: {
@@ -324,7 +326,7 @@ export class AuthService {
       const defaultOptions = OAuthConfig[provider];
       const redirectTo = options?.redirectTo || getRedirectURL();
 
-      const { error } = await supabaseClient.auth.signInWithOAuth({
+      const { error } = await this.supabaseService.auth.signInWithOAuth({
         provider,
         options: {
           redirectTo,
@@ -405,7 +407,7 @@ export class AuthService {
     this.loadingSubject.next(true);
 
     try {
-      const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+      const { error } = await this.supabaseService.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth/reset-password`,
       });
 
@@ -446,7 +448,7 @@ export class AuthService {
     this.loadingSubject.next(true);
 
   try {    
-    const { error } = await supabaseClient.auth.updateUser({
+    const { error } = await this.supabaseService.auth.updateUser({
       password: newPassword
     });
 
@@ -488,7 +490,7 @@ export class AuthService {
   async signOut(): Promise<{ error?: string }> {
     this.loadingSubject.next(true);
 
-    const { error } = await supabaseClient.auth.signOut();
+    const { error } = await this.supabaseService.auth.signOut();
     
     if (error) {
       console.error('Sign out error:', error.message);
@@ -550,7 +552,7 @@ export class AuthService {
       }
   
       // Llamar a la función RPC que elimina la cuenta
-      const { error } = await supabaseClient.rpc('delete_own_account');
+      const { error } = await this.supabaseService.client.rpc('delete_own_account');
   
       if (error) {
         console.error('Account deletion error:', error.message);
@@ -561,7 +563,7 @@ export class AuthService {
       console.log('Account deleted successfully');
   
       // Cerrar sesión y limpiar estado
-      await supabaseClient.auth.signOut();
+      await this.supabaseService.auth.signOut();
       this.currentUserSubject.next(null);
       this.loadingSubject.next(false);
   

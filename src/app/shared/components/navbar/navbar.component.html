@@ -4,7 +4,7 @@
       
       <div class="nav-links">
         @if (currentUser$ | async; as user) {
-          <a routerLink="/dashboard" class="btn">Dashboard</a>
+          <a routerLink="/dashboard" class="btn btn-outline">Dashboard</a>
         } @else {
           <a routerLink="/auth/login" class="btn btn-outline">Iniciar Sesión</a>
           <a routerLink="/auth/register" class="btn btn-primary">Registrarse</a>

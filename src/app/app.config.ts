@@ -3,6 +3,8 @@ import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { authInterceptor } from './core/authentication/interceptors/auth.interceptor';
 import { routes } from './app.routes';
+import { environment } from '../environments/environment';
+import { SUPABASE_CONFIG } from './core/supabase/supabase.config'; 
 
 /**
  * Configuración principal de la aplicación
@@ -12,6 +14,7 @@ import { routes } from './app.routes';
  * - Router con las rutas de la aplicación
  * - HttpClient con interceptor de autenticación
  * - Listeners globales de errores del navegador
+ * - Configuración de Supabase mediante Dependency Injection
  * 
  * Esta configuración se aplica al arrancar la app en main.ts
  */
@@ -32,6 +35,13 @@ export const appConfig: ApplicationConfig = {
     // Esto hace que todas las peticiones HTTP incluyan el header Authorization
     provideHttpClient(
       withInterceptors([authInterceptor])
-    )
+    ),
+
+    // Configuración de Supabase mediante Dependency Injection
+    // Permite que SupabaseService reciba la configuración automáticamente
+    {
+      provide: SUPABASE_CONFIG,
+      useValue: environment.supabase
+    }
   ]
 };

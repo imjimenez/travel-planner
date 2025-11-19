@@ -40,18 +40,31 @@ Luego edita `src/environments/environment.ts` y añade tus credenciales de Supab
 export const environment = {
   production: false,
   supabase: {
-    url: 'https://TU-PROJECT-ID.supabase.co',  // ← Reemplazar
-    key: 'TU-SUPABASE-ANON-KEY'                 // ← Reemplazar
-  }
+    url: 'https://TU-PROJECT-ID.supabase.co',    // Reemplazar
+    anonKey: 'TU-SUPABASE-ANON-KEY'              // Reemplazar
+  },
+  appURL: 'http://localhost:4200',
+  oauthCallbackPath: '/auth/callback'
+};
+```
+
+Y `src/environments/environment.prod.ts` para producción:
+```typescript
+export const environment = {
+  production: true,
+  supabase: {
+    url: 'https://TU-PROJECT-ID.supabase.co',    // Reemplazar
+    anonKey: 'TU-SUPABASE-ANON-KEY'              // Reemplazar
+  },
+  appURL: 'https://tuapp.com',                   // URL de producción
+  oauthCallbackPath: '/auth/callback'
 };
 ```
 
 **¿Dónde conseguir las credenciales?**
 1. Ve a tu proyecto en [Supabase Dashboard](https://supabase.com/dashboard)
-2. Settings → Data API
-3. Copia `Project URL`
-4. Settings → API Keys
-5. Copia `anon public`
+2. Settings → API → Project URL (copia la URL)
+3. Settings → API → Project API keys → `anon` `public` (copia la key)
 
 
 ### 4. Ejecutar el proyecto
@@ -64,24 +77,50 @@ La aplicación estará disponible en [http://localhost:4200](http://localhost:42
 ## Estructura del Proyecto
 ```
 src/app/
-├── core/                    # Servicios core (auth, supabase, etc.)
-│   ├── authentication/      # Sistema de autenticación
-│   ├── supabase/            # Cliente de Supabase
-│   └── notifications/       # Servicio de notificaciones
-├── features/                # Features de negocio
-│   ├── dashboard/           # Dashboard principal
-│   ├── trips/               # Gestión de viajes
-│   └── settings/            # Configuración de usuario
-├── shared/                  # Componentes compartidos
-│   ├── components/          # Componentes reutilizables
-│   └── layouts/             # Layouts (dashboard-layout)
-└── landing/                 # Landing page
+├── core/                         # Servicios core y configuración
+│   ├── authentication/           # Sistema completo de autenticación
+│   │   ├── guards/               # Guards de protección de rutas
+│   │   ├── interceptors/         # HTTP interceptor para tokens
+│   │   ├── models/               # Modelos de auth (User, Session, etc.)
+│   │   ├── pages/                # Páginas de auth (login, register, etc.)
+│   │   ├── providers/            # Configuración OAuth providers
+│   │   └── services/             # AuthService
+│   ├── supabase/                 # Cliente de Supabase con DI
+│   │   ├── supabase.config.ts    # Configuración con InjectionToken
+│   │   ├── supabase.service.ts   # Servicio del cliente
+│   │   └── supabase.types.ts     # Tipos generados de la DB
+│   └── notifications/            # Servicio de notificaciones
+├── features/                     # Features de negocio
+│   ├── dashboard/                # Dashboard principal
+│   ├── trips/                    # Gestión de viajes (próximamente)
+│   └── settings/                 # Configuración de usuario (próximamente)
+├── shared/                       # Componentes compartidos
+│   ├── components/               # Componentes reutilizables
+│   └── layouts/                  # Layouts (dashboard-layout)
+├── landing/                      # Landing page
+└── app.config.ts                 # Configuración global con providers
 ```
+
+## Arquitectura de Autenticación
+
+El sistema de autenticación usa **Dependency Injection** para inyectar la configuración de Supabase:
+```typescript
+// app.config.ts
+{
+  provide: SUPABASE_CONFIG,
+  useValue: environment.supabase  // Configuración inyectada
+}
+```
+
+Esto permite:
+- Tests más fáciles (inyectar configuración mock)
+- Mayor flexibilidad (cambiar config sin tocar servicios)
+- Mejor separación de responsabilidades
 
 ## Comandos Disponibles
 ```bash
 # Desarrollo
-npm start                  # Iniciar servidor de desarrollo
+npm start                 # Iniciar servidor de desarrollo
 
 # Build
 npm run build             # Build para producción
@@ -97,22 +136,29 @@ npm run lint              # Ejecutar ESLint
 
 ## Funcionalidades Implementadas
 
-- ✅ Autenticación (email/password + OAuth: Google, GitHub, Apple)
-- ✅ Registro de usuarios con verificación de email
-- ✅ Recuperación de contraseña
-- ✅ Dashboard layout con sidebar
-- ✅ Sistema de notificaciones (toast)
-- ✅ Guards de autenticación
-- ✅ Gestión de sesión con Supabase
+### Autenticación completa
+- Login/registro con email y password
+- OAuth (Google, GitHub)
+- Recuperación de contraseña
+- Eliminación de cuenta
+- Gestión automática de tokens (refresh)
+- HTTP Interceptor para añadir tokens automáticamente
+- Guards de protección de rutas
+- Manejo de errores
+
+### UI Base
+- Dashboard layout con sidebar
+- Sistema de notificaciones (toast)
+- Landing page
 
 ## Próximas Funcionalidades
 
-- 🔄 Gestión de viajes (CRUD)
-- 🔄 Invitaciones a viajes
-- 🔄 Gestión de gastos compartidos
-- 🔄 Itinerarios
-- 🔄 Documentos del viaje
-- 🔄 Tareas/todos
+- Gestión de viajes (CRUD)
+- Invitaciones a viajes
+- Gestión de gastos compartidos
+- Itinerarios
+- Documentos del viaje
+- Tareas/todos
 
 ## Contribuir
 
@@ -123,10 +169,11 @@ npm run lint              # Ejecutar ESLint
 
 ## Notas de Seguridad
 
-⚠️ **IMPORTANTE**: 
+**IMPORTANTE**: 
 - Los archivos `environment.ts` y `environment.prod.ts` contienen credenciales y **NUNCA** deben subirse a Git
 - Solo se suben los archivos `.example.ts` como plantilla
 - Cada desarrollador debe crear sus propios archivos de configuración localmente
+- El `.gitignore` ya está configurado para ignorar estos archivos
 
 ## Soporte
 
