@@ -7,17 +7,17 @@ import { Observable } from 'rxjs';
 
 /**
  * Layout principal del dashboard
- * 
+ *
  * Componente contenedor que proporciona la estructura base para todas
  * las páginas del dashboard (overview, trips, settings, etc.).
- * 
+ *
  * Estructura:
  * - Sidebar fijo con navegación e información del usuario
  * - Área de contenido dinámico que renderiza las rutas hijas vía <router-outlet>
- * 
+ *
  * Este layout solo se muestra para usuarios autenticados gracias al authGuard
  * configurado en las rutas principales (app.routes.ts).
- * 
+ *
  * TODO :
  * - Añadir header superior, busquedas (si se implementa), botón para colapsar, etc.
  * - Implementar diseño responsive (hamburger menu en mobile)
@@ -30,7 +30,7 @@ import { Observable } from 'rxjs';
   templateUrl: './dashboard-layout.component.html',
   styleUrl: './dashboard-layout.component.scss',
 })
-export class DashboardLayoutComponent implements OnInit {
+export default class DashboardLayoutComponent implements OnInit {
 
   /**
    * Observable del usuario actual
@@ -44,7 +44,7 @@ export class DashboardLayoutComponent implements OnInit {
 
   /**
    * Inicialización del componente
-   * 
+   *
    * Verifica que haya un usuario autenticado (medida de seguridad adicional).
    * En teoría nunca debería ser null porque el authGuard protege estas rutas,
    * pero se mantiene como verificación de desarrollo.
