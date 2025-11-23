@@ -1,19 +1,19 @@
-import { Injectable } from "@angular/core";
-import { AuthUser } from "@supabase/supabase-js";
+import { Injectable, inject } from "@angular/core";
+import type { AuthSession, AuthUser } from "@supabase/supabase-js";
 import { BehaviorSubject, type Observable } from "rxjs";
 import { SupabaseService } from "../../supabase/supabase.service";
 import {
-    type AuthResponse,
-    type LoginCredentials,
-    mapSupabaseUser,
-    type SignUpCredentials,
-    type User,
+	type AuthResponse,
+	type LoginCredentials,
+	mapSupabaseUser,
+	type SignUpCredentials,
+	type User,
 } from "../models";
 import {
-    type AuthProvider,
-    getRedirectURL,
-    OAuthConfig,
-    type OAuthOptions,
+	type AuthProvider,
+	getRedirectURL,
+	OAuthConfig,
+	type OAuthOptions,
 } from "../providers";
 
 /**
@@ -44,6 +44,7 @@ import {
 	providedIn: "root",
 })
 export class AuthService {
+	#supabaseService = inject(SupabaseService);
 	// ==========================================
 	// ESTADO REACTIVO
 	// ==========================================
@@ -93,9 +94,6 @@ export class AuthService {
 	 * Constructor del servicio
 	 * Inicializa automáticamente el estado de autenticación
 	 */
-	constructor(private supabaseService: SupabaseService) {
-		this.initializeAuth();
-	}
 
 	/**
 	 * Inicializa el sistema de autenticación
@@ -106,11 +104,11 @@ export class AuthService {
 	 * Se ejecuta automáticamente al arrancar la aplicación.
 	 * NO llamar manualmente.
 	 */
-	private async initializeAuth() {
+	async initialize() {
 		// Intenta cargar usuario de la sesión existente (localStorage)
 		const {
 			data: { user },
-		} = await this.supabaseService.auth.getUser();
+		} = await this.#supabaseService.auth.getUser();
 		if (user) {
 			const mappedUser = mapSupabaseUser(user);
 			this.currentUserSubject.next(mappedUser);
@@ -118,7 +116,7 @@ export class AuthService {
 
 		// Listener para cambios de autenticación
 		// Se dispara en: login, logout, refresh de token, etc.
-		this.supabaseService.auth.onAuthStateChange((event, session) => {
+		this.#supabaseService.auth.onAuthStateChange((event, session) => {
 			const user = session?.user ? mapSupabaseUser(session.user) : null;
 			this.currentUserSubject.next(user);
 		});
@@ -144,6 +142,24 @@ export class AuthService {
 	}
 
 	/**
+	 * Obtiene la sesión actual de forma síncrona
+	 *
+	 * @returns Sesión actual o null si no hay sesión
+	 *
+	 * @example
+	 * const session = await this.authService.getSession();
+	 * if (session) {
+	 *   console.log(session.user.email);
+	 * }
+	 */
+	async getSession(): Promise<AuthSession | null> {
+		const {
+			data: { session },
+		} = await this.#supabaseService.auth.getSession();
+		return session;
+	}
+
+	/**
 	 * Obtiene el access token actual
 	 *
 	 * Supabase automáticamente refresca el token si ha expirado,
@@ -159,10 +175,8 @@ export class AuthService {
 	 * // Usar para peticiones HTTP manuales (normalmente no necesario)
 	 */
 	async getAccessToken(): Promise<string | null> {
-		const {
-			data: { session },
-		} = await this.supabaseService.auth.getSession();
-		return session?.access_token || null;
+		const session = await this.getSession();
+		return session?.access_token ?? null;
 	}
 
 	/**
@@ -179,7 +193,7 @@ export class AuthService {
 	async getAuthUser(): Promise<AuthUser | null> {
 		const {
 			data: { user },
-		} = await this.supabaseService.auth.getUser();
+		} = await this.#supabaseService.auth.getUser();
 		return user;
 	}
 
@@ -210,7 +224,7 @@ export class AuthService {
 
 		try {
 			const { data, error } =
-				await this.supabaseService.auth.signInWithPassword({
+				await this.#supabaseService.auth.signInWithPassword({
 					email: credentials.email,
 					password: credentials.password,
 				});
@@ -274,7 +288,7 @@ export class AuthService {
 		this.loadingSubject.next(true);
 
 		try {
-			const { data, error } = await this.supabaseService.auth.signUp({
+			const { data, error } = await this.#supabaseService.auth.signUp({
 				email: credentials.email,
 				password: credentials.password,
 				options: {
@@ -354,7 +368,7 @@ export class AuthService {
 			const defaultOptions = OAuthConfig[provider];
 			const redirectTo = options?.redirectTo || getRedirectURL();
 
-			const { error } = await this.supabaseService.auth.signInWithOAuth({
+			const { error } = await this.#supabaseService.auth.signInWithOAuth({
 				provider,
 				options: {
 					redirectTo,
@@ -434,7 +448,7 @@ export class AuthService {
 		this.loadingSubject.next(true);
 
 		try {
-			const { error } = await this.supabaseService.auth.resetPasswordForEmail(
+			const { error } = await this.#supabaseService.auth.resetPasswordForEmail(
 				email,
 				{
 					redirectTo: `${window.location.origin}/auth/reset-password`,
@@ -479,7 +493,7 @@ export class AuthService {
 		this.loadingSubject.next(true);
 
 		try {
-			const { error } = await this.supabaseService.auth.updateUser({
+			const { error } = await this.#supabaseService.auth.updateUser({
 				password: newPassword,
 			});
 
@@ -520,7 +534,7 @@ export class AuthService {
 	async signOut(): Promise<{ error?: string }> {
 		this.loadingSubject.next(true);
 
-		const { error } = await this.supabaseService.auth.signOut();
+		const { error } = await this.#supabaseService.auth.signOut();
 
 		if (error) {
 			console.error("Sign out error:", error.message);
@@ -583,7 +597,7 @@ export class AuthService {
 
 			// Llamar a la función RPC que elimina la cuenta
 			const { error } =
-				await this.supabaseService.client.rpc("delete_own_account");
+				await this.#supabaseService.client.rpc("delete_own_account");
 
 			if (error) {
 				console.error("Account deletion error:", error.message);
@@ -594,7 +608,7 @@ export class AuthService {
 			console.log("Account deleted successfully");
 
 			// Cerrar sesión y limpiar estado
-			await this.supabaseService.auth.signOut();
+			await this.#supabaseService.auth.signOut();
 			this.currentUserSubject.next(null);
 			this.loadingSubject.next(false);
 

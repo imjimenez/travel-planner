@@ -1,6 +1,5 @@
 // Rutas del módulo
 import type { Routes } from "@angular/router";
-import { AuthCallbackComponent } from "./pages/auth-callback/auth-callback.component";
 import { ForgotPasswordComponent } from "./pages/forgot-password/forgot-password.component";
 import { LoginComponent } from "./pages/login/login.component";
 import { RegisterComponent } from "./pages/register/register.component";
@@ -19,10 +18,6 @@ import { RegisterComponent } from "./pages/register/register.component";
  * - /auth → Redirige automáticamente a /auth/login
  */
 const authRoutes: Routes = [
-	{
-		path: "callback",
-		component: AuthCallbackComponent,
-	},
 	{
 		path: "login",
 		component: LoginComponent,

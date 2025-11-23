@@ -9,18 +9,16 @@ import type { OAuthOptions } from "./auth-provider.type";
  * Define los scopes (permisos) que se solicitarán a cada proveedor.
  * El redirectTo se configura dinámicamente usando environment variables.
  */
-export const OAuthConfig = {
+export const OAuthConfig: Record<string, OAuthOptions> = {
 	google: {
 		scopes: "email profile", // Acceso a email y perfil básico
-	} as OAuthOptions,
-
+	},
 	github: {
 		scopes: "user:email", // Acceso al email del usuario
-	} as OAuthOptions,
-
+	},
 	apple: {
 		scopes: "email name", // Acceso a email y nombre
-	} as OAuthOptions,
+	},
 };
 
 /**

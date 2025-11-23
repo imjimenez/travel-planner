@@ -1,5 +1,5 @@
 import type { Routes } from "@angular/router";
-import { OverviewComponent } from "./pages/dashboard/dashboard.component";
+import { OverviewComponent } from "./pages/overview/overview.component";
 
 /**
  * Rutas del módulo Overview

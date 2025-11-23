@@ -1,12 +1,15 @@
 import { provideHttpClient, withInterceptors } from "@angular/common/http";
 import {
 	type ApplicationConfig,
+	inject,
+	provideAppInitializer,
 	provideBrowserGlobalErrorListeners,
 	provideZonelessChangeDetection,
 } from "@angular/core";
 import { provideRouter } from "@angular/router";
 import { environment } from "../environments/environment";
 import { routes } from "./app.routes";
+import { AuthService } from "./core/authentication";
 import { authInterceptor } from "./core/authentication/interceptors/auth.interceptor";
 import { SUPABASE_CONFIG } from "./core/supabase/supabase.config";
 
@@ -44,5 +47,10 @@ export const appConfig: ApplicationConfig = {
 			provide: SUPABASE_CONFIG,
 			useValue: environment.supabase,
 		},
+		// Inicializamos el servicio de autenticación al inicio de la aplicación
+		provideAppInitializer(() => {
+			const authService = inject(AuthService);
+			return authService.initialize();
+		}),
 	],
 };

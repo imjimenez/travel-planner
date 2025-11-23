@@ -1,5 +1,9 @@
 import type { Routes } from "@angular/router";
-import { authGuard, noAuthGuard } from "./core/authentication";
+import {
+	authGuard,
+	noAuthGuard,
+	oauthCallbackGuard,
+} from "./core/authentication";
 import { HomeComponent } from "./features/landing/pages/home/home.component";
 
 /**
@@ -14,7 +18,12 @@ import { HomeComponent } from "./features/landing/pages/home/home.component";
  * Las rutas hijas se cargan de forma lazy (loadChildren) para mejor performance.
  */
 export const routes: Routes = [
-  {
+	{
+		path: "oauth/callback",
+		canMatch: [oauthCallbackGuard],
+		children: [],
+	},
+	{
 		// Landing page pública
 		path: "",
 		component: HomeComponent,
@@ -33,7 +42,8 @@ export const routes: Routes = [
 		// Usa DashboardLayout con sidebar para todas las rutas hijas
 		path: "",
 		canMatch: [authGuard], // Protege todas las rutas hijas
-		loadComponent: () => import("./shared/layouts/dashboard-layout/dashboard-layout.component"),
+		loadComponent: () =>
+			import("./shared/layouts/dashboard-layout/dashboard-layout.component"),
 		children: [
 			{
 				// Overview - página principal del dashboard
