@@ -6,7 +6,11 @@ import {
 	provideBrowserGlobalErrorListeners,
 	provideZonelessChangeDetection,
 } from "@angular/core";
+// primeNG
+import { provideAnimationsAsync } from "@angular/platform-browser/animations/async";
 import { provideRouter } from "@angular/router";
+import Aura from "@primeuix/themes/aura"; // Aura, Material, Lara, Nora
+import { providePrimeNG } from "primeng/config";
 import { environment } from "../environments/environment";
 import { routes } from "./app.routes";
 import { AuthService } from "./core/authentication";
@@ -40,7 +44,14 @@ export const appConfig: ApplicationConfig = {
 		// HttpClient con interceptor que añade token de auth automáticamente
 		// Esto hace que todas las peticiones HTTP incluyan el header Authorization
 		provideHttpClient(withInterceptors([authInterceptor])),
-
+		// PrimeNG - Animations - Aunque aparezca deprecado, es necesario
+		provideAnimationsAsync(),
+		// PrimeNG - Configuración global de PrimeNG
+		providePrimeNG({
+			theme: {
+				preset: Aura,
+			},
+		}),
 		// Configuración de Supabase mediante Dependency Injection
 		// Permite que SupabaseService reciba la configuración automáticamente
 		{

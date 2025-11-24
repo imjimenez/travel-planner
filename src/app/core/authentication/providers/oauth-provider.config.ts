@@ -31,5 +31,5 @@ export const OAuthConfig: Record<string, OAuthOptions> = {
  * @returns URL completa del callback OAuth (ej: https://miapp.com/auth/callback)
  */
 export function getRedirectURL(): string {
-	return `${window.location.origin}${environment.supabase.oauthCallbackPath}`;
+	return `${window.location.origin}${environment.oauthCallbackPath}`;
 }
