@@ -1,14 +1,12 @@
-import { Component } from '@angular/core';
-import { NavbarComponent } from '../../../../shared/components/navbar/navbar.component';
-
+import { Component } from "@angular/core";
+import { NavbarComponent } from "../../../../shared/components/navbar/navbar.component";
 
 @Component({
-  selector: 'app-home',
-  standalone: true,
-  imports: [NavbarComponent],
-  templateUrl: './home.component.html',
-  styleUrl: './home.component.scss',
+	selector: "app-home",
+	imports: [NavbarComponent],
+	template: `
+    <app-navbar></app-navbar>
+  `,
+	styleUrl: "./home.component.scss",
 })
-export class HomeComponent {
-
-}
+export class HomeComponent {}
