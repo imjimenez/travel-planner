@@ -6,7 +6,8 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "types:generate": "supabase gen types typescript --project-id ifnbifiohomptqiuznom > src/app/core/supabase/supabase.types.ts"
   },
   "prettier": {
     "printWidth": 100,
@@ -22,21 +23,27 @@
   },
   "private": true,
   "dependencies": {
-    "@angular/common": "^20.3.0",
-    "@angular/compiler": "^20.3.0",
-    "@angular/core": "^20.3.0",
-    "@angular/forms": "^20.3.0",
-    "@angular/platform-browser": "^20.3.0",
-    "@angular/router": "^20.3.0",
+    "@angular/common": "^20.3.13",
+    "@angular/compiler": "^20.3.13",
+    "@angular/core": "^20.3.13",
+    "@angular/forms": "^20.3.13",
+    "@angular/platform-browser": "^20.3.13",
+    "@angular/router": "^20.3.13",
+    "@primeuix/themes": "^1.2.5",
     "@supabase/supabase-js": "^2.81.1",
+    "@tailwindcss/postcss": "^4.1.15",
+    "postcss": "^8.5.6",
+    "primeng": "^20.3.0",
     "leaflet": "^1.9.4",
     "rxjs": "~7.8.0",
+    "tailwindcss": "^4.1.15",
+    "tailwindcss-primeui": "^0.6.1",
     "tslib": "^2.3.0"
   },
   "devDependencies": {
     "@angular/build": "^20.3.6",
     "@angular/cli": "^20.3.10",
-    "@angular/compiler-cli": "^20.3.0",
+    "@angular/compiler-cli": "^20.3.13",
     "@types/jasmine": "~5.1.0",
     "@types/leaflet": "^1.9.21",
     "jasmine-core": "~5.9.0",
@@ -45,6 +52,7 @@
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
+    "supabase": "^2.58.5",
     "typescript": "~5.9.2"
   }
 }
