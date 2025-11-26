@@ -43,6 +43,7 @@ export const environment = {
     url: 'https://TU-PROJECT-ID.supabase.co',    // Reemplazar
     anonKey: 'TU-SUPABASE-ANON-KEY'              // Reemplazar
   },
+  resendApiKey:'RESEND_API_KEY',
   appURL: 'http://localhost:4200',
   oauthCallbackPath: '/auth/callback'
 };
@@ -56,8 +57,10 @@ export const environment = {
     url: 'https://TU-PROJECT-ID.supabase.co',    // Reemplazar
     anonKey: 'TU-SUPABASE-ANON-KEY'              // Reemplazar
   },
+  resendApiKey:'RESEND_API_KEY',
   appURL: 'https://tuapp.com',                   // URL de producción
-  oauthCallbackPath: '/auth/callback'
+  oauthCallbackPath: '/auth/callback',
+
 };
 ```
 
@@ -65,7 +68,7 @@ export const environment = {
 1. Ve a tu proyecto en [Supabase Dashboard](https://supabase.com/dashboard)
 2. Settings → API → Project URL (copia la URL)
 3. Settings → API → Project API keys → `anon` `public` (copia la key)
-
+4. Ve a [Resend Dashboard - Api Keys](https://resend.com/api-keys) y copia la key Travel planner web
 
 ### 4. Ejecutar el proyecto
 ```bash
