@@ -310,6 +310,19 @@ export type Database = {
     Functions: {
       accept_trip_invite: { Args: { invite_token: string }; Returns: Json }
       delete_own_account: { Args: never; Returns: undefined }
+      get_trip_participants: {
+        Args: { p_trip_id: string }
+        Returns: {
+          added_at: string
+          avatar_url: string
+          email: string
+          full_name: string
+          trip_id: string
+          trip_user_id: string
+          user_id: string
+        }[]
+      }
+      get_user_info: { Args: { user_uuid: string }; Returns: Json }
     }
     Enums: {
       [_ in never]: never
