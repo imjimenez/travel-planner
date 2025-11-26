@@ -1,1 +1,2 @@
 export * from './trip.model';
+export * from './trip-todo.model';
