@@ -1,4 +1,4 @@
-import type { Tables, TablesInsert, TablesUpdate } from '../../supabase/supabase.types';
+import type { Tables, TablesInsert, TablesUpdate } from '@core/supabase/supabase.types';
 
 /**
  * Modelo de Trip (lectura desde BD)
