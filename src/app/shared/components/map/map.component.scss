@@ -1,0 +1,68 @@
+/**
+ * Estilos básicos para el componente de mapa.
+ */
+
+ .map-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+  
+  .map-container {
+    width: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  /**
+   * Estilos para los popups de los marcadores.
+   */
+  :host ::ng-deep .leaflet-popup-content-wrapper {
+    border-radius: 8px;
+    padding: 12px;
+  }
+  
+  :host ::ng-deep .leaflet-popup-content {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  
+  :host ::ng-deep .leaflet-popup-content strong {
+    color: #333;
+    font-weight: 600;
+  }
+  
+  /**
+   * Estilos para los controles de zoom.
+   */
+  :host ::ng-deep .leaflet-control-zoom {
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+  
+  :host ::ng-deep .leaflet-control-zoom a {
+    color: #333;
+    font-weight: bold;
+  }
+  
+  :host ::ng-deep .leaflet-control-zoom a:hover {
+    background-color: #f4f4f4;
+  }
+  
+  /**
+   * Responsive: ajustes para pantallas pequeñas.
+   */
+  @media (max-width: 768px) {
+    .map-container {
+      border-radius: 0;
+    }
+  
+    :host ::ng-deep .leaflet-control-geocoder {
+      width: calc(100% - 20px);
+      margin: 10px;
+    }
+  }
+  
