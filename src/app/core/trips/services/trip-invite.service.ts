@@ -3,6 +3,7 @@ import { SupabaseService } from '@core/supabase/supabase.service';
 import { AuthService } from '@core/authentication/services/auth.service';
 import { TripParticipantService } from './trip-participant.service';
 import { TripService } from './trip.service';
+import { EmailService } from '@core/notifications/email.service';
 import type {
   TripInvite,
   CreateInviteData,
@@ -30,6 +31,7 @@ export class TripInviteService {
   private authService = inject(AuthService);
   private tripParticipantService = inject(TripParticipantService);
   private tripService = inject(TripService);
+  private emailService = inject(EmailService);
 
   /**
    * Invita a un usuario a un viaje
@@ -40,6 +42,7 @@ export class TripInviteService {
    *
    * @param data - tripId y email del invitado
    * @returns Invitación creada y link para compartir
+   * @throws Error si falla la creación o el envío del email
    */
   async inviteUser(data: CreateInviteData): Promise<InviteCreatedResponse> {
     const user = await this.authService.getAuthUser();
@@ -59,7 +62,17 @@ export class TripInviteService {
     if (hasPendingInvite) throw new Error('Este usuario ya tiene una invitación pendiente');
 
     // Crear invitación
-    return this.createInvite(data.tripId, data.email, user.id);
+    const result = await this.createInvite(data.tripId, data.email, user.id);
+
+    // Envía email de invitación
+    await this.sendInvitationEmail(
+      data.tripId,
+      data.email,
+      result.inviteLink,
+      user.email || 'Un usuario'
+    );
+
+    return result;
   }
 
   /**
@@ -90,7 +103,17 @@ export class TripInviteService {
     await this.supabaseService.client.from('trip_invite').delete().eq('id', inviteId);
 
     // Crear nueva invitación
-    return this.createInvite(oldInvite.trip_id!, oldInvite.email, user.id);
+    const result = await this.createInvite(oldInvite.trip_id!, oldInvite.email, user.id);
+
+    // Reenviar email
+    await this.sendInvitationEmail(
+      oldInvite.trip_id!,
+      oldInvite.email,
+      result.inviteLink,
+      user.email || 'Un usuario'
+    );
+
+    return result;
   }
 
   /**
@@ -333,6 +356,36 @@ export class TripInviteService {
       invite,
       inviteLink: this.generateInviteLink(token),
     };
+  }
+
+  /**
+   * Envía el email de invitación
+   *
+   * Método privado reutilizable para inviteUser y resendInvite.
+   * Si falla el envío, lanza un error para que el componente lo maneje.
+   *
+   * @private
+   * @param tripId - ID del viaje
+   * @param recipientEmail - Email del destinatario
+   * @param inviteLink - Link de la invitación
+   * @param inviterEmail - Email de quien invita
+   * @throws Error si no se puede enviar el email
+   */
+  private async sendInvitationEmail(
+    tripId: string,
+    recipientEmail: string,
+    inviteLink: string,
+    inviterEmail: string
+  ): Promise<void> {
+    try {
+      const trip = await this.tripService.getTripById(tripId);
+
+      await this.emailService.sendTripInvite(recipientEmail, inviteLink, trip.name, inviterEmail);
+    } catch (error) {
+      // Log para debugging pero lanzamos el error
+      console.error('Error al enviar email de invitación:', error);
+      throw new Error('La invitación se creó pero no se pudo enviar el email');
+    }
   }
 
   /**
