@@ -1,16 +1,25 @@
-import { Component } from "@angular/core";
-import { CheckButton } from "../../../../shared/components/check-button/check-button";
+// src/app/(dashboard)/overview/overview.component.ts
+import { Component, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
+import { TripService } from '@core/trips/services/trip.service';
+import { TripModalService } from '@core/trips/services/trip-modal.service.ts';
 
 @Component({
-	selector: "app-overview",
-	imports: [CheckButton],
-	template: `
-    <div>
-      <h1>Welcome to the Overview</h1>
-      <p>This is the overview component.</p>
-      <app-check-button></app-check-button>
-    </div>
-  `,
-	styles: [],
+  selector: 'app-overview',
+  standalone: true,
+  imports: [CommonModule, RouterLink],
+  templateUrl: './overview.component.html',
+  styles: [],
 })
-export class OverviewComponent {}
+export class OverviewComponent {
+  private tripService = inject(TripService);
+  private tripModalService = inject(TripModalService);
+
+  trips = this.tripService.trips;
+  loading = this.tripService.loading;
+
+  openModal() {
+    this.tripModalService.openCreateTripModal();
+  }
+}

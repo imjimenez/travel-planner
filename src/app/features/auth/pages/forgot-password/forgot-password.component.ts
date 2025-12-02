@@ -7,16 +7,16 @@ import { NotificationService } from '../../../../core/notifications/notification
 
 /**
  * Componente de recuperación de contraseña
- * 
+ *
  * Permite a los usuarios solicitar un email para resetear su contraseña
  * cuando la han olvidado.
- * 
+ *
  * Flujo:
  * 1. Usuario ingresa su email
  * 2. Se envía un email con enlace mágico de recuperación
  * 3. Al hacer clic en el enlace, se redirige a /auth/reset-password
  * 4. Muestra confirmación visual de que el email fue enviado
- * 
+ *
  * Estados:
  * - emailSent = false: Muestra formulario de solicitud
  * - emailSent = true: Muestra mensaje de confirmación
@@ -31,11 +31,11 @@ import { NotificationService } from '../../../../core/notifications/notification
 export class ForgotPasswordComponent {
   /** Formulario reactivo para capturar el email */
   forgotForm: FormGroup;
-  
+
   /** Indica si hay una operación en curso */
   loading = false;
-  
-  /** Indica si el email de recuperación fue enviado exitosamente */
+
+  /** Indica si el email de recuperación fue enviado con éxito */
   emailSent = false;
 
   constructor(
@@ -46,13 +46,13 @@ export class ForgotPasswordComponent {
   ) {
     // Formulario simple con solo email
     this.forgotForm = this.fb.group({
-      email: ['', [Validators.required, Validators.email]]
+      email: ['', [Validators.required, Validators.email]],
     });
   }
 
   /**
    * Maneja el envío del formulario de recuperación
-   * 
+   *
    * 1. Valida que el email sea correcto
    * 2. Solicita el email de recuperación al servicio
    * 3. Muestra notificación y cambia el estado a "emailSent"
@@ -85,6 +85,6 @@ export class ForgotPasswordComponent {
 
   /** Navega de vuelta a la página de login */
   goToLogin() {
-    this.router.navigate(['/auth/login'])
+    this.router.navigate(['/auth/login']);
   }
 }

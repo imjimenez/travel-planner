@@ -199,7 +199,7 @@ export type Database = {
           city: string | null
           country: string | null
           created_at: string | null
-          end_date: string | null
+          end_date: string
           id: string
           latitude: number | null
           longitude: number | null
@@ -211,7 +211,7 @@ export type Database = {
           city?: string | null
           country?: string | null
           created_at?: string | null
-          end_date?: string | null
+          end_date: string
           id?: string
           latitude?: number | null
           longitude?: number | null
@@ -223,7 +223,7 @@ export type Database = {
           city?: string | null
           country?: string | null
           created_at?: string | null
-          end_date?: string | null
+          end_date?: string
           id?: string
           latitude?: number | null
           longitude?: number | null
@@ -309,7 +309,41 @@ export type Database = {
     }
     Functions: {
       accept_trip_invite: { Args: { invite_token: string }; Returns: Json }
+      create_trip_invitation: {
+        Args: {
+          p_email: string
+          p_expires_at: string
+          p_invited_by: string
+          p_token: string
+          p_trip_id: string
+        }
+        Returns: {
+          created_at: string | null
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          status: string | null
+          token: string
+          trip_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "trip_invite"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       delete_own_account: { Args: never; Returns: undefined }
+      get_trip_members: {
+        Args: { p_trip_id: string }
+        Returns: {
+          added_at: string
+          id: string
+          trip_id: string
+          user_id: string
+        }[]
+      }
       get_trip_participants: {
         Args: { p_trip_id: string }
         Returns: {
@@ -323,6 +357,10 @@ export type Database = {
         }[]
       }
       get_user_info: { Args: { user_uuid: string }; Returns: Json }
+      internal_add_trip_member: {
+        Args: { p_trip_id: string; p_user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

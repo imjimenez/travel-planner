@@ -4,14 +4,15 @@
  */
 
 // Guards de protección de rutas
-export * from "./guards/auth.guard";
-export * from "./guards/oauth-callback.guard";
+export * from './guards/auth.guard';
+export * from './guards/oauth-callback.guard';
+export * from './guards/onboarding-check.guard';
 // Modelos de datos
-export * from "./models";
+export * from './models';
 // Configuración de proveedores OAuth
-export * from "./providers";
+export * from './providers';
 // Servicios
-export * from "./services/auth.service";
+export * from './services/auth.service';
 
 // Interceptor HTTP (no se exporta porque se registra en app.config.ts)
 // import { authInterceptor } from './interceptors/auth.interceptor';

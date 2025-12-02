@@ -9,6 +9,7 @@ import type {
   CreateInviteData,
   InviteCreatedResponse,
 } from '../models/trip-invite.model';
+import { firstValueFrom } from 'rxjs';
 
 /**
  * Servicio para gestión de invitaciones a viajes
@@ -337,18 +338,16 @@ export class TripInviteService {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
-    const { data: invite, error } = await this.supabaseService.client
-      .from('trip_invite')
-      .insert({
-        trip_id: tripId,
-        email: email,
-        token: token,
-        invited_by: invitedBy,
-        status: 'pending',
-        expires_at: expiresAt.toISOString(),
-      })
-      .select()
-      .single();
+    const { data: invite, error } = await this.supabaseService.client.rpc(
+      'create_trip_invitation',
+      {
+        p_trip_id: tripId,
+        p_email: email,
+        p_token: token,
+        p_invited_by: invitedBy,
+        p_expires_at: expiresAt.toISOString(),
+      }
+    );
 
     if (error) throw new Error(`Error al crear invitación: ${error.message}`);
 

@@ -1,0 +1,357 @@
+<!-- src/core/trips/components/trip-wizard/trip-wizard.component.html -->
+<!-- Contenedor con fondo condicional -->
+<div
+  [ngClass]="{
+    'fixed inset-0 flex items-center justify-center z-50': true,
+    'bg-black/50': backgroundStyle === 'dark',
+    'bg-white p-6 relative overflow-hidden min-h-screen': backgroundStyle === 'onboarding'
+  }"
+  (click)="onBackdropClick($event)"
+>
+  <!-- SVG de fondo solo para onboarding -->
+  @if (backgroundStyle === 'onboarding') {
+  <img
+    src="/images/mapamundi.svg"
+    alt="Mapa mundial"
+    class="absolute inset-0 w-full h-full object-cover opacity-50 pointer-events-none transform scale-125"
+    style="
+      filter: invert(70%) sepia(1%) saturate(209%) hue-rotate(4deg) brightness(94%) contrast(85%);
+    "
+  />
+  }
+
+  <!-- Modal central -->
+  <div
+    [ngClass]="{
+      'flex flex-col overflow-hidden rounded-lg shadow-xl': true,
+      'w-full h-[85vh]': true,
+      'max-w-4xl': backgroundStyle === 'dark',
+      'max-w-6xl': backgroundStyle === 'onboarding',
+      'bg-white': backgroundStyle === 'dark',
+      'bg-gray-300/30 backdrop-blur-md border border-white relative z-10':
+        backgroundStyle === 'onboarding'
+    }"
+    (click)="$event.stopPropagation()"
+  >
+    <!-- Header: progreso + botón cerrar -->
+    <div class="flex items-center justify-between px-8 pt-8 pb-6 shrink-0">
+      <div class="w-8"></div>
+
+      <!-- Indicador de progreso -->
+      <div class="flex justify-center gap-2">
+        @for (step of [0, 1, 2, 3]; track step) { @if (showWelcome || step > 0) {
+        <div
+          class="h-1 transition-all duration-300 rounded-full"
+          [ngClass]="
+            currentStep() === step
+              ? 'w-12 bg-black'
+              : currentStep() > step
+              ? 'w-8 bg-green-600'
+              : 'w-8 bg-gray-200'
+          "
+        ></div>
+        } }
+      </div>
+
+      <!-- Botón cerrar -->
+      <button
+        type="button"
+        (click)="closeWizard()"
+        class="w-8 h-8 flex bg-white hover:bg-gray-50 shadow-sm border border-gray-100 rounded-full items-center justify-center text-gray-500 hover:text-gray-800 transition-colors cursor-pointer"
+        title="Cerrar"
+      >
+        <i class="pi pi-times" style="color: black; font-size: 0.8rem"></i>
+      </button>
+    </div>
+
+    <!-- Contenedor del contenido con scroll -->
+    <div class="flex-1 overflow-y-auto px-12">
+      <!-- PASO 0: BIENVENIDA -->
+      @if (currentStep() === 0 && showWelcome) {
+      <div class="h-full flex flex-col justify-center py-8">
+        <h1 class="text-5xl font-semibold text-gray-900 mb-5 tracking-tight text-center">
+          ¡Bienvenido a tu nueva aventura!
+        </h1>
+        <p class="text-xl text-gray-600 mb-14 font-light text-center max-w-2xl mx-auto">
+          Prepárate para organizar tu siguiente gran viaje.<br />
+          Te guiaremos paso a paso para que no se te escape ningún detalle.
+        </p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mb-12 mx-auto">
+          <div class="p-5 border border-gray-200 rounded-xl bg-white">
+            <h3 class="text-sm font-semibold text-gray-900 mb-1 uppercase tracking-wide">
+              Planificación
+            </h3>
+            <p class="text-sm text-gray-600">Diseña tu itinerario y rutas</p>
+          </div>
+          <div class="p-5 border border-gray-200 rounded-xl bg-white">
+            <h3 class="text-sm font-semibold text-gray-900 mb-1 uppercase tracking-wide">
+              Presupuesto
+            </h3>
+            <p class="text-sm text-gray-600">Control total de gastos compartidos</p>
+          </div>
+          <div class="p-5 border border-gray-200 rounded-xl bg-white">
+            <h3 class="text-sm font-semibold text-gray-900 mb-1 uppercase tracking-wide">
+              Colaboración
+            </h3>
+            <p class="text-sm text-gray-600">Invita y gestiona participantes</p>
+          </div>
+          <div class="p-5 border border-gray-200 rounded-xl bg-white">
+            <h3 class="text-sm font-semibold text-gray-900 mb-1 uppercase tracking-wide">
+              Documentación
+            </h3>
+            <p class="text-sm text-gray-600">Almacena archivos importantes</p>
+          </div>
+        </div>
+
+        <p class="text-base text-gray-900 font-medium text-center">
+          ¡Empecemos creando tu primer viaje!
+        </p>
+      </div>
+      }
+
+      <!-- PASO 1: NOMBRE Y DESTINO -->
+      @if (currentStep() === 1) {
+      <div class="py-6">
+        <h2 class="text-3xl font-medium text-gray-900 mb-2 tracking-tight">Información básica</h2>
+        <p class="text-gray-600 mb-8">Define el nombre y destino principal de tu viaje</p>
+
+        <div class="mb-8">
+          <label
+            for="trip-name"
+            class="block text-xs font-semibold text-gray-900 mb-2 uppercase tracking-wide"
+          >
+            Nombre del viaje
+          </label>
+          <input
+            type="text"
+            id="trip-name"
+            [ngModel]="tripName()"
+            (ngModelChange)="tripName.set($event)"
+            placeholder="Ej: Expedición Asia 2025"
+            maxlength="100"
+            class="w-full px-4 py-3 rounded-full border bg-white border-gray-100 outline-none focus:ring-2 focus:ring-transparent focus:border-green-600 transition-all text-gray-900 placeholder-gray-400"
+          />
+          <small class="block mt-2 text-xs text-gray-500 pl-4">
+            Utiliza un nombre descriptivo y memorable
+          </small>
+        </div>
+
+        <div class="mb-6">
+          <div class="flex gap-3 items-center">
+            <label class="block text-xs font-semibold text-gray-900 mb-2 uppercase tracking-wide">
+              Destino principal:
+            </label>
+            @if (hasLocationSelected()) {
+            <p class="block text-xs font-semibold text-gray-900 mb-2 uppercase tracking-wide">
+              {{ tripCity() }}, {{ tripCountry() }}
+            </p>
+            }
+          </div>
+
+          <div class="flex gap-3 mb-4">
+            <input
+              type="text"
+              [(ngModel)]="locationSearch"
+              (keyup.enter)="searchLocation()"
+              placeholder="Buscar ciudad o país..."
+              class="w-full px-4 py-3 rounded-full border bg-white border-gray-100 outline-none focus:ring-2 focus:ring-transparent focus:border-green-600 transition-all text-gray-900 placeholder-gray-400"
+            />
+            <button
+              type="button"
+              (click)="searchLocation()"
+              [disabled]="!locationSearch"
+              class="px-6 py-3 bg-black text-white rounded-full hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
+            >
+              Buscar
+            </button>
+          </div>
+
+          <div class="rounded overflow-hidden border border-gray-300">
+            <app-map
+              #mapRef
+              [config]="{
+                mode: 'select-location',
+                height: '280px',
+                zoom: 6,
+                center: currentCoordinates() || { lat: 42.847, lng: -2.673 }
+              }"
+              (locationSelected)="onMapLocationSelected($event)"
+            >
+            </app-map>
+          </div>
+
+          <small class="block mt-2 text-xs text-gray-500">
+            Utiliza el buscador o selecciona directamente en el mapa
+          </small>
+        </div>
+      </div>
+      }
+
+      <!-- PASO 2: FECHAS -->
+      @if (currentStep() === 2) {
+      <div class="h-full flex flex-col justify-center py-8">
+        <h2 class="text-3xl font-medium text-gray-900 mb-2 tracking-tight">Fechas del viaje</h2>
+        <p class="text-gray-600 mb-6">Establece el período de tu viaje</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 my-8">
+          <div>
+            <label
+              for="start-date"
+              class="flex justify-center text-xs font-semibold text-gray-900 mb-2 uppercase tracking-wide"
+            >
+              Fecha de inicio
+            </label>
+            <div class="card flex justify-center">
+              <p-datepicker
+                class="max-w-full py-4"
+                [ngModel]="tripStartDate()"
+                (ngModelChange)="tripStartDate.set($event)"
+                [inline]="true"
+                [showWeek]="true"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label
+              for="end-date"
+              class="flex justify-center text-xs font-semibold text-gray-900 mb-2 uppercase tracking-wide"
+            >
+              Fecha de finalización
+            </label>
+            <div class="card flex justify-center">
+              <p-datepicker
+                class="max-w-full py-4"
+                [ngModel]="tripEndDate()"
+                (ngModelChange)="tripEndDate.set($event)"
+                [inline]="true"
+                [showWeek]="true"
+              />
+            </div>
+          </div>
+        </div>
+        <div
+          class="flex min-h-20 p-5 items-center gap-6 bg-gray-50 border border-gray-300 rounded-xl mb-6"
+        >
+          <span class="text-md font-normal text-gray-900 uppercase tracking-wide">
+            Duración del viaje:
+          </span>
+          @if (tripStartDate() && tripEndDate()) {
+          <p class="text-xl font-medium text-gray-900 m-0">{{ calculateDuration() }} días</p>
+          }
+        </div>
+      </div>
+      }
+
+      <!-- PASO 3: INVITACIONES -->
+      @if (currentStep() === 3) {
+      <div class="py-6">
+        <h2 class="text-3xl font-medium text-gray-900 mb-2 tracking-tight">Participantes</h2>
+        <p class="text-gray-600 mb-8">Invita a las personas que participarán en el viaje</p>
+
+        <div class="mb-8">
+          <label class="block text-xs font-semibold text-gray-900 mb-2 uppercase tracking-wide">
+            Correo electrónico
+          </label>
+          <div class="flex gap-3">
+            <input
+              type="email"
+              [(ngModel)]="tempEmail"
+              (keyup.enter)="addInvite()"
+              placeholder="nombre@ejemplo.com"
+              class="w-full px-4 py-3 rounded-full border bg-white border-gray-100 outline-none focus:ring-2 focus:ring-transparent focus:border-green-600 transition-all text-gray-900 placeholder-gray-400"
+            />
+            <button
+              type="button"
+              (click)="addInvite()"
+              [disabled]="!tempEmail"
+              class="px-6 py-3 bg-black text-white rounded-full hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium cursor-pointer"
+            >
+              Añadir
+            </button>
+          </div>
+        </div>
+
+        @if (tripInvites().length > 0) {
+        <div class="mb-6">
+          <h3 class="text-xs font-semibold text-gray-900 mb-3 uppercase tracking-wide">
+            Invitaciones pendientes ({{ tripInvites().length }})
+          </h3>
+          <div class="space-y-2 max-h-64 overflow-y-auto">
+            @for (email of tripInvites(); track email) {
+            <div
+              class="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-xl"
+            >
+              <span class="text-gray-900">{{ email }}</span>
+              <button
+                type="button"
+                (click)="removeInvite(email)"
+                title="Eliminar"
+                class="px-3 py-1 text-sm text-gray-600 hover:text-gray-900 hover:bg-red-200 rounded-lg transition-colors cursor-pointer"
+              >
+                Eliminar
+              </button>
+            </div>
+            }
+          </div>
+        </div>
+        } @if (tripInvites().length === 0) {
+        <div class="p-8 bg-gray-50 border border-gray-200 rounded-xl text-center">
+          <p class="text-gray-600 mb-2">No se han añadido invitaciones</p>
+          <small class="text-gray-500 text-sm">
+            Podrás invitar a más personas después de crear el viaje
+          </small>
+        </div>
+        }
+      </div>
+      }
+    </div>
+
+    <!-- Botones de navegación -->
+    <div class="flex justify-between items-center px-12 py-6 border-t border-gray-200 shrink-0">
+      @if (currentStep() > minStep) {
+      <button
+        type="button"
+        (click)="previousStep()"
+        [disabled]="isLoading()"
+        class="px-6 py-3 bg-white border border-gray-100 text-gray-700 rounded-full hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium cursor-pointer"
+      >
+        Atrás
+      </button>
+      } @if (currentStep() === minStep) {
+      <div></div>
+      } @if (currentStep() === minStep) {
+      <button
+        type="button"
+        (click)="nextStep()"
+        class="px-8 py-3 bg-gray-900 text-white rounded-full hover:bg-gray-800 transition-colors font-medium cursor-pointer"
+      >
+        {{ showWelcome ? 'Comenzar' : 'Siguiente' }}
+      </button>
+      } @if (currentStep() > minStep && currentStep() < 3) {
+      <button
+        type="button"
+        (click)="nextStep()"
+        [disabled]="isLoading()"
+        class="px-8 py-3 bg-gray-900 text-white rounded-full hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium cursor-pointer"
+      >
+        Siguiente
+      </button>
+      } @if (currentStep() === 3) {
+      <button
+        type="button"
+        (click)="finishWizard()"
+        [disabled]="isLoading()"
+        class="px-8 py-3 bg-gray-900 text-white rounded-full hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium cursor-pointer"
+      >
+        @if (!isLoading()) {
+        <span>Crear viaje</span>
+        } @if (isLoading()) {
+        <span>Creando...</span>
+        }
+      </button>
+      }
+    </div>
+  </div>
+</div>
