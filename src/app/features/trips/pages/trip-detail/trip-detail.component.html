@@ -1,0 +1,111 @@
+<!-- src/app/features/trips/pages/trip-detail/trip-detail.component.html -->
+<div class="h-full overflow-y-auto">
+  <!-- Loading state -->
+  @if (isLoading()) {
+  <div class="flex items-center justify-center h-full">
+    <p class="text-gray-500">Cargando viaje...</p>
+  </div>
+  }
+
+  <!-- Trip content -->
+  @if (!isLoading() && trip()) {
+  <div class="h-full flex flex-col gap-6 p-6">
+    <!-- SECCIÓN 1: Header con nombre, ubicación, fechas y acciones -->
+    <div class="flex items-start justify-between">
+      <!-- Nombre del viaje, ciudad, país y fechas -->
+      <div class="flex-1">
+        <div class="flex items-baseline gap-3 mb-2">
+          <h1 class="text-3xl font-medium text-gray-900">{{ trip()?.name }}</h1>
+          <span class="text-sm text-gray-500">{{ trip()?.city }}, {{ trip()?.country }}</span>
+        </div>
+
+        <p class="text-sm text-gray-600">
+          {{ trip()?.start_date | date : 'dd MMM yyyy' }} -
+          {{ trip()?.end_date | date : 'dd MMM yyyy' }}
+          ({{ calculateDuration() }} días)
+        </p>
+      </div>
+
+      <!-- Botones de acción alineados a la derecha -->
+      <div class="flex items-center gap-3">
+        <button
+          type="button"
+          (click)="editTrip()"
+          class="flex items-center p-3 bg-white border border-gray-300 text-gray-700 rounded-full hover:bg-gray-50 transition-colors font-medium cursor-pointer"
+          title="Editar viaje"
+        >
+          <i class="pi pi-pen-to-square" style="font-size: 0.9rem"></i>
+        </button>
+        <button
+          type="button"
+          (click)="deleteTrip()"
+          class="flex items-center p-3 bg-white border border-red-300 text-red-600 rounded-full hover:bg-red-50 transition-colors font-medium cursor-pointer"
+          title="Eliminar viaje"
+        >
+          <i class="pi pi-trash" style="font-size: 0.9rem"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 2: Tres widgets (Participantes, Documentos, Checklist) -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <app-participant-widget [tripId]="trip()!.id" [participantCount]="0" />
+      <app-document-widget [tripId]="trip()!.id" [documentCount]="0" />
+      <app-checklist-widget [tripId]="trip()!.id" [completedCount]="0" [totalCount]="0" />
+    </div>
+
+    <!-- SECCIÓN 3: Pestañas (itinerary/gastos) -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <!-- Pestañas estilo iOS picker -->
+      <div class="relative bg-white rounded-xl shadow-sm border border-gray-200 p-2">
+        <!-- Indicador deslizante (fondo) -->
+        <div
+          class="absolute inset-y-1 m-1 bg-black border border-gray-100 rounded-lg shadow-sm transition-all duration-300 ease-out"
+          [style.width.%]="50"
+          [style.left]="activeTab() === 'itinerary' ? '0.25rem' : 'calc(50% - 0.75rem)'"
+        ></div>
+
+        <!-- Contenedor de pestañas -->
+        <div class="relative flex">
+          <button
+            type="button"
+            (click)="activeTab.set('itinerary')"
+            [class]="
+              activeTab() === 'itinerary'
+                ? 'flex-1 px-6 py-3 text-sm font-medium text-white transition-colors cursor-pointer relative z-10'
+                : 'flex-1 px-6 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors cursor-pointer relative z-10'
+            "
+          >
+            <span class="flex items-center justify-center">
+              <span>Itinerario</span>
+            </span>
+          </button>
+
+          <button
+            type="button"
+            (click)="activeTab.set('expenses')"
+            [class]="
+              activeTab() === 'expenses'
+                ? 'flex-1 px-6 py-3 text-sm font-medium text-white transition-colors cursor-pointer relative z-10'
+                : 'flex-1 px-6 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors cursor-pointer relative z-10'
+            "
+          >
+            <span class="flex items-center justify-center">
+              <span>Gastos</span>
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Contenido del tab activo -->
+      <div class="flex-1 overflow-y-auto p-6">
+        @if (activeTab() === 'itinerary') {
+        <app-itinerary-empty-state (addStopClicked)="handleAddStop()" />
+        } @if (activeTab() === 'expenses') {
+        <app-expense-empty-state (addExpenseClicked)="handleAddExpense()" />
+        }
+      </div>
+    </div>
+  </div>
+  }
+</div>
