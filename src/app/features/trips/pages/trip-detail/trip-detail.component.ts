@@ -7,6 +7,13 @@ import { Trip } from '@core/trips/models/trip.model';
 import { NotificationService } from '@core/notifications/notification.service';
 import { Subscription } from 'rxjs';
 
+// Componentes de la vista
+import { ParticipantWidgetComponent } from '@features/trips/components/participants/participants.component';
+import { DocumentWidgetComponent } from '@features/trips/components/documents/documents-widget.component';
+import { ChecklistWidgetComponent } from '@features/trips/components/checklist/checklist-widget.component';
+import { ItineraryEmptyStateComponent } from '@features/trips/components/itinerary/itinerary-emptystate.component';
+import { ExpenseEmptyStateComponent } from '@features/trips/components/expenses/expenses-emptystate.component';
+
 /**
  * Componente para mostrar el detalle de un viaje
  *
@@ -16,7 +23,14 @@ import { Subscription } from 'rxjs';
 @Component({
   selector: 'app-trip-detail',
   standalone: true,
-  imports: [CommonModule],
+  imports: [
+    CommonModule,
+    ParticipantWidgetComponent,
+    DocumentWidgetComponent,
+    ChecklistWidgetComponent,
+    ItineraryEmptyStateComponent,
+    ExpenseEmptyStateComponent,
+  ],
   templateUrl: './trip-detail.component.html',
 })
 export class TripDetailComponent implements OnInit, OnDestroy {
@@ -34,8 +48,6 @@ export class TripDetailComponent implements OnInit, OnDestroy {
   private paramsSubscription?: Subscription;
 
   ngOnInit(): void {
-    // Escuchar cambios en los parámetros de la ruta
-    // Esto se ejecutará cada vez que cambie el ID en la URL
     this.paramsSubscription = this.route.params.subscribe(async (params) => {
       const tripId = params['id'];
 
@@ -51,29 +63,20 @@ export class TripDetailComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    // Limpiar suscripción para evitar memory leaks
     if (this.paramsSubscription) {
       this.paramsSubscription.unsubscribe();
     }
   }
 
-  /**
-   * Carga un viaje por su ID
-   * Primero intenta encontrarlo en la lista cargada en memoria,
-   * si no lo encuentra, hace una petición directa a la API
-   */
   private async loadTrip(tripId: string): Promise<void> {
-    // Resetear estado
     this.trip.set(null);
     this.isLoading.set(true);
 
     try {
-      // Esperar a que los trips estén cargados si es necesario
       if (!this.tripService.trips().length) {
         await this.tripService.loadUserTrips();
       }
 
-      // Buscar el trip en memoria (más rápido)
       const tripFromMemory = this.tripService
         .trips()
         .find((t) => String(t.id).trim() === String(tripId).trim());
@@ -81,7 +84,6 @@ export class TripDetailComponent implements OnInit, OnDestroy {
       if (tripFromMemory) {
         this.trip.set(tripFromMemory);
       } else {
-        // Si no lo encuentra en memoria, pedirlo directamente a la API
         const fetchedTrip = await this.tripService.getTripById(tripId);
         this.trip.set(fetchedTrip);
       }
@@ -94,9 +96,6 @@ export class TripDetailComponent implements OnInit, OnDestroy {
     }
   }
 
-  /**
-   * Calcula la duración del viaje en días
-   */
   calculateDuration(): number {
     const currentTrip = this.trip();
     if (!currentTrip?.start_date || !currentTrip?.end_date) {
@@ -105,32 +104,27 @@ export class TripDetailComponent implements OnInit, OnDestroy {
 
     const start = new Date(currentTrip.start_date);
     const end = new Date(currentTrip.end_date);
+
+    // Calcular diferencia en días
     const diffTime = Math.abs(end.getTime() - start.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    return diffDays;
+    // Sumar 1 para incluir ambos días (inicio y fin)
+    return diffDays + 1;
   }
 
-  /**
-   * Abre el modal o página de edición del viaje
-   */
   editTrip(): void {
     const currentTrip = this.trip();
     if (!currentTrip) return;
 
-    // TODO: Implementar modal/página de edición
     this.notificationService.info('Funcionalidad de edición próximamente');
     console.log('Editar viaje:', currentTrip);
   }
 
-  /**
-   * Elimina el viaje actual con confirmación
-   */
   async deleteTrip(): Promise<void> {
     const currentTrip = this.trip();
     if (!currentTrip) return;
 
-    // Confirmación del usuario
     const confirmed = confirm(
       `¿Estás seguro de que deseas eliminar el viaje "${currentTrip.name}"? Esta acción no se puede deshacer.`
     );
@@ -145,5 +139,21 @@ export class TripDetailComponent implements OnInit, OnDestroy {
       console.error('Error al eliminar el viaje:', error);
       this.notificationService.error('Error al eliminar el viaje');
     }
+  }
+
+  /**
+   * Maneja el evento de añadir parada al itinerario
+   */
+  handleAddStop(): void {
+    this.notificationService.info('Funcionalidad de itinerario próximamente');
+    console.log('Añadir parada al itinerario');
+  }
+
+  /**
+   * Maneja el evento de añadir gasto
+   */
+  handleAddExpense(): void {
+    this.notificationService.info('Funcionalidad de gastos próximamente');
+    console.log('Añadir gasto');
   }
 }
