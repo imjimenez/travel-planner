@@ -6,12 +6,12 @@ import {
   MapMarker,
   GeocodingResult,
   MapConfig,
-  DEFAULT_MAP_CONFIG
+  DEFAULT_MAP_CONFIG,
 } from '../models';
 
 /**
  * Servicio para gestionar mapas con Leaflet y Nominatim.
- * 
+ *
  * Funcionalidades:
  * - Crear y configurar mapas con Leaflet
  * - Gestionar marcadores
@@ -20,7 +20,7 @@ import {
  * - Calcular distancias y rutas
  */
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class LeafletService {
   private readonly DEFAULT_ICON = L.icon({
@@ -30,7 +30,7 @@ export class LeafletService {
     iconSize: [25, 41],
     iconAnchor: [12, 41],
     popupAnchor: [1, -34],
-    shadowSize: [41, 41]
+    shadowSize: [41, 41],
   });
 
   private readonly NOMINATIM_URL = 'https://nominatim.openstreetmap.org';
@@ -53,7 +53,7 @@ export class LeafletService {
 
   /**
    * Crea un nuevo mapa en el elemento especificado.
-   * 
+   *
    * @param elementId ID del elemento HTML donde se renderizará el mapa
    * @param config Configuración del mapa
    * @returns Instancia del mapa de Leaflet
@@ -66,13 +66,13 @@ export class LeafletService {
       zoom: finalConfig.zoom,
       minZoom: finalConfig.minZoom,
       maxZoom: finalConfig.maxZoom,
-      zoomControl: finalConfig.showZoomControl
+      zoomControl: finalConfig.showZoomControl,
     });
 
     // Añadir capa de OpenStreetMap
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors',
-      maxZoom: 19
+      maxZoom: 19,
     }).addTo(map);
 
     // Añadir controles adicionales
@@ -85,43 +85,47 @@ export class LeafletService {
 
   /**
    * Busca ubicaciones por nombre o dirección usando Nominatim.
-   * 
+   *
    * @param query Texto de búsqueda (ej: "Madrid", "Calle Gran Vía, Madrid")
    * @returns Observable con los resultados
-   * 
+   *
    * @example
    * this.leafletService.searchLocation('Vitoria').subscribe(results => {
    *   console.log(results);
    * });
    */
   searchLocation(query: string): Observable<GeocodingResult[]> {
-    const url = `${this.NOMINATIM_URL}/search?format=json&q=${encodeURIComponent(query)}&accept-language=es&limit=5`;
-    
+    const url = `${this.NOMINATIM_URL}/search?format=json&q=${encodeURIComponent(
+      query
+    )}&accept-language=es&limit=5`;
+
     return from(
       fetch(url)
-        .then(response => response.json())
+        .then((response) => response.json())
         .then((data: any[]) => {
-          return data.map(item => ({
+          return data.map((item) => ({
             displayName: item.display_name,
             coordinates: {
               lat: parseFloat(item.lat),
-              lng: parseFloat(item.lon)
+              lng: parseFloat(item.lon),
             },
-            bounds: item.boundingbox ? {
-              southWest: { 
-                lat: parseFloat(item.boundingbox[0]), 
-                lng: parseFloat(item.boundingbox[2]) 
-              },
-              northEast: { 
-                lat: parseFloat(item.boundingbox[1]), 
-                lng: parseFloat(item.boundingbox[3]) 
-              }
-            } : undefined,
+            bounds: item.boundingbox
+              ? {
+                  southWest: {
+                    lat: parseFloat(item.boundingbox[0]),
+                    lng: parseFloat(item.boundingbox[2]),
+                  },
+                  northEast: {
+                    lat: parseFloat(item.boundingbox[1]),
+                    lng: parseFloat(item.boundingbox[3]),
+                  },
+                }
+              : undefined,
             type: item.type,
-            raw: item
+            raw: item,
           }));
         })
-        .catch(error => {
+        .catch((error) => {
           console.error('Error en búsqueda de ubicación:', error);
           return [];
         })
@@ -130,10 +134,10 @@ export class LeafletService {
 
   /**
    * Obtiene el nombre de un lugar a partir de sus coordenadas (geocoding inverso).
-   * 
+   *
    * @param coordinates Coordenadas de la ubicación
    * @returns Observable con el resultado
-   * 
+   *
    * @example
    * this.leafletService.reverseGeocode({ lat: 42.5, lng: -1.6 }).subscribe(result => {
    *   console.log(result.displayName);
@@ -141,25 +145,25 @@ export class LeafletService {
    */
   reverseGeocode(coordinates: MapCoordinates): Observable<GeocodingResult | null> {
     const url = `${this.NOMINATIM_URL}/reverse?format=json&lat=${coordinates.lat}&lon=${coordinates.lng}&accept-language=es`;
-    
+
     return from(
       fetch(url)
-        .then(response => response.json())
+        .then((response) => response.json())
         .then((data: any) => {
           if (data && data.display_name) {
             return {
               displayName: data.display_name,
               coordinates: {
                 lat: parseFloat(data.lat),
-                lng: parseFloat(data.lon)
+                lng: parseFloat(data.lon),
               },
               type: data.type,
-              raw: data
+              raw: data,
             };
           }
           return null;
         })
-        .catch(error => {
+        .catch((error) => {
           console.error('Error en geocoding inverso:', error);
           return null;
         })
@@ -168,7 +172,7 @@ export class LeafletService {
 
   /**
    * Añade un marcador al mapa.
-   * 
+   *
    * @param map Instancia del mapa
    * @param marker Datos del marcador
    * @param onClick Callback al hacer click
@@ -181,14 +185,11 @@ export class LeafletService {
     onClick?: (marker: MapMarker) => void,
     onDragEnd?: (marker: MapMarker, newCoordinates: MapCoordinates) => void
   ): L.Marker {
-    const leafletMarker = L.marker(
-      [marker.coordinates.lat, marker.coordinates.lng],
-      {
-        icon: this.createIcon(marker),
-        draggable: marker.draggable || false,
-        title: marker.title
-      }
-    );
+    const leafletMarker = L.marker([marker.coordinates.lat, marker.coordinates.lng], {
+      icon: this.createIcon(marker),
+      draggable: marker.draggable || false,
+      title: marker.title,
+    });
 
     if (marker.title || marker.description) {
       const popupContent = this.createPopupContent(marker);
@@ -204,7 +205,7 @@ export class LeafletService {
         const position = event.target.getLatLng();
         const newCoordinates: MapCoordinates = {
           lat: position.lat,
-          lng: position.lng
+          lng: position.lng,
         };
         onDragEnd(marker, newCoordinates);
       });
@@ -214,10 +215,23 @@ export class LeafletService {
     return leafletMarker;
   }
 
+  // leaflet.service.ts
+  /**
+   * Centra el mapa en unas coordenadas específicas con un zoom opcional.
+   *
+   * @param map Instancia del mapa
+   * @param coordinates Coordenadas donde centrar
+   * @param zoom Nivel de zoom (opcional, usa el actual si no se especifica)
+   */
+  centerMap(map: L.Map, coordinates: MapCoordinates, zoom?: number): void {
+    const currentZoom = map.getZoom();
+    map.setView([coordinates.lat, coordinates.lng], zoom || currentZoom);
+  }
+
   /**
    * Crea un icono Leaflet para un marcador.
    * Si el marcador incluye una URL personalizada, la usa; de lo contrario aplica el icono por defecto.
-   * 
+   *
    * @param marker Datos del marcador
    * @returns Instancia del icono Leaflet
    */
@@ -227,7 +241,7 @@ export class LeafletService {
         iconUrl: marker.iconUrl,
         iconSize: marker.iconSize || [25, 41],
         iconAnchor: [12, 41],
-        popupAnchor: [1, -34]
+        popupAnchor: [1, -34],
       });
     }
     return this.DEFAULT_ICON;
@@ -236,7 +250,7 @@ export class LeafletService {
   /**
    * Genera el contenido HTML que se mostrará en el popup del marcador.
    * Combina título y descripción si están disponibles.
-   * 
+   *
    * @param marker Datos del marcador
    * @returns Cadena HTML para el popup
    */
@@ -253,7 +267,7 @@ export class LeafletService {
 
   /**
    * Elimina un marcador específico del mapa.
-   * 
+   *
    * @param map Instancia del mapa
    * @param leafletMarker Marcador a eliminar
    */
@@ -264,7 +278,7 @@ export class LeafletService {
   /**
    * Elimina todos los marcadores del mapa sin afectar capas base.
    * Recorre todas las capas y borra únicamente los objetos de tipo Marker.
-   * 
+   *
    * @param map Instancia del mapa
    */
   clearMarkers(map: L.Map): void {
@@ -296,9 +310,7 @@ export class LeafletService {
     if (coordinates.length < 2) return null;
 
     const orderedCoordinates = this.orderPointsByProximity(coordinates);
-    const latLngs: L.LatLngExpression[] = orderedCoordinates.map(coord => 
-      [coord.lat, coord.lng]
-    );
+    const latLngs: L.LatLngExpression[] = orderedCoordinates.map((coord) => [coord.lat, coord.lng]);
 
     let dashArray: string | undefined;
     if (options.style === 'dashed') dashArray = '10, 10';
@@ -308,7 +320,7 @@ export class LeafletService {
       color: options.color || '#3388ff',
       weight: options.weight || 3,
       dashArray,
-      opacity: 0.7
+      opacity: 0.7,
     });
 
     polyline.addTo(map);
@@ -318,7 +330,7 @@ export class LeafletService {
   /**
    * Ordena una lista de coordenadas según su proximidad.
    * Comienza por el primer punto y selecciona siempre el siguiente más cercano.
-   * 
+   *
    * @param coordinates Lista de coordenadas
    * @returns Lista ordenada por distancia progresiva
    */
@@ -357,10 +369,12 @@ export class LeafletService {
     const dLat = this.toRadians(coord2.lat - coord1.lat);
     const dLng = this.toRadians(coord2.lng - coord1.lng);
 
-    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(this.toRadians(coord1.lat)) *
-      Math.cos(this.toRadians(coord2.lat)) *
-      Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        Math.cos(this.toRadians(coord2.lat)) *
+        Math.sin(dLng / 2) *
+        Math.sin(dLng / 2);
 
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
@@ -368,7 +382,7 @@ export class LeafletService {
 
   /**
    * Convierte grados a radianes.
-   * 
+   *
    * @param degrees Valor en grados
    * @returns Valor en radianes
    */
@@ -379,16 +393,12 @@ export class LeafletService {
   /**
    * Ajusta el mapa para mostrar todas las coordenadas dadas dentro del área visible.
    * Aplica un padding para evitar que queden pegadas al borde.
-   * 
+   *
    * @param map Instancia del mapa
    * @param coordinates Lista de coordenadas a encuadrar
    * @param padding Espaciado adicional alrededor de los límites
    */
-  fitBounds(
-    map: L.Map,
-    coordinates: MapCoordinates[],
-    padding: [number, number] = [50, 50]
-  ): void {
+  fitBounds(map: L.Map, coordinates: MapCoordinates[], padding: [number, number] = [50, 50]): void {
     if (coordinates.length === 0) return;
 
     if (coordinates.length === 1) {
@@ -397,7 +407,7 @@ export class LeafletService {
     }
 
     const bounds = L.latLngBounds(
-      coordinates.map(coord => [coord.lat, coord.lng] as L.LatLngExpression)
+      coordinates.map((coord) => [coord.lat, coord.lng] as L.LatLngExpression)
     );
 
     map.fitBounds(bounds, { padding });
@@ -406,7 +416,7 @@ export class LeafletService {
   /**
    * Registra un callback que se ejecuta cuando el usuario hace click en el mapa.
    * Devuelve las coordenadas del punto donde se hizo click.
-   * 
+   *
    * @param map Instancia del mapa
    * @param callback Función que recibe las coordenadas del click
    */
@@ -414,7 +424,7 @@ export class LeafletService {
     map.on('click', (event: L.LeafletMouseEvent) => {
       callback({
         lat: event.latlng.lat,
-        lng: event.latlng.lng
+        lng: event.latlng.lng,
       });
     });
   }
@@ -422,7 +432,7 @@ export class LeafletService {
   /**
    * Elimina todas las capas del mapa excepto las capas base (TileLayer).
    * Limpia líneas, rutas, marcadores, polígonos y cualquier overlay visual.
-   * 
+   *
    * @param map Instancia del mapa
    */
   clearAllOverlays(map: L.Map): void {
@@ -435,7 +445,7 @@ export class LeafletService {
 
   /**
    * Destruye completamente la instancia del mapa y libera sus recursos.
-   * 
+   *
    * @param map Instancia del mapa
    */
   destroyMap(map: L.Map): void {

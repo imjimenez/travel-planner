@@ -1,9 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { SidebarComponent } from './components/sidebar/sidebar.component';
 import { AuthService, User } from '../../../core/authentication';
 import { Observable } from 'rxjs';
+import { TripWizardComponent } from '@shared/components/trips/tripWizard/trip-wizard.component';
+import { TripModalService } from '@core/trips/services/trip-modal.service.ts';
 
 /**
  * Layout principal del dashboard
@@ -26,17 +28,17 @@ import { Observable } from 'rxjs';
 @Component({
   selector: 'app-dashboard-layout',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, SidebarComponent],
+  imports: [CommonModule, RouterOutlet, SidebarComponent, TripWizardComponent],
   templateUrl: './dashboard-layout.component.html',
-  styleUrl: './dashboard-layout.component.scss',
 })
 export default class DashboardLayoutComponent implements OnInit {
-
+  private tripModalService = inject(TripModalService);
   /**
    * Observable del usuario actual
    * Se pasa al sidebar para mostrar información del usuario
    */
   currentUser$: Observable<User | null>;
+  showCreateTripModal = this.tripModalService.createTripModal;
 
   constructor(private authService: AuthService) {
     this.currentUser$ = this.authService.currentUser$;
@@ -50,10 +52,19 @@ export default class DashboardLayoutComponent implements OnInit {
    * pero se mantiene como verificación de desarrollo.
    */
   ngOnInit() {
-    this.currentUser$.subscribe(user => {
+    this.currentUser$.subscribe((user) => {
       if (!user) {
         console.warn('No authenticated user in dashboard');
       }
     });
+  }
+
+  // Método para abrir el modal (se llamará desde el sidebar)
+  openCreateTripModal() {
+    this.tripModalService.openCreateTripModal();
+  }
+
+  closeCreateTripModal() {
+    this.tripModalService.closeCreateTripModal();
   }
 }

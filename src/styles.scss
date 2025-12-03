@@ -1,8 +1,10 @@
 /* You can add global styles to this file, and also import other style files */
-@use "tailwind.css";
+@use 'tailwind.css';
+@import 'primeicons/primeicons.css';
 
-html, body {
-    font-family: 'Inter', sans-serif; /* Fuente global */
-    margin: 0;                         /* Quitamos márgenes por defecto */
-    padding: 0;
+html,
+body {
+  font-family: 'Inter', sans-serif; /* Fuente global */
+  margin: 0; /* Quitamos márgenes por defecto */
+  padding: 0;
 }

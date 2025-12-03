@@ -1,3 +1,4 @@
+// src/shared/components/map/map.component.ts
 import {
   Component,
   OnInit,
@@ -7,35 +8,30 @@ import {
   EventEmitter,
   AfterViewInit,
   ViewChild,
-  ElementRef
+  ElementRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import * as L from 'leaflet';
 import { LeafletService } from './services/leaflet.service';
-import {
-  MapConfig,
-  MapCoordinates,
-  MapMarker,
-  DEFAULT_MAP_CONFIG
-} from './models';
+import { MapConfig, MapCoordinates, MapMarker, DEFAULT_MAP_CONFIG } from './models';
 
 /**
  * Componente reutilizable de mapa con Leaflet.
- * 
+ *
  * Soporta múltiples modos de operación:
  * - view-only: Solo visualización
  * - select-location: Seleccionar una ubicación (click o búsqueda)
  * - add-marker: Añadir múltiples marcadores
  * - view-markers: Visualizar marcadores existentes
  * - edit-markers: Editar/mover marcadores
- * 
+ *
  * @example
  * // Modo selección de ubicación
  * <app-map
  *   [config]="{ mode: 'select-location', showSearchControl: true }"
  *   (locationSelected)="onLocationSelected($event)">
  * </app-map>
- * 
+ *
  * @example
  * // Modo visualización de múltiples paradas con ruta
  * <app-map
@@ -50,15 +46,15 @@ import {
   imports: [CommonModule],
   template: `
     <div class="map-wrapper">
-      <div 
-        #mapContainer 
+      <div
+        #mapContainer
         [id]="mapId"
         class="map-container"
-        [style.height]="config.height || '500px'">
-      </div>
+        [style.height]="config.height || '500px'"
+      ></div>
     </div>
   `,
-  styleUrls: ['./map.component.scss']
+  styleUrls: ['./map.component.scss'],
 })
 export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('mapContainer', { static: true }) mapContainer!: ElementRef;
@@ -108,19 +104,20 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   private leafletMarkers: Map<string, L.Marker> = new Map();
   private routeLine?: L.Polyline;
   private finalConfig!: MapConfig;
+  private currentMarker?: L.Marker; // Marcador temporal para select-location
 
   /**
    * ID único para el contenedor del mapa.
    */
   mapId: string = 'map-' + Date.now();
 
-  constructor(private leafletService: LeafletService) { }
+  constructor(private leafletService: LeafletService) {}
 
   ngOnInit(): void {
     // Combinar configuración por defecto con la proporcionada
     this.finalConfig = {
       ...DEFAULT_MAP_CONFIG,
-      ...this.config
+      ...this.config,
     } as MapConfig;
 
     // Si se proporcionan coordenadas iniciales, sobrescribir el center
@@ -148,10 +145,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
    */
   private initializeMap(): void {
     // Crear el mapa
-    this.map = this.leafletService.createMap(
-      this.mapContainer.nativeElement.id,
-      this.finalConfig
-    );
+    this.map = this.leafletService.createMap(this.mapContainer.nativeElement.id, this.finalConfig);
 
     // Configurar eventos según el modo
     this.setupModeInteractions();
@@ -195,19 +189,14 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
    * @private
    */
   private setupSelectLocationMode(): void {
-    let currentMarker: L.Marker | null = null;
-
     this.leafletService.onMapClick(this.map, (coordinates) => {
       // Eliminar marcador anterior si existe
-      if (currentMarker) {
-        this.leafletService.removeMarker(this.map, currentMarker);
+      if (this.currentMarker) {
+        this.map.removeLayer(this.currentMarker);
       }
 
-      // Añadir nuevo marcador
-      currentMarker = this.leafletService.addMarker(this.map, {
-        id: 'selected-location',
-        coordinates
-      });
+      // Añadir nuevo marcador usando el método simple
+      this.currentMarker = L.marker([coordinates.lat, coordinates.lng]).addTo(this.map);
 
       // Emitir evento
       this.locationSelected.emit(coordinates);
@@ -224,7 +213,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       const markerId = `marker-${Date.now()}`;
       const marker: MapMarker = {
         id: markerId,
-        coordinates
+        coordinates,
       };
 
       const leafletMarker = this.leafletService.addMarker(this.map, marker);
@@ -244,7 +233,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.clearMarkers();
 
     // Añadir nuevos marcadores
-    this.markers.forEach(marker => {
+    this.markers.forEach((marker) => {
       const isDraggable = this.finalConfig.mode === 'edit-markers' || marker.draggable;
 
       const leafletMarker = this.leafletService.addMarker(
@@ -265,7 +254,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     // Ajustar vista para mostrar todos los marcadores
-    const coordinates = this.markers.map(m => m.coordinates);
+    const coordinates = this.markers.map((m) => m.coordinates);
     this.leafletService.fitBounds(this.map, coordinates);
   }
 
@@ -279,16 +268,13 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       this.map.removeLayer(this.routeLine);
     }
 
-    const coordinates = this.markers.map(m => m.coordinates);
-    this.routeLine = this.leafletService.drawRoute(
-      this.map,
-      coordinates,
-      {
+    const coordinates = this.markers.map((m) => m.coordinates);
+    this.routeLine =
+      this.leafletService.drawRoute(this.map, coordinates, {
         color: this.finalConfig.routeColor,
         weight: this.finalConfig.routeWeight,
-        style: this.finalConfig.routeStyle
-      }
-    ) || undefined;
+        style: this.finalConfig.routeStyle,
+      }) || undefined;
   }
 
   /**
@@ -296,7 +282,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
    * @private
    */
   private clearMarkers(): void {
-    this.leafletMarkers.forEach(marker => {
+    this.leafletMarkers.forEach((marker) => {
       this.leafletService.removeMarker(this.map, marker);
     });
     this.leafletMarkers.clear();
@@ -324,12 +310,13 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
    */
   centerMap(coordinates: MapCoordinates, zoom?: number): void {
     if (this.map) {
-      this.map.setView([coordinates.lat, coordinates.lng], zoom || this.finalConfig.zoom);
+      this.leafletService.centerMap(this.map, coordinates, zoom);
     }
   }
 
   /**
-   * Añade un marcador programáticamente.
+   * Añade un marcador completo programáticamente.
+   * Usado cuando necesitas control total sobre el marcador (con ID, popup, etc.)
    * @public
    */
   addMarker(marker: MapMarker): void {
@@ -341,6 +328,24 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /**
+   * Añade un marcador simple en las coordenadas especificadas.
+   * Usado en modo select-location para mostrar la ubicación seleccionada.
+   * Si ya existe un marcador temporal, lo reemplaza.
+   * @public
+   */
+  addSimpleMarker(coordinates: MapCoordinates): void {
+    if (!this.map) return;
+
+    // Si ya existe un marcador temporal, eliminarlo
+    if (this.currentMarker) {
+      this.map.removeLayer(this.currentMarker);
+    }
+
+    // Crear nuevo marcador simple
+    this.currentMarker = L.marker([coordinates.lat, coordinates.lng]).addTo(this.map);
+  }
+
+  /**
    * Elimina un marcador por su ID.
    * @public
    */
@@ -349,7 +354,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     if (leafletMarker && this.map) {
       this.leafletService.removeMarker(this.map, leafletMarker);
       this.leafletMarkers.delete(markerId);
-      this.markers = this.markers.filter(m => m.id !== markerId);
+      this.markers = this.markers.filter((m) => m.id !== markerId);
     }
   }
 
@@ -360,6 +365,13 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   clear(): void {
     if (this.map) {
       this.clearMarkers();
+
+      // También limpiar el marcador temporal si existe
+      if (this.currentMarker) {
+        this.map.removeLayer(this.currentMarker);
+        this.currentMarker = undefined;
+      }
+
       this.leafletService.clearAllOverlays(this.map);
     }
   }
