@@ -9,6 +9,7 @@ import {
   Output,
   EventEmitter,
   computed,
+  OnInit,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -21,6 +22,7 @@ import { MapCoordinates, GeocodingResult } from '@shared/components/map/models';
 import { NotificationService } from '@core/notifications/notification.service';
 import { Subscription } from 'rxjs';
 import { DatePickerModule } from 'primeng/datepicker';
+import { Trip } from '@core/trips';
 
 /**
  * Datos del viaje durante el wizard con signals para reactividad
@@ -59,11 +61,13 @@ type WizardStep = 0 | 1 | 2 | 3;
     `,
   ],
 })
-export class TripWizardComponent implements OnDestroy {
+export class TripWizardComponent implements OnInit, OnDestroy {
   // Configuración del componente
   @Input() showWelcome = true;
   @Input() redirectAfterCreate = '/trips';
   @Input() backgroundStyle: 'dark' | 'onboarding' = 'dark';
+  @Input() mode: 'create' | 'edit' = 'create';
+  @Input() tripToEdit: Trip | null = null;
 
   @Output() closed = new EventEmitter<void>();
 
@@ -140,6 +144,11 @@ export class TripWizardComponent implements OnDestroy {
 
   ngOnInit(): void {
     this.currentStep.set(this.showWelcome ? 0 : 1);
+
+    // Cargar datos del viaje si estamos en modo edit
+    if (this.mode === 'edit' && this.tripToEdit) {
+      this.loadTripData(this.tripToEdit);
+    }
   }
 
   ngOnDestroy(): void {
@@ -148,12 +157,31 @@ export class TripWizardComponent implements OnDestroy {
     }
   }
 
+  // Método para cargar datos del viaje
+  private loadTripData(trip: Trip): void {
+    this.tripName.set(trip.name);
+    this.tripCity.set(trip.city!);
+    this.tripCountry.set(trip.country!);
+    this.tripLatitude.set(trip.latitude);
+    this.tripLongitude.set(trip.longitude);
+    this.tripStartDate.set(trip.start_date);
+    this.tripEndDate.set(trip.end_date);
+
+    // Centrar el mapa en la ubicación del viaje
+    if (this.mapComponent && trip.latitude && trip.longitude) {
+      setTimeout(() => {
+        this.mapComponent?.centerMap({ lat: trip.latitude!, lng: trip.longitude! }, 10);
+        this.mapComponent?.addSimpleMarker({ lat: trip.latitude!, lng: trip.longitude! });
+      }, 100);
+    }
+  }
+
   get minStep(): WizardStep {
     return this.showWelcome ? 0 : 1;
   }
 
   get maxStep(): WizardStep {
-    return 3;
+    return this.mode === 'edit' ? 2 : 3;
   }
 
   get startDate(): Date | null {
@@ -387,42 +415,72 @@ export class TripWizardComponent implements OnDestroy {
     this.isLoading.set(true);
 
     try {
-      const trip = await this.tripService.createTrip({
-        name: this.tripName(),
-        city: this.tripCity(),
-        country: this.tripCountry(),
-        latitude: this.tripLatitude()!,
-        longitude: this.tripLongitude()!,
-        start_date: this.tripStartDate(),
-        end_date: this.tripEndDate(),
-      });
-
-      if (this.tripInvites().length > 0) {
-        const invitePromises = this.tripInvites().map((email) =>
-          this.tripInviteService
-            .inviteUser({
-              tripId: trip.id,
-              email: email,
-            })
-            .catch((error) => {
-              console.error(`Error invitando a ${email}:`, error);
-              return null;
-            })
-        );
-
-        await Promise.all(invitePromises);
+      if (this.mode === 'edit' && this.tripToEdit) {
+        await this.updateTrip();
+      } else {
+        await this.createTrip();
       }
-
-      this.notificationService.success('¡Viaje creado!');
-      this.closed.emit();
-
-      await this.router.navigate([this.redirectAfterCreate, trip.id]);
     } catch (error) {
-      console.error('Error al crear el viaje:', error);
-      this.notificationService.error('Error al crear el viaje.');
+      console.error(`Error al ${this.mode === 'edit' ? 'actualizar' : 'crear'} el viaje:`, error);
+      this.notificationService.error(
+        `Error al ${this.mode === 'edit' ? 'actualizar' : 'crear'} el viaje.`
+      );
     } finally {
       this.isLoading.set(false);
     }
+  }
+
+  // Método para actualizar viaje
+  private async updateTrip(): Promise<void> {
+    if (!this.tripToEdit) return;
+
+    await this.tripService.updateTrip(this.tripToEdit.id, {
+      name: this.tripName(),
+      city: this.tripCity(),
+      country: this.tripCountry(),
+      latitude: this.tripLatitude()!,
+      longitude: this.tripLongitude()!,
+      start_date: this.tripStartDate(),
+      end_date: this.tripEndDate(),
+    });
+
+    this.notificationService.success('Viaje actualizado correctamente');
+    this.closed.emit();
+    await this.router.navigate(['/trips', this.tripToEdit.id]);
+    await this.tripService.loadUserTrips();
+  }
+
+  // Lógica de creación
+  private async createTrip(): Promise<void> {
+    const trip = await this.tripService.createTrip({
+      name: this.tripName(),
+      city: this.tripCity(),
+      country: this.tripCountry(),
+      latitude: this.tripLatitude()!,
+      longitude: this.tripLongitude()!,
+      start_date: this.tripStartDate(),
+      end_date: this.tripEndDate(),
+    });
+
+    if (this.tripInvites().length > 0) {
+      const invitePromises = this.tripInvites().map((email) =>
+        this.tripInviteService
+          .inviteUser({
+            tripId: trip.id,
+            email: email,
+          })
+          .catch((error) => {
+            console.error(`Error invitando a ${email}:`, error);
+            return null;
+          })
+      );
+
+      await Promise.all(invitePromises);
+    }
+
+    this.notificationService.success('¡Viaje creado!');
+    this.closed.emit();
+    await this.router.navigate([this.redirectAfterCreate, trip.id]);
   }
 
   onBackdropClick(event: Event): void {

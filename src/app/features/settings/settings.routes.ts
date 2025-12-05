@@ -1,5 +1,5 @@
-import type { Routes } from "@angular/router";
-import { SettingsComponent } from "./pages/settings/settings.component";
+import type { Routes } from '@angular/router';
+import SettingsComponent from './pages/settings/settings.component';
 
 /**
  * Rutas del módulo Settings
@@ -8,9 +8,9 @@ import { SettingsComponent } from "./pages/settings/settings.component";
  * Configuración y preferencias del usuario.
  */
 const settingsRoutes: Routes = [
-	{
-		path: "",
-		component: SettingsComponent,
-	},
+  {
+    path: '',
+    component: SettingsComponent,
+  },
 ];
 export default settingsRoutes;

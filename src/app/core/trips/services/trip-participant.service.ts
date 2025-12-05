@@ -26,6 +26,9 @@ export class TripParticipantService {
   private participantsSignal = signal<ParticipantWithUser[]>([]);
   participants = this.participantsSignal.asReadonly();
 
+  private currentTripIdSignal = signal<string | null>(null);
+  currentTripId = this.currentTripIdSignal.asReadonly();
+
   // Signal de estado de carga
   private loadingSignal = signal(false);
   isLoading = this.loadingSignal.asReadonly();
@@ -34,6 +37,7 @@ export class TripParticipantService {
    * Carga todos los participantes de un viaje y actualiza el signal
    */
   async loadParticipants(tripId: string): Promise<void> {
+    this.currentTripIdSignal.set(tripId);
     this.loadingSignal.set(true);
     this.participantsSignal.set([]);
 

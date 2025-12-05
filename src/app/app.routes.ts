@@ -10,14 +10,6 @@ import { OnboardingComponent } from '@features/onboarding/pages/onboarding.compo
 
 /**
  * Configuración de rutas de la aplicación
- *
- * Estructura:
- * - / → Landing page pública (home)
- * - /auth → Rutas de autenticación (login, register, forgot-password, etc.)
- * - / (con layout) → Rutas privadas protegidas por authGuard
- *
- * El authGuard protege todas las rutas del dashboard mediante el layout.
- * Las rutas hijas se cargan de forma lazy (loadChildren) para mejor performance.
  */
 export const routes: Routes = [
   {
@@ -39,6 +31,15 @@ export const routes: Routes = [
     loadChildren: () => import('./features/auth/auth.routes'),
   },
   {
+    // Reset password DEBE permitir usuario autenticado
+    path: 'auth/reset-password',
+    loadComponent: () => import('./features/auth/pages/reset-password/reset-password.component'),
+  },
+  {
+    path: 'invite/:token',
+    loadComponent: () => import('./features/trips/pages/accept-invite/accept-invite.component'),
+  },
+  {
     path: 'onboarding',
     canMatch: [authGuard],
     component: OnboardingComponent,
@@ -49,7 +50,7 @@ export const routes: Routes = [
     // Usa DashboardLayout con sidebar para todas las rutas hijas
     path: '',
     canMatch: [authGuard],
-    loadComponent: () => import('./shared/layouts/dashboard-layout/dashboard-layout.component'),
+    loadComponent: () => import('./shared/layouts/dashboard-layout.component'),
     children: [
       {
         // Overview - página principal del dashboard
