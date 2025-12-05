@@ -9,7 +9,7 @@
 
   <!-- Trip content -->
   @if (!isLoading() && trip()) {
-  <div class="h-full flex flex-col gap-6 p-6">
+  <div class="h-full flex flex-col gap-6">
     <!-- SECCIÓN 1: Header con nombre, ubicación, fechas y acciones -->
     <div class="flex items-start justify-between">
       <!-- Nombre del viaje, ciudad, país y fechas -->
@@ -49,7 +49,7 @@
 
     <!-- SECCIÓN 2: Tres widgets (Participantes, Documentos, Checklist) -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <app-participant-widget [tripId]="trip()!.id" [participantCount]="0" />
+      <app-participant-widget [tripId]="trip()!.id" />
       <app-document-widget [tripId]="trip()!.id" [documentCount]="0" />
       <app-checklist-widget [tripId]="trip()!.id" [completedCount]="0" [totalCount]="0" />
     </div>

@@ -8,11 +8,13 @@ import { NotificationService } from '@core/notifications/notification.service';
 import { Subscription } from 'rxjs';
 
 // Componentes de la vista
-import { ParticipantWidgetComponent } from '@features/trips/components/participants/participants.component';
+import { ParticipantWidgetComponent } from '@features/trips/components/participants/participants-widget.component';
 import { DocumentWidgetComponent } from '@features/trips/components/documents/documents-widget.component';
 import { ChecklistWidgetComponent } from '@features/trips/components/checklist/checklist-widget.component';
 import { ItineraryEmptyStateComponent } from '@features/trips/components/itinerary/itinerary-emptystate.component';
 import { ExpenseEmptyStateComponent } from '@features/trips/components/expenses/expenses-emptystate.component';
+import { ModalService } from '@core/modal/modal.service';
+import { TripModalService } from '@core/trips/services/trip-modal.service.ts';
 
 /**
  * Componente para mostrar el detalle de un viaje
@@ -30,6 +32,7 @@ import { ExpenseEmptyStateComponent } from '@features/trips/components/expenses/
     ChecklistWidgetComponent,
     ItineraryEmptyStateComponent,
     ExpenseEmptyStateComponent,
+    ParticipantWidgetComponent,
   ],
   templateUrl: './trip-detail.component.html',
 })
@@ -38,6 +41,8 @@ export class TripDetailComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private tripService = inject(TripService);
   private notificationService = inject(NotificationService);
+  modalService = inject(ModalService);
+  private tripModalService = inject(TripModalService);
 
   // Signals
   trip = signal<Trip | null>(null);
@@ -117,8 +122,7 @@ export class TripDetailComponent implements OnInit, OnDestroy {
     const currentTrip = this.trip();
     if (!currentTrip) return;
 
-    this.notificationService.info('Funcionalidad de edición próximamente');
-    console.log('Editar viaje:', currentTrip);
+    this.tripModalService.openEditTripModal(currentTrip);
   }
 
   async deleteTrip(): Promise<void> {

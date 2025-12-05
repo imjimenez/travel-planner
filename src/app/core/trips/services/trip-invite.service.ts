@@ -152,22 +152,29 @@ export class TripInviteService {
    * @param tripId - ID del viaje
    * @returns Lista de invitaciones pendientes
    */
-  async getPendingInvites(tripId: string): Promise<TripInvite[]> {
+  async getPendingInvites(
+    tripId: string
+  ): Promise<Array<{ id: string; email: string; created_at: string | null }>> {
     const user = await this.authService.getAuthUser();
     if (!user) throw new Error('Usuario no autenticado');
+    console.log('getpendings');
 
-    // Verificar que el usuario es miembro del viaje
     await this.verifyMembership(tripId, user.id);
 
     const { data, error } = await this.supabaseService.client
       .from('trip_invite')
-      .select('*')
+      .select('id, email, created_at')
       .eq('trip_id', tripId)
       .eq('status', 'pending')
       .gt('expires_at', new Date().toISOString())
       .order('created_at', { ascending: false });
 
-    if (error) throw new Error(`Error al obtener invitaciones: ${error.message}`);
+    if (error) {
+      console.error('Error getting invites:', error);
+      throw new Error(`Error al obtener invitaciones: ${error.message}`);
+    }
+
+    console.log(data);
 
     return data || [];
   }
@@ -275,7 +282,12 @@ export class TripInviteService {
 
     const { data, error } = await this.supabaseService.client
       .from('trip_invite')
-      .select('*, trip:trip_id(name, city, country)')
+      .select(
+        `
+        *,
+        trip:trip!trip_invite_trip_id_fkey(name, city, country)
+      `
+      )
       .eq('email', user.email)
       .eq('status', 'pending')
       .gt('expires_at', new Date().toISOString())

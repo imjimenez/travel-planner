@@ -2,8 +2,8 @@
 <!-- Contenedor con fondo condicional -->
 <div
   [ngClass]="{
-    'fixed inset-0 flex items-center justify-center z-50': true,
-    'bg-black/50': backgroundStyle === 'dark',
+    'fixed inset-0 flex items-center justify-center z-50 backdrop-blur-sm': true,
+    'bg-black/60': backgroundStyle === 'dark',
     'bg-white p-6 relative overflow-hidden min-h-screen': backgroundStyle === 'onboarding'
   }"
   (click)="onBackdropClick($event)"
@@ -329,7 +329,9 @@
       >
         {{ showWelcome ? 'Comenzar' : 'Siguiente' }}
       </button>
-      } @if (currentStep() > minStep && currentStep() < 3) {
+      }
+      <!-- Botón "Siguiente" o "Guardar" según paso -->
+      @if (currentStep() > minStep && currentStep() < maxStep) {
       <button
         type="button"
         (click)="nextStep()"
@@ -338,7 +340,9 @@
       >
         Siguiente
       </button>
-      } @if (currentStep() === 3) {
+      }
+      <!-- Botón final cambia según modo -->
+      @if (currentStep() === maxStep) {
       <button
         type="button"
         (click)="finishWizard()"
@@ -346,9 +350,9 @@
         class="px-8 py-3 bg-gray-900 text-white rounded-full hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium cursor-pointer"
       >
         @if (!isLoading()) {
-        <span>Crear viaje</span>
+        <span>{{ mode === 'edit' ? 'Guardar cambios' : 'Crear viaje' }}</span>
         } @if (isLoading()) {
-        <span>Creando...</span>
+        <span>{{ mode === 'edit' ? 'Guardando...' : 'Creando...' }}</span>
         }
       </button>
       }
