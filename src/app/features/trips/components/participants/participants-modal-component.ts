@@ -25,7 +25,7 @@ import { AuthService } from '@core/authentication';
           } @else {
           <div class="space-y-2">
             @for (participant of participantService.participants(); track participant.id) {
-            <div class="group flex items-center gap-3 p-3 bg-gray-100 rounded-lg transition-colors">
+            <div class="group flex items-center gap-3 p-3 bg-gray-50 rounded-lg transition-colors">
               <!-- Avatar -->
               <div class="shrink-0">
                 @if (participant.avatarUrl) {
@@ -54,10 +54,10 @@ import { AuthService } from '@core/authentication';
               <button
                 type="button"
                 (click)="removeParticipant(participant)"
-                class="w-6 h-6 p-2 flex items-center justify-center text-red-600 hover:bg-gray-200 rounded cursor-pointer"
-                title="Cancelar invitación"
+                class="opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center w-7 h-7 text-red-600 hover:bg-red-100 rounded-lg mr-1.5 cursor-pointer"
+                [title]="'Eliminar participante'"
               >
-                <i class="pi pi-trash" style="font-size: 0.75rem"></i>
+                <i class="pi pi-trash" style="font-size: 0.875rem"></i>
               </button>
               }
 

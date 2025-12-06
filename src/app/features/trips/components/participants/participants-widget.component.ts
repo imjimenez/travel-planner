@@ -32,7 +32,7 @@ import { ModalService } from '@core/modal/modal.service';
         <button
           type="button"
           (click)="openParticipantsModal()"
-          class="flex items-center justify-center w-8 h-8 text-gray-600 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
+          class="flex items-center justify-center w-8 h-8 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
           [title]="'Opciones'"
         >
           <i class="pi pi-pen-to-square" style="font-size: 1rem"></i>
@@ -50,7 +50,7 @@ import { ModalService } from '@core/modal/modal.service';
       @if (!participantService.isLoading()) {
       <div class="space-y-3 mb-2 overflow-y-auto flex-1">
         @for (participant of displayedParticipants(); track participant.id) {
-        <div class="group flex items-center gap-3 rounded-lg transition-colors">
+        <div class="group flex items-center gap-3 bg-gray-50 rounded-lg transition-colors">
           <!-- Avatar -->
           <div class="shrink-0">
             @if (participant.avatarUrl) {
@@ -80,12 +80,12 @@ import { ModalService } from '@core/modal/modal.service';
             </p>
           </div>
 
-          <!-- Delete button (visible on hover, only for owner, not for self) -->
+          <!-- Botón para eliminar (visible en hover, solo para el propietario) -->
           @if (canRemoveParticipant(participant)) {
           <button
             type="button"
             (click)="removeParticipant(participant)"
-            class="opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center w-8 h-8 text-red-600 hover:bg-red-50 rounded-full cursor-pointer"
+            class="opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center w-7 h-7 text-red-600 hover:bg-red-100 rounded-lg mr-1.5 cursor-pointer"
             [title]="'Eliminar participante'"
           >
             <i class="pi pi-trash" style="font-size: 0.875rem"></i>
