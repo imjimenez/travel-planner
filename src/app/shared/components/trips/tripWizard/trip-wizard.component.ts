@@ -23,6 +23,7 @@ import { NotificationService } from '@core/notifications/notification.service';
 import { Subscription } from 'rxjs';
 import { DatePickerModule } from 'primeng/datepicker';
 import { Trip } from '@core/trips';
+import { TripModalService } from '@core/trips/services/trip-modal.service.ts';
 
 /**
  * Datos del viaje durante el wizard con signals para reactividad
@@ -76,6 +77,7 @@ export class TripWizardComponent implements OnInit, OnDestroy {
   private leafletService = inject(LeafletService);
   private router = inject(Router);
   private notificationService = inject(NotificationService);
+  private modalBus = inject(TripModalService);
 
   @ViewChild('mapRef') mapComponent?: MapComponent;
 
@@ -443,6 +445,10 @@ export class TripWizardComponent implements OnInit, OnDestroy {
       start_date: this.tripStartDate(),
       end_date: this.tripEndDate(),
     });
+
+    // Emite evento global
+
+    this.modalBus.tripUpdated.emit(this.tripToEdit.id);
 
     this.notificationService.success('Viaje actualizado correctamente');
     this.closed.emit();

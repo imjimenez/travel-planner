@@ -29,10 +29,10 @@ import { ModalService } from '@core/modal/modal.service';
           <button
             type="button"
             (click)="modalService.close()"
-            class="w-8 h-8 flex bg-white hover:bg-gray-50 shadow-sm border border-gray-100 rounded-full items-center justify-center text-gray-500 hover:text-gray-800 transition-colors cursor-pointer"
+            class="w-8 h-8 flex bg-white hover:bg-gray-100 shadow-sm border border-gray-100 rounded-lg items-center justify-center text-gray-500 hover:text-gray-800 hover:border-gray-200 transition-colors cursor-pointer"
             title="Cerrar"
           >
-            <i class="pi pi-times" style="color: black; font-size: 0.8rem"></i>
+            <i class="pi pi-times" style="color: black; font-size: 1rem"></i>
           </button>
         </div>
 

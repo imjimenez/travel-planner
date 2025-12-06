@@ -1,39 +1,88 @@
-// core/modal/modal.service.ts
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
+import { TripDocumentService } from '@core/trips';
 
-type ModalType = 'participants' | 'documents' | 'checklist' | null;
+/**
+ * Tipos de modales disponibles en la aplicación
+ */
+export type ModalType = 'participants' | 'documents' | 'checklist' | null;
 
+/**
+ * Servicio de gestión de modales
+ *
+ * Controla qué modal está abierto y mantiene el estado necesario
+ * para cada modal (ej: tripId).
+ *
+ * Patrón:
+ * - Un solo modal abierto a la vez
+ * - Cada modal tiene acceso al tripId a través de este servicio
+ * - Estado reactivo con signals
+ */
 @Injectable({
   providedIn: 'root',
 })
 export class ModalService {
-  private activeModalSignal = signal<ModalType>(null);
-  activeModal = this.activeModalSignal.asReadonly();
+  // Modal actualmente abierto
+  private activeModal = signal<ModalType>(null);
 
-  private tripIdSignal = signal<string | null>(null);
-  tripId = this.tripIdSignal.asReadonly();
+  // ID del viaje para el modal actual
+  private currentTripId = signal<string | null>(null);
 
-  openParticipantsModal(tripId: string) {
-    this.tripIdSignal.set(tripId);
-    this.activeModalSignal.set('participants');
+  // Computed: ¿Hay algún modal abierto?
+  isOpen = computed(() => this.activeModal() !== null);
+
+  // Computed: Tipo de modal activo
+  type = computed(() => this.activeModal());
+
+  // Computed: Trip ID del modal actual
+  tripId = computed(() => this.currentTripId());
+
+  // Señal que emite el tipo de modal que se acaba de cerrar
+  private lastClosedModal = signal<ModalType>(null);
+  closedModal = computed(() => this.lastClosedModal());
+
+  /**
+   * Abre el modal de participantes
+   *
+   * @param tripId - ID del viaje
+   */
+  openParticipantsModal(tripId: string): void {
+    this.currentTripId.set(tripId);
+    this.activeModal.set('participants');
   }
 
-  openDocumentsModal(tripId: string) {
-    this.tripIdSignal.set(tripId);
-    this.activeModalSignal.set('documents');
+  /**
+   * Abre el modal de documentos
+   *
+   * @param tripId - ID del viaje
+   */
+  openDocumentsModal(tripId: string): void {
+    this.currentTripId.set(tripId);
+    this.activeModal.set('documents');
   }
 
-  openChecklistModal(tripId: string) {
-    this.tripIdSignal.set(tripId);
-    this.activeModalSignal.set('checklist');
+  /**
+   * Abre el modal de checklist
+   *
+   * @param tripId - ID del viaje
+   */
+  openChecklistModal(tripId: string): void {
+    this.currentTripId.set(tripId);
+    this.activeModal.set('checklist');
   }
 
-  close() {
-    this.activeModalSignal.set(null);
-    this.tripIdSignal.set(null);
-  }
+  /**
+   * Cierra el modal actual
+   *
+   * Resetea tanto el tipo de modal como el tripId
+   */
+  close(): void {
+    const closed = this.activeModal(); // guardar cuál modal estaba abierto
+    this.lastClosedModal.set(closed); // emitir evento de cierre
 
-  isOpen(): boolean {
-    return this.activeModal() !== null;
+    this.activeModal.set(null);
+    this.currentTripId.set(null);
+
+    // limpiar después de notificar para evitar emisiones infinitas
+    setTimeout(() => this.lastClosedModal.set(null), 0);
   }
 }
