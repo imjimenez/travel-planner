@@ -50,7 +50,7 @@
     <!-- SECCIÓN 2: Tres widgets (Participantes, Documentos, Checklist) -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <app-participant-widget [tripId]="trip()!.id" />
-      <app-document-widget [tripId]="trip()!.id" [documentCount]="0" />
+      <app-document-widget [tripId]="trip()!.id" />
       <app-checklist-widget [tripId]="trip()!.id" [completedCount]="0" [totalCount]="0" />
     </div>
 
