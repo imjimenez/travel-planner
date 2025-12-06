@@ -1,5 +1,5 @@
 // src/app/core/ui/modal.service.ts
-import { Injectable, signal } from '@angular/core';
+import { EventEmitter, Injectable, signal } from '@angular/core';
 import { Trip } from '../models';
 
 /**
@@ -20,6 +20,9 @@ export class TripModalService {
   createTripModal = this.createTripModalSignal.asReadonly();
   editTripModal = this.editTripModalSignal.asReadonly();
   tripToEdit = this.tripToEditSignal.asReadonly();
+
+  // Evento global para avisar que se ha actualizado un viaje
+  tripUpdated = new EventEmitter<string>(); // tripId actualizado
 
   /**
    * Abre el modal de crear viaje

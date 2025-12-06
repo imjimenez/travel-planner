@@ -52,10 +52,10 @@ import { ModalService } from '@core/modal/modal.service';
         @for (participant of displayedParticipants(); track participant.id) {
         <div class="group flex items-center gap-3 bg-gray-50 rounded-lg transition-colors">
           <!-- Avatar -->
-          <div class="shrink-0">
+          <div class="shrink-0 p-1">
             @if (participant.avatarUrl) {
             <!-- Avatar con imagen -->
-            <div class="w-10 h-10 rounded-full bg-gray-200 overflow-hidden">
+            <div class="w-8 h-8 rounded-full bg-gray-200 overflow-hidden">
               <img
                 [src]="participant.avatarUrl"
                 [alt]="participant.fullName"
@@ -64,7 +64,7 @@ import { ModalService } from '@core/modal/modal.service';
             </div>
             } @else {
             <!-- Avatar por defecto -->
-            <div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center">
+            <div class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
               <i class="pi pi-user" style="font-size: 1.1rem"></i>
             </div>
             }

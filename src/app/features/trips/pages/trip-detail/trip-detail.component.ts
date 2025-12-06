@@ -43,6 +43,7 @@ export class TripDetailComponent implements OnInit, OnDestroy {
   private notificationService = inject(NotificationService);
   modalService = inject(ModalService);
   private tripModalService = inject(TripModalService);
+  private updateSubscription?: Subscription;
 
   // Signals
   trip = signal<Trip | null>(null);
@@ -64,6 +65,13 @@ export class TripDetailComponent implements OnInit, OnDestroy {
       }
 
       await this.loadTrip(tripId);
+    });
+
+    // Cuando el wizard emite "viaje actualizado"
+    this.updateSubscription = this.tripModalService.tripUpdated.subscribe(async (tripId) => {
+      if (String(tripId) === String(this.trip()?.id)) {
+        await this.loadTrip(tripId);
+      }
     });
   }
 

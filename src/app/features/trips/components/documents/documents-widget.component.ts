@@ -1,4 +1,4 @@
-import { Component, inject, Input, OnInit, signal } from '@angular/core';
+import { Component, effect, inject, Input, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ModalService } from '@core/modal/modal.service';
 import { TripDocumentService } from '@core/trips/services/trip-document.service';
@@ -77,7 +77,7 @@ import type { TripDocumentWithUrl } from '@core/trips/models/trip-document.model
 
         <!-- Lista de documentos -->
         @if (documents().length > 0) {
-        <div class="space-y-2">
+        <div class="space-y-3">
           @for (doc of displayedDocuments(); track doc.id) {
           <div
             class="group flex items-center gap-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
@@ -164,6 +164,16 @@ export class DocumentWidgetComponent implements OnInit {
    * Computed: Primeros 2 documentos para mostrar en la lista
    */
   displayedDocuments = signal<TripDocumentWithUrl[]>([]);
+
+  constructor() {
+    effect(() => {
+      const closed = this.modalService.closedModal();
+
+      if (closed === 'documents') {
+        void this.loadDocuments();
+      }
+    });
+  }
 
   async ngOnInit() {
     await this.loadDocuments();

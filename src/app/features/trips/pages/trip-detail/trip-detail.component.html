@@ -2,7 +2,9 @@
 <div class="h-full overflow-y-auto">
   <!-- Loading state -->
   @if (isLoading()) {
-  <div class="flex items-center justify-center h-full">
+
+  <div class="flex flex-col gap-4 items-center justify-center h-full">
+    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
     <p class="text-gray-500">Cargando viaje...</p>
   </div>
   }
@@ -31,18 +33,18 @@
         <button
           type="button"
           (click)="editTrip()"
-          class="flex items-center p-3 bg-white border border-gray-300 text-gray-700 rounded-full hover:bg-gray-50 transition-colors font-medium cursor-pointer"
+          class="flex items-center p-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium cursor-pointer"
           title="Editar viaje"
         >
-          <i class="pi pi-pen-to-square" style="font-size: 0.9rem"></i>
+          <i class="pi pi-pen-to-square" style="font-size: 1.2rem"></i>
         </button>
         <button
           type="button"
           (click)="deleteTrip()"
-          class="flex items-center p-3 bg-white border border-red-300 text-red-600 rounded-full hover:bg-red-50 transition-colors font-medium cursor-pointer"
+          class="flex items-center p-2 bg-white border border-red-300 text-red-600 rounded-lg hover:bg-red-100 transition-colors font-medium cursor-pointer"
           title="Eliminar viaje"
         >
-          <i class="pi pi-trash" style="font-size: 0.9rem"></i>
+          <i class="pi pi-trash" style="font-size: 1.2rem"></i>
         </button>
       </div>
     </div>
@@ -51,7 +53,7 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <app-participant-widget [tripId]="trip()!.id" />
       <app-document-widget [tripId]="trip()!.id" />
-      <app-checklist-widget [tripId]="trip()!.id" [completedCount]="0" [totalCount]="0" />
+      <app-checklist-widget [tripId]="trip()!.id" />
     </div>
 
     <!-- SECCIÓN 3: Pestañas (itinerary/gastos) -->
