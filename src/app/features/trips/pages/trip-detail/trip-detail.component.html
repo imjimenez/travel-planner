@@ -30,6 +30,8 @@
 
       <!-- Botones de acción alineados a la derecha -->
       <div class="flex items-center gap-3">
+        @if (isOwner()) {
+        <!-- Botones para el owner -->
         <button
           type="button"
           (click)="editTrip()"
@@ -46,6 +48,18 @@
         >
           <i class="pi pi-trash" style="font-size: 1.2rem"></i>
         </button>
+        } @else {
+        <!-- Botón para participantes no-owner -->
+        <button
+          type="button"
+          (click)="leaveTrip()"
+          class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-900 rounded-lg hover:bg-red-100 hover:border-red-200 hover:text-red-500 transition-colors font-medium cursor-pointer"
+          title="Salir del viaje"
+        >
+          <i class="pi pi-sign-out" style="font-size: 1rem"></i>
+          <span class="text-sm">Salir del viaje</span>
+        </button>
+        }
       </div>
     </div>
 
@@ -100,11 +114,11 @@
       </div>
 
       <!-- Contenido del tab activo -->
-      <div class="flex-1 overflow-y-auto p-6">
+      <div class="flex-1 overflow-y-auto">
         @if (activeTab() === 'itinerary') {
         <app-itinerary-empty-state (addStopClicked)="handleAddStop()" />
         } @if (activeTab() === 'expenses') {
-        <app-expense-empty-state (addExpenseClicked)="handleAddExpense()" />
+        <app-expenses [tripId]="trip()!.id" />
         }
       </div>
     </div>

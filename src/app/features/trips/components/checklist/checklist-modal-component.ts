@@ -17,6 +17,7 @@ import type { ParticipantWithUser } from '@core/trips/models/trip-participant.mo
  * - Editar tareas completas (título + detalles + asignación)
  * - Eliminar tareas
  * - Asignar participante al crear tarea nueva
+ * - Loading solo se muestra en la primera carga
  */
 @Component({
   selector: 'app-checklist-modal',
@@ -31,7 +32,7 @@ import type { ParticipantWithUser } from '@core/trips/models/trip-participant.mo
         [class.items-center]="!isLoading() && todos().length === 0"
         [class.justify-center]="!isLoading() && todos().length === 0"
       >
-        <!-- Loading state -->
+        <!-- Loading state (solo primera carga) -->
         @if (isLoading()) {
         <div class="flex justify-center py-8">
           <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
@@ -311,6 +312,7 @@ export class ChecklistModalComponent implements OnInit {
   participants = signal<ParticipantWithUser[]>([]);
   isLoading = signal(false);
   isAdding = signal(false);
+  private isFirstLoad = signal(true);
 
   // Estado de edición
   editingTask = signal<string | null>(null);
@@ -346,10 +348,15 @@ export class ChecklistModalComponent implements OnInit {
 
   /**
    * Carga tareas y participantes
+   * Solo muestra loading en la primera carga
    */
-  private async loadData(tripId: string): Promise<void> {
+  private async loadData(tripId: string, showLoading: boolean = true): Promise<void> {
     try {
-      this.isLoading.set(true);
+      // Solo mostrar loading si es la primera carga Y showLoading es true
+      if (this.isFirstLoad() && showLoading) {
+        this.isLoading.set(true);
+      }
+
       const [todos, participants] = await Promise.all([
         this.todoService.getTripTodos(tripId),
         this.participantService.getParticipants(tripId),
@@ -357,6 +364,9 @@ export class ChecklistModalComponent implements OnInit {
 
       this.todos.set(todos);
       this.participants.set(participants);
+
+      // Marcar que ya no es la primera carga
+      this.isFirstLoad.set(false);
     } catch (error: any) {
       console.error('Error loading data:', error);
       this.notificationService.error(error.message || 'No se pudieron cargar los datos');
@@ -407,7 +417,8 @@ export class ChecklistModalComponent implements OnInit {
 
       const tripId = this.modalService.tripId();
       if (tripId) {
-        await this.loadData(tripId);
+        // Recargar sin mostrar loading
+        await this.loadData(tripId, false);
       }
     } catch (error: any) {
       console.error('Error updating todo:', error);
@@ -426,7 +437,8 @@ export class ChecklistModalComponent implements OnInit {
 
       const tripId = this.modalService.tripId();
       if (tripId) {
-        await this.loadData(tripId);
+        // Recargar sin mostrar loading
+        await this.loadData(tripId, false);
       }
     } catch (error: any) {
       console.error('Error updating todo:', error);
@@ -449,7 +461,8 @@ export class ChecklistModalComponent implements OnInit {
 
       const tripId = this.modalService.tripId();
       if (tripId) {
-        await this.loadData(tripId);
+        // Recargar sin mostrar loading
+        await this.loadData(tripId, false);
       }
     } catch (error: any) {
       console.error('Error deleting todo:', error);
@@ -482,7 +495,8 @@ export class ChecklistModalComponent implements OnInit {
       this.newTodoDetails = '';
       this.newTodoAssignee = '';
 
-      await this.loadData(tripId);
+      // Recargar sin mostrar loading
+      await this.loadData(tripId, false);
     } catch (error: any) {
       console.error('Error creating todo:', error);
       this.notificationService.error(error.message || 'No se pudo agregar la tarea');
@@ -496,6 +510,6 @@ export class ChecklistModalComponent implements OnInit {
    */
   getParticipantName(userId: string): string {
     const participant = this.participants().find((p) => p.user_id === userId);
-    return participant?.fullName || 'Usuario desconocido';
+    return participant?.fullName || 'Sin asignar';
   }
 }

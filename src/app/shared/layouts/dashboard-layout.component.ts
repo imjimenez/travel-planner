@@ -86,15 +86,15 @@ import { ChecklistModalComponent } from '@features/trips/components/checklist/ch
       }
 
       <!-- MODALES NUEVOS -->
-      @if (modalService.activeModal() === 'participants') {
+      @if (modalService.type() === 'participants') {
       <app-modal-wrapper title="Participantes">
         <app-participants-modal />
       </app-modal-wrapper>
-      } @if (modalService.activeModal() === 'documents') {
+      } @if (modalService.type() === 'documents') {
       <app-modal-wrapper title="Documentos">
         <app-documents-modal />
       </app-modal-wrapper>
-      } @if (modalService.activeModal() === 'checklist') {
+      } @if (modalService.type() === 'checklist') {
       <app-modal-wrapper title="Checklist">
         <app-checklist-modal />
       </app-modal-wrapper>
