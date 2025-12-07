@@ -1,12 +1,13 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ModalService } from '@core/modal/modal.service';
+import { WidgetModalService } from '@core/modal/widget-modal.service';
 import { NotificationService } from '@core/notifications/notification.service';
 import { TripTodoService } from '@core/trips/services/trip-todo.service';
 import { TripParticipantService } from '@core/trips/services/trip-participant.service';
 import type { TripTodo } from '@core/trips/models/trip-todo.model';
 import type { ParticipantWithUser } from '@core/trips/models/trip-participant.model';
+import { ConfirmModalService } from '@core/modal/confirm-modal.service';
 
 /**
  * Modal de gestión de checklist
@@ -162,7 +163,7 @@ import type { ParticipantWithUser } from '@core/trips/models/trip-participant.mo
                     class="w-7 h-7 flex items-center justify-center text-blue-600 hover:bg-blue-100 rounded transition-colors cursor-pointer"
                     title="Editar tarea"
                   >
-                    <i class="pi pi-pencil" style="font-size: 0.75rem"></i>
+                    <i class="pi pi-pencil" style="font-size: 0.85rem"></i>
                   </button>
                   <button
                     type="button"
@@ -170,7 +171,7 @@ import type { ParticipantWithUser } from '@core/trips/models/trip-participant.mo
                     class="w-7 h-7 flex items-center justify-center text-red-600 hover:bg-red-100 rounded transition-colors cursor-pointer"
                     title="Eliminar tarea"
                   >
-                    <i class="pi pi-trash" style="font-size: 0.75rem"></i>
+                    <i class="pi pi-trash" style="font-size: 0.85rem"></i>
                   </button>
                   }
                 </div>
@@ -303,10 +304,11 @@ import type { ParticipantWithUser } from '@core/trips/models/trip-participant.mo
   `,
 })
 export class ChecklistModalComponent implements OnInit {
-  modalService = inject(ModalService);
   private todoService = inject(TripTodoService);
   private participantService = inject(TripParticipantService);
   private notificationService = inject(NotificationService);
+  private widgetModalService = inject(WidgetModalService);
+  private confirmModalService = inject(ConfirmModalService);
 
   todos = signal<TripTodo[]>([]);
   participants = signal<ParticipantWithUser[]>([]);
@@ -340,7 +342,7 @@ export class ChecklistModalComponent implements OnInit {
   });
 
   async ngOnInit() {
-    const tripId = this.modalService.tripId();
+    const tripId = this.widgetModalService.tripId();
     if (tripId) {
       await this.loadData(tripId);
     }
@@ -401,7 +403,7 @@ export class ChecklistModalComponent implements OnInit {
   async saveEdit(todo: TripTodo): Promise<void> {
     const title = this.editTitle.trim();
     if (!title) {
-      this.notificationService.error('El título no puede estar vacío');
+      this.notificationService.warning('El título no puede estar vacío');
       return;
     }
 
@@ -415,7 +417,7 @@ export class ChecklistModalComponent implements OnInit {
       this.notificationService.success('Tarea actualizada correctamente');
       this.cancelEdit();
 
-      const tripId = this.modalService.tripId();
+      const tripId = this.widgetModalService.tripId();
       if (tripId) {
         // Recargar sin mostrar loading
         await this.loadData(tripId, false);
@@ -435,7 +437,7 @@ export class ChecklistModalComponent implements OnInit {
     try {
       await this.todoService.updateTodo(todo.id, { status: newStatus });
 
-      const tripId = this.modalService.tripId();
+      const tripId = this.widgetModalService.tripId();
       if (tripId) {
         // Recargar sin mostrar loading
         await this.loadData(tripId, false);
@@ -450,24 +452,26 @@ export class ChecklistModalComponent implements OnInit {
    * Elimina una tarea
    */
   async deleteTodo(todo: TripTodo): Promise<void> {
-    const confirmMessage = `¿Estás seguro de que quieres eliminar "${todo.title}"?`;
-    if (!confirm(confirmMessage)) {
-      return;
-    }
+    this.confirmModalService.open(
+      'Eliminar tarea',
+      `¿Estás seguro de que quieres eliminar "${todo.title}"?`,
+      async () => {
+        try {
+          await this.todoService.deleteTodo(todo.id);
+          this.notificationService.success('Tarea eliminada correctamente');
 
-    try {
-      await this.todoService.deleteTodo(todo.id);
-      this.notificationService.success('Tarea eliminada correctamente');
-
-      const tripId = this.modalService.tripId();
-      if (tripId) {
-        // Recargar sin mostrar loading
-        await this.loadData(tripId, false);
-      }
-    } catch (error: any) {
-      console.error('Error deleting todo:', error);
-      this.notificationService.error(error.message || 'No se pudo eliminar la tarea');
-    }
+          const tripId = this.widgetModalService.tripId();
+          if (tripId) {
+            // Recargar sin mostrar loading
+            await this.loadData(tripId, false);
+          }
+        } catch (error: any) {
+          console.error('Error deleting todo:', error);
+          this.notificationService.error(error.message || 'No se pudo eliminar la tarea');
+        }
+      },
+      'Eliminar'
+    );
   }
 
   /**
@@ -476,7 +480,7 @@ export class ChecklistModalComponent implements OnInit {
   async addTodo(event: Event): Promise<void> {
     event.preventDefault();
 
-    const tripId = this.modalService.tripId();
+    const tripId = this.widgetModalService.tripId();
     if (!this.newTodoTitle || !tripId) return;
 
     this.isAdding.set(true);

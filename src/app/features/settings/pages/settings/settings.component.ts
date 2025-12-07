@@ -7,76 +7,134 @@ import { Router } from '@angular/router';
 import { AuthService } from '@core/authentication';
 import { TripInviteService } from '@core/trips';
 import { NotificationService } from '@core/notifications/notification.service';
+import { ConfirmModalService } from '@core/modal/confirm-modal.service';
 
 @Component({
   selector: 'app-settings',
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="w-full mx-auto">
-      <h1 class="text-3xl font-medium text-gray-900 mb-8">Configuración de cuenta</h1>
+    <div class="w-full mx-auto max-w-6xl">
+      <!-- Header con avatar centrado (sin fondo) -->
+      <div class="flex flex-col items-center mb-12 pt-8">
+        <!-- Avatar grande -->
+        @if (getAvatarUrl()) {
+        <div
+          class="w-32 h-32 rounded-full overflow-hidden bg-gray-200 ring-4 ring-black/5 shadow-xl mb-6"
+        >
+          <img
+            [src]="getAvatarUrl()!"
+            [alt]="getDisplayName()"
+            class="w-full h-full object-cover"
+          />
+        </div>
+        } @else {
+        <div
+          class="w-32 h-32 rounded-full bg-linear-to-br from-gray-700 to-gray-900 flex items-center justify-center text-4xl font-bold text-white ring-4 ring-black/5 shadow-xl mb-6"
+        >
+          {{ getInitials() }}
+        </div>
+        }
+
+        <!-- Info usuario -->
+        <h1 class="text-3xl font-semibold text-gray-900 mb-2">{{ getDisplayName() }}</h1>
+        <p class="text-base text-gray-600 mb-3">{{ user()?.email }}</p>
+
+        @if (authProvider()) {
+        <span
+          class="inline-flex items-center gap-2 px-4 py-1.5 bg-black/5 backdrop-blur-sm text-gray-700 rounded-full text-sm font-medium"
+        >
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fill-rule="evenodd"
+              d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          Conectado vía {{ authProvider() }}
+        </span>
+        }
+      </div>
 
       <!-- Grid de dos columnas -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <!-- Columna izquierda: Información del perfil -->
-        <div class="bg-white rounded-2xl border border-gray-200 p-6">
-          <h2 class="text-lg font-semibold text-gray-900 mb-6">Información personal</h2>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <!-- Columna izquierda: Información de la cuenta -->
+        <div class="bg-white/70 backdrop-blur-sm rounded-2xl border border-gray-200 shadow-sm p-6">
+          <h2 class="text-lg font-semibold text-gray-900 mb-6">Información de la cuenta</h2>
 
-          <div class="flex flex-col items-center gap-4 mb-6">
-            <!-- Avatar grande centrado -->
-            @if (getAvatarUrl()) {
-            <div class="w-24 h-24 rounded-full overflow-hidden bg-gray-200 ring-4 ring-gray-100">
-              <img
-                [src]="getAvatarUrl()!"
-                [alt]="getDisplayName()"
-                class="w-full h-full object-cover"
-              />
-            </div>
-            } @else {
-            <div
-              class="w-24 h-24 rounded-full bg-linear-to-br from-gray-300 to-gray-400 flex items-center justify-center text-3xl font-bold text-white ring-4 ring-gray-100"
-            >
-              {{ getInitials() }}
-            </div>
-            }
-
-            <!-- Info usuario -->
-            <div class="text-center">
-              <h3 class="text-xl font-semibold text-gray-900">{{ getDisplayName() }}</h3>
-              <p class="text-sm text-gray-600">{{ user()?.email }}</p>
-              @if (authProvider()) {
-              <span
-                class="inline-block mt-2 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium"
-              >
-                Conectado vía {{ authProvider() }}
-              </span>
-              }
-            </div>
-          </div>
-
-          <!-- Información adicional -->
-          <div class="space-y-3 pt-4 border-t border-gray-200">
-            <div class="flex items-center justify-between py-2">
+          <!-- Detalles de la cuenta -->
+          <div class="space-y-4 mb-6">
+            <div class="flex items-center justify-between py-3 border-b border-gray-100">
               <span class="text-sm text-gray-600">Cuenta creada</span>
               <span class="text-sm font-medium text-gray-900">{{
                 formatDate(user()?.created_at)
               }}</span>
             </div>
-            <div class="flex items-center justify-between py-2">
+            <div class="flex items-center justify-between py-3 border-b border-gray-100">
               <span class="text-sm text-gray-600">Última conexión</span>
               <span class="text-sm font-medium text-gray-900">{{
                 formatDate(user()?.last_sign_in_at)
               }}</span>
             </div>
           </div>
+
+          <!-- Cambiar contraseña (solo para usuarios con email/password) -->
+          @if (canChangePassword()) {
+          <div class="pt-6 border-t border-gray-200">
+            <h3 class="text-base font-semibold text-gray-900 mb-4">Cambiar contraseña</h3>
+
+            <form (submit)="changePassword($event)" class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Nueva contraseña</label>
+                <input
+                  type="password"
+                  [(ngModel)]="newPassword"
+                  name="newPassword"
+                  placeholder="Mínimo 6 caracteres"
+                  [disabled]="isChangingPassword()"
+                  class="w-full px-4 py-2.5 rounded-xl border bg-white border-gray-200 outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-900 transition-all text-gray-900 placeholder-gray-400 disabled:bg-gray-50 disabled:cursor-not-allowed"
+                  minlength="6"
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  Confirmar contraseña
+                </label>
+                <input
+                  type="password"
+                  [(ngModel)]="confirmPassword"
+                  name="confirmPassword"
+                  placeholder="Repite la contraseña"
+                  [disabled]="isChangingPassword()"
+                  class="w-full px-4 py-2.5 rounded-xl border bg-white border-gray-200 outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-900 transition-all text-gray-900 placeholder-gray-400 disabled:bg-gray-50 disabled:cursor-not-allowed"
+                  minlength="6"
+                />
+              </div>
+
+              <button
+                type="submit"
+                [disabled]="isChangingPassword() || !newPassword || !confirmPassword"
+                class="w-full px-6 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition-all disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
+              >
+                @if (isChangingPassword()) {
+                <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <span>Actualizando...</span>
+                } @else {
+                <span>Cambiar contraseña</span>
+                }
+              </button>
+            </form>
+          </div>
+          }
         </div>
 
         <!-- Columna derecha: Invitaciones pendientes -->
-        <div class="bg-white rounded-2xl border border-gray-200 p-6">
+        <div class="bg-white/70 backdrop-blur-sm rounded-2xl border border-gray-200 shadow-sm p-6">
           <div class="flex items-center justify-between mb-6">
             <h2 class="text-lg font-semibold text-gray-900">Invitaciones pendientes</h2>
             @if (pendingInvites().length > 0) {
-            <span class="px-2.5 py-1 bg-green-100 text-gray-900 rounded-full text-xs font-semibold">
+            <span class="px-2.5 py-1 bg-gray-900 text-white rounded-full text-xs font-semibold">
               {{ pendingInvites().length }}
             </span>
             }
@@ -86,7 +144,7 @@ import { NotificationService } from '@core/notifications/notification.service';
           <div class="space-y-3 max-h-96 overflow-y-auto">
             @for (invite of pendingInvites(); track invite.id) {
             <div
-              class="group p-4 bg-gray-50 border border-gray-200 rounded-xl hover:shadow-md transition-all"
+              class="group p-4 bg-gray-50/80 backdrop-blur-sm border border-gray-200 rounded-xl hover:shadow-md hover:border-gray-300 transition-all"
             >
               <div class="flex items-start justify-between gap-3 mb-3">
                 <div class="flex-1 min-w-0">
@@ -104,15 +162,21 @@ import { NotificationService } from '@core/notifications/notification.service';
 
               <button
                 (click)="acceptInvite(invite.token)"
-                [disabled]="isAcceptingInvite()"
-                class="w-full px-4 py-2.5 bg-gray-200 text-green-600 rounded-xl text-sm font-medium  transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
+                [disabled]="acceptingInviteToken() === invite.token"
+                class="w-full px-4 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
               >
-                @if (isAcceptingInvite()) {
+                @if (acceptingInviteToken() === invite.token) {
                 <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                 <span>Aceptando...</span>
                 } @else {
-                <i class="pi pi-check" style="color: green; font-size: 1.2rem"></i>
-
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
                 <span>Aceptar invitación</span>
                 }
               </button>
@@ -142,60 +206,12 @@ import { NotificationService } from '@core/notifications/notification.service';
         </div>
       </div>
 
-      <!-- Cambiar contraseña (solo para usuarios con email/password) -->
-      @if (canChangePassword()) {
-      <div class="bg-white rounded-2xl border border-gray-200 p-6 mb-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-6">Cambiar contraseña</h3>
-
-        <form (submit)="changePassword($event)" class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2"> Nueva contraseña </label>
-            <input
-              type="password"
-              [(ngModel)]="newPassword"
-              name="newPassword"
-              placeholder="Mínimo 6 caracteres"
-              [disabled]="isChangingPassword()"
-              class="w-full px-4 py-3 rounded-lg border bg-white border-gray-100 outline-none focus:ring-2 focus:ring-transparent focus:border-green-600 transition-all text-gray-900 placeholder-gray-400 disabled:bg-gray-100 disabled:cursor-not-allowed"
-              minlength="6"
-            />
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Confirmar contraseña
-            </label>
-            <input
-              type="password"
-              [(ngModel)]="confirmPassword"
-              name="confirmPassword"
-              placeholder="Repite la contraseña"
-              [disabled]="isChangingPassword()"
-              class="w-full px-4 py-3 rounded-lg border bg-white border-gray-100 outline-none focus:ring-2 focus:ring-transparent focus:border-green-600 transition-all text-gray-900 placeholder-gray-400 disabled:bg-gray-100 disabled:cursor-not-allowed"
-              minlength="6"
-            />
-          </div>
-
-          <button
-            type="submit"
-            [disabled]="isChangingPassword() || !newPassword || !confirmPassword"
-            class="w-full px-6 py-3 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-all disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
-          >
-            @if (isChangingPassword()) {
-            <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-            <span>Actualizando...</span>
-            } @else {
-            <span>Cambiar contraseña</span>
-            }
-          </button>
-        </form>
-      </div>
-      }
-
       <!-- Zona de peligro -->
-      <div class="bg-linear-to-br from-red-50 to-red-100 border-2 border-red-200 rounded-2xl p-6">
-        <div class="flex items-start gap-3 mb-4">
-          <div class="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center shrink-0">
+      <div
+        class="bg-linear-to-br from-red-50 to-red-100/50 backdrop-blur-sm rounded-2xl border-2 border-red-200 shadow-sm p-6"
+      >
+        <div class="flex items-start gap-4 mb-6">
+          <div class="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center shrink-0">
             <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 stroke-linecap="round"
@@ -205,31 +221,45 @@ import { NotificationService } from '@core/notifications/notification.service';
               />
             </svg>
           </div>
-          <div>
-            <h3 class="text-lg font-semibold text-red-900 mb-1">Zona de peligro</h3>
+          <div class="flex-1">
+            <h3 class="text-base font-semibold text-red-900 mb-1">Zona de peligro</h3>
             <p class="text-sm text-red-700">
               Estas acciones son permanentes y no se pueden deshacer.
             </p>
           </div>
         </div>
 
-        <div class="space-y-3">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <!-- Cerrar sesión -->
           <button
             (click)="logout()"
-            class="w-full px-4 py-3 bg-white border-2 border-red-300 text-red-700 rounded-xl text-sm font-medium hover:bg-red-50 transition-all flex items-center justify-center gap-2 cursor-pointer"
+            class="px-4 py-3 bg-white border-2 border-red-300 text-red-700 rounded-xl text-sm font-medium hover:bg-red-50 hover:border-red-400 transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
-            <i class="pi pi-sign-out" style="color: red-300; font-size: 1.2rem"></i>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+              />
+            </svg>
             <span>Cerrar sesión</span>
           </button>
 
           <!-- Eliminar cuenta -->
           <button
             (click)="deleteAccount()"
-            class="w-full px-4 py-3 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700 transition-all flex items-center justify-center gap-2 cursor-pointer"
+            class="px-4 py-3 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700 transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
-            <i class="pi pi-trash" style="color: white; font-size: 1.2rem"></i>
-            <span>Eliminar cuenta permanentemente</span>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+              />
+            </svg>
+            <span>Eliminar cuenta</span>
           </button>
         </div>
       </div>
@@ -241,6 +271,7 @@ export default class SettingsComponent implements OnInit {
   private inviteService = inject(TripInviteService);
   private notificationService = inject(NotificationService);
   private router = inject(Router);
+  private confirmModalService = inject(ConfirmModalService);
 
   user = signal<any>(null);
   pendingInvites = signal<any[]>([]);
@@ -249,7 +280,7 @@ export default class SettingsComponent implements OnInit {
   confirmPassword = '';
 
   isChangingPassword = signal(false);
-  isAcceptingInvite = signal(false);
+  acceptingInviteToken = signal<string | null>(null);
 
   async ngOnInit() {
     // Cargar usuario
@@ -337,7 +368,7 @@ export default class SettingsComponent implements OnInit {
   }
 
   async acceptInvite(token: string) {
-    this.isAcceptingInvite.set(true);
+    this.acceptingInviteToken.set(token);
 
     try {
       const result = await this.inviteService.acceptInvite(token);
@@ -347,6 +378,9 @@ export default class SettingsComponent implements OnInit {
       const invites = await this.inviteService.getMyInvites();
       this.pendingInvites.set(invites);
 
+      // Emitir evento personalizado para que el sidebar se actualice
+      window.dispatchEvent(new CustomEvent('inviteAccepted', { detail: invites.length }));
+
       // Redirigir al viaje
       setTimeout(() => {
         this.router.navigate(['/trips', result.tripId]);
@@ -354,51 +388,41 @@ export default class SettingsComponent implements OnInit {
     } catch (error: any) {
       this.notificationService.error(error.message || 'Error al aceptar la invitación');
     } finally {
-      this.isAcceptingInvite.set(false);
+      this.acceptingInviteToken.set(null);
     }
   }
 
   async logout() {
-    if (!confirm('¿Estás seguro de que quieres cerrar sesión?')) {
-      return;
-    }
-
-    await this.authService.signOut();
-    sessionStorage.setItem('onboardingDismissed', 'false');
-    this.router.navigate(['/']);
+    this.confirmModalService.open(
+      'Cerrar sesión',
+      '¿Estás seguro de que quieres cerrar sesión?',
+      async () => {
+        await this.authService.signOut();
+        sessionStorage.setItem('onboardingDismissed', 'false');
+        this.router.navigate(['/']);
+      },
+      'Cerrar sesión'
+    );
   }
 
   async deleteAccount() {
-    const firstConfirm = confirm(
-      '¿Estás seguro de que quieres eliminar tu cuenta?\n\nEsta acción es PERMANENTE y eliminará:\n• Tu cuenta\n• Todos tus viajes\n• Toda tu información\n\nNo se puede deshacer.'
+    this.confirmModalService.open(
+      'Eliminar cuenta permanentemente',
+      '¿Estás seguro de que quieres eliminar tu cuenta?\n\nEsta acción es irreversible, no se puede deshacer.',
+      async () => {
+        try {
+          const response = await this.authService.deleteAccount();
+          if (response.error) {
+            this.notificationService.error(response.error);
+          } else {
+            this.notificationService.success('Cuenta eliminada correctamente');
+            this.router.navigate(['/']);
+          }
+        } catch (error: any) {
+          this.notificationService.error(error.message || 'Error al eliminar la cuenta');
+        }
+      },
+      'Eliminar'
     );
-
-    if (!firstConfirm) return;
-
-    const secondConfirm = confirm(
-      'ÚLTIMA ADVERTENCIA\n\n¿Confirmas que quieres eliminar permanentemente tu cuenta?\n\nEscribe "ELIMINAR" en el siguiente paso para continuar.'
-    );
-
-    if (!secondConfirm) return;
-
-    const typed = prompt('Por favor, escribe "ELIMINAR" para confirmar:');
-
-    if (typed !== 'ELIMINAR') {
-      this.notificationService.error('Cancelado. La cuenta no fue eliminada.');
-      return;
-    }
-
-    try {
-      const response = await this.authService.deleteAccount();
-
-      if (response.error) {
-        this.notificationService.error(response.error);
-      } else {
-        this.notificationService.success('Cuenta eliminada correctamente');
-        this.router.navigate(['/']);
-      }
-    } catch (error: any) {
-      this.notificationService.error(error.message || 'Error al eliminar la cuenta');
-    }
   }
 }

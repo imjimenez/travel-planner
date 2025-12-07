@@ -5,7 +5,8 @@ import { CommonModule } from '@angular/common';
 import { TripParticipantService } from '@core/trips/services/trip-participant.service';
 import { AuthService } from '@core/authentication';
 import { NotificationService } from '@core/notifications/notification.service';
-import { ModalService } from '@core/modal/modal.service';
+import { WidgetModalService } from '@core/modal/widget-modal.service';
+import { ConfirmModalService } from '@core/modal/confirm-modal.service';
 
 /**
  * Widget de participantes para mostrar en el detalle del viaje
@@ -104,7 +105,8 @@ export class ParticipantWidgetComponent implements OnInit {
   participantService = inject(TripParticipantService);
   private authService = inject(AuthService);
   private notificationService = inject(NotificationService);
-  private modalService = inject(ModalService);
+  private widgetModalService = inject(WidgetModalService);
+  private confirmModalService = inject(ConfirmModalService);
 
   private currentUserId: string | null = null;
   private tripOwnerId: string | null = null;
@@ -181,32 +183,33 @@ export class ParticipantWidgetComponent implements OnInit {
       participant
     )} del viaje?`;
 
-    if (!confirm(confirmMessage)) {
-      return;
-    }
+    this.confirmModalService.open(
+      'Eliminar participante',
+      confirmMessage,
+      async () => {
+        try {
+          await this.participantService.removeParticipant(this.tripId, participant.user_id);
 
-    try {
-      await this.participantService.removeParticipant(this.tripId, participant.user_id);
-
-      // Recargar la lista de participantes
-      this.isLoading.set(true);
-      await this.participantService.loadParticipants(this.tripId);
-      this.notificationService.success('Participante eliminado correctamente');
-    } catch (error) {
-      console.error('Error al eliminar participante:', error);
-      this.notificationService.error(
-        'No se pudo eliminar el participante. Por favor, inténtalo de nuevo.'
-      );
-    } finally {
-      this.isLoading.set(false);
-    }
+          // Recargar la lista de participantes
+          this.isLoading.set(true);
+          await this.participantService.loadParticipants(this.tripId);
+          this.notificationService.success('Participante eliminado correctamente');
+        } catch (error: any) {
+          console.error('Error al eliminar participante:', error);
+          this.notificationService.error(error.message || 'No se pudo eliminar el participante.');
+        } finally {
+          this.isLoading.set(false);
+        }
+      },
+      'Eliminar'
+    );
   }
 
   /**
    * Abre el modal con todos los participantes
    */
   openParticipantsModal(): void {
-    this.modalService.openParticipantsModal(this.tripId);
+    this.widgetModalService.openParticipantsModal(this.tripId);
   }
 
   /**

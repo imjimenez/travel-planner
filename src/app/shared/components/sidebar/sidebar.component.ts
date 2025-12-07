@@ -1,9 +1,10 @@
-import { Component, inject, Input, OnInit, signal } from '@angular/core';
+import { Component, inject, Input, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { AuthService, getFullName, getUserInitials, User } from '@core/authentication';
 import { TripService } from '@core/trips/services/trip.service';
 import { TripModalService } from '@core/trips/services/trip-modal.service.ts';
+import { TripInviteService } from '@core/trips';
 
 /**
  * Componente de barra lateral (sidebar) del dashboard
@@ -11,9 +12,10 @@ import { TripModalService } from '@core/trips/services/trip-modal.service.ts';
  * Muestra la navegación principal y la información del usuario autenticado.
  *
  * Funcionalidades actuales:
- * - Navegación a Dashboard , lista de viajes y SettiL
+ * - Navegación a Dashboard , lista de viajes y Settings
  * - Lista de viajes del usuario
  * - Navegación a los ajustes del usuario
+ * - Badge con número de invitaciones pendientes
  *
  */
 @Component({
@@ -64,7 +66,7 @@ import { TripModalService } from '@core/trips/services/trip-modal.service.ts';
               <button
                 type="button"
                 (click)="openModal()"
-                class="w-6 h-6 flex p-3 text-white bg-black hover:bg-black/90 shadow-sm rounded-full items-center justify-center transition-colors cursor-pointer"
+                class="w-6 h-6 flex p-3 text-white bg-black hover:bg-black/90 shadow-sm rounded items-center justify-center transition-colors cursor-pointer"
                 title="Crear nuevo viaje"
               >
                 <i class="pi pi-plus" style="color: white; font-size: 0.7rem"></i>
@@ -154,6 +156,15 @@ import { TripModalService } from '@core/trips/services/trip-modal.service.ts';
                   {{ user.email }}
                 </p>
               </div>
+
+              <!-- Badge de invitaciones pendientes -->
+              @if (pendingInvitesCount() > 0) {
+              <div
+                class="shrink-0 flex items-center justify-center w-6 h-6 bg-red-500 text-white rounded-full text-xs font-semibold"
+              >
+                {{ pendingInvitesCount() }}
+              </div>
+              }
             </button>
             }
           </div>
@@ -162,10 +173,11 @@ import { TripModalService } from '@core/trips/services/trip-modal.service.ts';
     </aside>
   `,
 })
-export class SidebarComponent implements OnInit {
+export class SidebarComponent implements OnInit, OnDestroy {
   private tripService = inject(TripService);
   private authService = inject(AuthService);
   private tripModalService = inject(TripModalService);
+  private inviteService = inject(TripInviteService);
   public router = inject(Router);
 
   /**
@@ -178,11 +190,50 @@ export class SidebarComponent implements OnInit {
   private loadingSignal = signal(true);
   isLoading = this.loadingSignal.asReadonly();
 
+  /**
+   * Número de invitaciones pendientes del usuario
+   */
+  pendingInvitesCount = signal(0);
+
   async ngOnInit() {
     this.loadingSignal.set(true);
     await this.tripService.loadUserTrips();
     console.log('Ejecutando..');
     this.loadingSignal.set(false);
+
+    // Cargar invitaciones pendientes
+    await this.loadPendingInvites();
+
+    // Escuchar evento de invitación aceptada
+    window.addEventListener('inviteAccepted', this.handleInviteAccepted.bind(this));
+  }
+
+  /**
+   * Carga el número de invitaciones pendientes del usuario
+   */
+  private async loadPendingInvites() {
+    try {
+      const invites = await this.inviteService.getMyInvites();
+      this.pendingInvitesCount.set(invites.length);
+    } catch (error) {
+      console.error('Error loading pending invites:', error);
+      this.pendingInvitesCount.set(0);
+    }
+  }
+
+  /**
+   * Maneja el evento de invitación aceptada
+   */
+  private handleInviteAccepted(event: Event) {
+    const customEvent = event as CustomEvent;
+    this.pendingInvitesCount.set(customEvent.detail);
+  }
+
+  /**
+   * Limpia el listener del evento al destruir el componente
+   */
+  ngOnDestroy() {
+    window.removeEventListener('inviteAccepted', this.handleInviteAccepted.bind(this));
   }
 
   /**

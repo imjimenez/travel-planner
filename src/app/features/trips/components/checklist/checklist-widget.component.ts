@@ -1,7 +1,7 @@
 import { Component, effect, inject, Input, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ModalService } from '@core/modal/modal.service';
+import { WidgetModalService } from '@core/modal/widget-modal.service';
 import { TripTodoService } from '@core/trips/services/trip-todo.service';
 import { NotificationService } from '@core/notifications/notification.service';
 import type { TripTodo } from '@core/trips/models/trip-todo.model';
@@ -125,7 +125,7 @@ import type { TripTodo } from '@core/trips/models/trip-todo.model';
 export class ChecklistWidgetComponent implements OnInit {
   @Input() tripId!: string;
 
-  private modalService = inject(ModalService);
+  private widgetModalService = inject(WidgetModalService);
   private todoService = inject(TripTodoService);
   private notificationService = inject(NotificationService);
 
@@ -156,7 +156,7 @@ export class ChecklistWidgetComponent implements OnInit {
 
   constructor() {
     effect(() => {
-      const closed = this.modalService.closedModal();
+      const closed = this.widgetModalService.closedModal();
 
       if (closed === 'checklist') {
         // Recargar sin loading cuando se cierra el modal
@@ -256,6 +256,6 @@ export class ChecklistWidgetComponent implements OnInit {
    * Abre el modal con todas las tareas
    */
   openChecklistModal(): void {
-    this.modalService.openChecklistModal(this.tripId);
+    this.widgetModalService.openChecklistModal(this.tripId);
   }
 }

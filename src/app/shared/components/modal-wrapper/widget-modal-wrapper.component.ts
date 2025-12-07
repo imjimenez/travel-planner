@@ -1,17 +1,17 @@
 // shared/components/modal-wrapper/modal-wrapper.component.ts
 import { Component, Input, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ModalService } from '@core/modal/modal.service';
+import { WidgetModalService } from '@core/modal/widget-modal.service';
 
 @Component({
-  selector: 'app-modal-wrapper',
+  selector: 'app-widget-modal-wrapper',
   standalone: true,
   imports: [CommonModule],
   template: `
     <!-- Backdrop -->
     <div
       class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
-      (click)="modalService.close()"
+      (click)="widgetModalService.close()"
     ></div>
 
     <!-- Modal -->
@@ -28,7 +28,7 @@ import { ModalService } from '@core/modal/modal.service';
 
           <button
             type="button"
-            (click)="modalService.close()"
+            (click)="widgetModalService.close()"
             class="w-8 h-8 flex bg-white hover:bg-gray-100 shadow-sm border border-gray-100 rounded-lg items-center justify-center text-gray-500 hover:text-gray-800 hover:border-gray-200 transition-colors cursor-pointer"
             title="Cerrar"
           >
@@ -46,5 +46,5 @@ import { ModalService } from '@core/modal/modal.service';
 })
 export class ModalWrapperComponent {
   @Input() title: string = '';
-  modalService = inject(ModalService);
+  widgetModalService = inject(WidgetModalService);
 }

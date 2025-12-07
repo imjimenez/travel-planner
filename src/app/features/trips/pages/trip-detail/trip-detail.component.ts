@@ -14,9 +14,9 @@ import { ParticipantWidgetComponent } from '@features/trips/components/participa
 import { DocumentWidgetComponent } from '@features/trips/components/documents/documents-widget.component';
 import { ChecklistWidgetComponent } from '@features/trips/components/checklist/checklist-widget.component';
 import { ItineraryEmptyStateComponent } from '@features/trips/components/itinerary/itinerary-emptystate.component';
-import { ModalService } from '@core/modal/modal.service';
 import { TripModalService } from '@core/trips/services/trip-modal.service.ts';
 import { ExpensesComponent } from '@features/trips/components/expenses/expenses.component';
+import { ConfirmModalService } from '@core/modal/confirm-modal.service';
 
 /**
  * Componente para mostrar el detalle de un viaje
@@ -45,8 +45,8 @@ export class TripDetailComponent implements OnInit, OnDestroy {
   private participantService = inject(TripParticipantService);
   private authService = inject(AuthService);
   private notificationService = inject(NotificationService);
-  modalService = inject(ModalService);
   private tripModalService = inject(TripModalService);
+  private confirmModalService = inject(ConfirmModalService);
   private updateSubscription?: Subscription;
 
   // Signals
@@ -83,6 +83,9 @@ export class TripDetailComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     if (this.paramsSubscription) {
       this.paramsSubscription.unsubscribe();
+    }
+    if (this.updateSubscription) {
+      this.updateSubscription?.unsubscribe();
     }
   }
 
@@ -149,20 +152,21 @@ export class TripDetailComponent implements OnInit, OnDestroy {
     const currentTrip = this.trip();
     if (!currentTrip) return;
 
-    const confirmed = confirm(
-      `¿Estás seguro de que deseas eliminar el viaje "${currentTrip.name}"? Esta acción no se puede deshacer.`
+    this.confirmModalService.open(
+      'Eliminar viaje',
+      `¿Estás seguro de que deseas eliminar el viaje "${currentTrip.name}"? Esta acción no se puede deshacer.`,
+      async () => {
+        try {
+          await this.tripService.deleteTrip(currentTrip.id);
+          this.notificationService.success('Viaje eliminado correctamente');
+          this.router.navigate(['/overview']);
+        } catch (error) {
+          console.error('Error al eliminar el viaje:', error);
+          this.notificationService.error('Error al eliminar el viaje');
+        }
+      },
+      'Eliminar'
     );
-
-    if (!confirmed) return;
-
-    try {
-      await this.tripService.deleteTrip(currentTrip.id);
-      this.notificationService.success('Viaje eliminado correctamente');
-      this.router.navigate(['/overview']);
-    } catch (error) {
-      console.error('Error al eliminar el viaje:', error);
-      this.notificationService.error('Error al eliminar el viaje');
-    }
   }
 
   /**
@@ -179,19 +183,22 @@ export class TripDetailComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const confirmed = confirm(`¿Estás seguro de que deseas salir del viaje "${currentTrip.name}"?`);
-
-    if (!confirmed) return;
-
-    try {
-      await this.participantService.removeParticipant(currentTrip.id, user.id);
-      this.notificationService.success('Has salido del viaje correctamente');
-      this.tripService.loadUserTrips();
-      this.router.navigate(['/overview']);
-    } catch (error: any) {
-      console.error('Error al salir del viaje:', error);
-      this.notificationService.error(error.message || 'Error al salir del viaje');
-    }
+    this.confirmModalService.open(
+      'Salir del viaje',
+      `¿Estás seguro de que deseas salir del viaje "${currentTrip.name}"?`,
+      async () => {
+        try {
+          await this.participantService.removeParticipant(currentTrip.id, user.id);
+          this.notificationService.success('Has salido del viaje correctamente');
+          this.tripService.loadUserTrips();
+          this.router.navigate(['/overview']);
+        } catch (error: any) {
+          console.error('Error al salir del viaje:', error);
+          this.notificationService.error(error.message || 'Error al salir del viaje');
+        }
+      },
+      'Salir'
+    );
   }
 
   /**
@@ -200,13 +207,5 @@ export class TripDetailComponent implements OnInit, OnDestroy {
   handleAddStop(): void {
     this.notificationService.info('Funcionalidad de itinerario próximamente');
     console.log('Añadir parada al itinerario');
-  }
-
-  /**
-   * Maneja el evento de añadir gasto
-   */
-  handleAddExpense(): void {
-    this.notificationService.info('Funcionalidad de gastos próximamente');
-    console.log('Añadir gasto');
   }
 }

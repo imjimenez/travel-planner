@@ -1,10 +1,11 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ModalService } from '@core/modal/modal.service';
+import { WidgetModalService } from '@core/modal/widget-modal.service';
 import { NotificationService } from '@core/notifications/notification.service';
 import { TripDocumentService } from '@core/trips/services/trip-document.service';
 import type { TripDocumentWithUrl } from '@core/trips/models/trip-document.model';
+import { ConfirmModalService } from '@core/modal/confirm-modal.service';
 
 /**
  * Modal de gestión de documentos
@@ -164,10 +165,11 @@ import type { TripDocumentWithUrl } from '@core/trips/models/trip-document.model
   `,
 })
 export class DocumentsModalComponent implements OnInit {
-  modalService = inject(ModalService);
   documentService = inject(TripDocumentService);
   private notificationService = inject(NotificationService);
   private isFirstLoad = signal(true);
+  private widgetModalService = inject(WidgetModalService);
+  private confirmModalService = inject(ConfirmModalService);
 
   documents = signal<TripDocumentWithUrl[]>([]);
   isLoading = signal(false);
@@ -175,7 +177,7 @@ export class DocumentsModalComponent implements OnInit {
   isDragging = signal(false);
 
   async ngOnInit() {
-    const tripId = this.modalService.tripId();
+    const tripId = this.widgetModalService.tripId();
     if (tripId) {
       await this.loadDocuments(tripId);
     }
@@ -237,23 +239,25 @@ export class DocumentsModalComponent implements OnInit {
   async deleteDocument(doc: TripDocumentWithUrl, event: Event): Promise<void> {
     event.stopPropagation();
 
-    const confirmMessage = `¿Estás seguro de que quieres eliminar "${doc.name}"?`;
-    if (!confirm(confirmMessage)) {
-      return;
-    }
+    this.confirmModalService.open(
+      'Eliminar documento',
+      `¿Estás seguro de que quieres eliminar "${doc.name}"?`,
+      async () => {
+        try {
+          await this.documentService.deleteDocument(doc.id);
+          this.notificationService.success('Documento eliminado correctamente');
 
-    try {
-      await this.documentService.deleteDocument(doc.id);
-      this.notificationService.success('Documento eliminado correctamente');
-
-      const tripId = this.modalService.tripId();
-      if (tripId) {
-        await this.loadDocuments(tripId, false);
-      }
-    } catch (error: any) {
-      console.error('Error deleting document:', error);
-      this.notificationService.error(error.message || 'No se pudo eliminar el documento');
-    }
+          const tripId = this.widgetModalService.tripId();
+          if (tripId) {
+            await this.loadDocuments(tripId, false);
+          }
+        } catch (error: any) {
+          console.error('Error deleting document:', error);
+          this.notificationService.error(error.message || 'No se pudo eliminar el documento');
+        }
+      },
+      'Eliminar'
+    );
   }
 
   /**
@@ -305,7 +309,7 @@ export class DocumentsModalComponent implements OnInit {
    * Sube uno o más archivos
    */
   private async uploadFiles(files: File[]): Promise<void> {
-    const tripId = this.modalService.tripId();
+    const tripId = this.widgetModalService.tripId();
     if (!tripId) return;
 
     this.isUploading.set(true);
