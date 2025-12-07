@@ -167,6 +167,7 @@ export class DocumentsModalComponent implements OnInit {
   modalService = inject(ModalService);
   documentService = inject(TripDocumentService);
   private notificationService = inject(NotificationService);
+  private isFirstLoad = signal(true);
 
   documents = signal<TripDocumentWithUrl[]>([]);
   isLoading = signal(false);
@@ -183,15 +184,24 @@ export class DocumentsModalComponent implements OnInit {
   /**
    * Carga los documentos del viaje
    */
-  private async loadDocuments(tripId: string): Promise<void> {
+  private async loadDocuments(tripId: string, showLoading: boolean = true): Promise<void> {
     try {
-      this.isLoading.set(true);
+      // Mostrar loading solo si es la primera carga Y showLoading = true
+      if (this.isFirstLoad() && showLoading) {
+        this.isLoading.set(true);
+      }
+
+      // Cargar documentos
       const docs = await this.documentService.getTripDocumentsWithUrl(tripId);
       this.documents.set(docs);
+
+      // Marcar que ya no es primera carga
+      this.isFirstLoad.set(false);
     } catch (error: any) {
       console.error('Error loading documents:', error);
       this.notificationService.error(error.message || 'No se pudieron cargar los documentos');
     } finally {
+      // Siempre quitar loading al final
       this.isLoading.set(false);
     }
   }
@@ -238,7 +248,7 @@ export class DocumentsModalComponent implements OnInit {
 
       const tripId = this.modalService.tripId();
       if (tripId) {
-        await this.loadDocuments(tripId);
+        await this.loadDocuments(tripId, false);
       }
     } catch (error: any) {
       console.error('Error deleting document:', error);
@@ -314,7 +324,7 @@ export class DocumentsModalComponent implements OnInit {
           : `${files.length} documentos subidos correctamente`
       );
 
-      await this.loadDocuments(tripId);
+      await this.loadDocuments(tripId, false);
     } catch (error: any) {
       console.error('Error uploading files:', error);
       this.notificationService.error(error.message || 'Error al subir los documentos');

@@ -15,6 +15,7 @@ import type { TripTodo } from '@core/trips/models/trip-todo.model';
  * - Input siempre visible para agregar tareas rápidamente
  * - Empty state simple cuando no hay tareas
  * - Abre modal para gestión completa
+ * - Loading solo se muestra en la primera carga
  */
 @Component({
   selector: 'app-checklist-widget',
@@ -42,7 +43,7 @@ import type { TripTodo } from '@core/trips/models/trip-todo.model';
         </button>
       </div>
 
-      <!-- Loading state -->
+      <!-- Loading state (solo primera carga) -->
       @if (isLoading()) {
       <div class="flex justify-center py-8">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
@@ -131,6 +132,7 @@ export class ChecklistWidgetComponent implements OnInit {
   todos = signal<TripTodo[]>([]);
   isLoading = signal(true);
   newTodoTitle = signal('');
+  private isFirstLoad = signal(true);
 
   /**
    * Computed: Tareas pendientes (no completadas)
@@ -157,7 +159,8 @@ export class ChecklistWidgetComponent implements OnInit {
       const closed = this.modalService.closedModal();
 
       if (closed === 'checklist') {
-        void this.loadTodos();
+        // Recargar sin loading cuando se cierra el modal
+        void this.loadTodos(false);
       }
     });
   }
@@ -168,10 +171,15 @@ export class ChecklistWidgetComponent implements OnInit {
 
   /**
    * Carga todas las tareas del viaje
+   * Solo muestra loading en la primera carga
    */
-  private async loadTodos(): Promise<void> {
+  private async loadTodos(showLoading: boolean = true): Promise<void> {
     try {
-      this.isLoading.set(true);
+      // Solo mostrar loading si es la primera carga Y showLoading es true
+      if (this.isFirstLoad() && showLoading) {
+        this.isLoading.set(true);
+      }
+
       const allTodos = await this.todoService.getTripTodos(this.tripId);
       this.todos.set(allTodos);
 
@@ -183,6 +191,9 @@ export class ChecklistWidgetComponent implements OnInit {
       this.displayedTodos.set(pending.slice(0, 2));
       this.totalCount.set(allTodos.length);
       this.completedCount.set(completed.length);
+
+      // Marcar que ya no es la primera carga
+      this.isFirstLoad.set(false);
     } catch (error: any) {
       console.error('Error loading todos:', error);
       this.notificationService.error(error.message || 'No se pudieron cargar las tareas');
@@ -199,7 +210,8 @@ export class ChecklistWidgetComponent implements OnInit {
 
     try {
       await this.todoService.updateTodo(todo.id, { status: newStatus });
-      await this.loadTodos();
+      // Recargar sin loading
+      await this.loadTodos(false);
     } catch (error: any) {
       console.error('Error updating todo:', error);
       this.notificationService.error(error.message || 'No se pudo actualizar la tarea');
@@ -222,7 +234,8 @@ export class ChecklistWidgetComponent implements OnInit {
 
       this.newTodoTitle.set('');
       this.notificationService.success('Tarea agregada');
-      await this.loadTodos();
+      // Recargar sin loading
+      await this.loadTodos(false);
     } catch (error: any) {
       console.error('Error creating todo:', error);
       this.notificationService.error(error.message || 'No se pudo agregar la tarea');

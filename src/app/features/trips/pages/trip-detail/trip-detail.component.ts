@@ -3,8 +3,10 @@ import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TripService } from '@core/trips/services/trip.service';
+import { TripParticipantService } from '@core/trips/services/trip-participant.service';
 import { Trip } from '@core/trips/models/trip.model';
 import { NotificationService } from '@core/notifications/notification.service';
+import { AuthService } from '@core/authentication/services/auth.service';
 import { Subscription } from 'rxjs';
 
 // Componentes de la vista
@@ -12,9 +14,9 @@ import { ParticipantWidgetComponent } from '@features/trips/components/participa
 import { DocumentWidgetComponent } from '@features/trips/components/documents/documents-widget.component';
 import { ChecklistWidgetComponent } from '@features/trips/components/checklist/checklist-widget.component';
 import { ItineraryEmptyStateComponent } from '@features/trips/components/itinerary/itinerary-emptystate.component';
-import { ExpenseEmptyStateComponent } from '@features/trips/components/expenses/expenses-emptystate.component';
 import { ModalService } from '@core/modal/modal.service';
 import { TripModalService } from '@core/trips/services/trip-modal.service.ts';
+import { ExpensesComponent } from '@features/trips/components/expenses/expenses.component';
 
 /**
  * Componente para mostrar el detalle de un viaje
@@ -31,8 +33,8 @@ import { TripModalService } from '@core/trips/services/trip-modal.service.ts';
     DocumentWidgetComponent,
     ChecklistWidgetComponent,
     ItineraryEmptyStateComponent,
-    ExpenseEmptyStateComponent,
     ParticipantWidgetComponent,
+    ExpensesComponent,
   ],
   templateUrl: './trip-detail.component.html',
 })
@@ -40,6 +42,8 @@ export class TripDetailComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private tripService = inject(TripService);
+  private participantService = inject(TripParticipantService);
+  private authService = inject(AuthService);
   private notificationService = inject(NotificationService);
   modalService = inject(ModalService);
   private tripModalService = inject(TripModalService);
@@ -49,6 +53,7 @@ export class TripDetailComponent implements OnInit, OnDestroy {
   trip = signal<Trip | null>(null);
   isLoading = signal(true);
   activeTab = signal<'itinerary' | 'expenses'>('itinerary');
+  isOwner = signal(false);
 
   // Suscripción a cambios de parámetros de la URL
   private paramsSubscription?: Subscription;
@@ -100,6 +105,13 @@ export class TripDetailComponent implements OnInit, OnDestroy {
         const fetchedTrip = await this.tripService.getTripById(tripId);
         this.trip.set(fetchedTrip);
       }
+
+      // Verificar si el usuario actual es owner
+      const user = await this.authService.getAuthUser();
+      const currentTrip = this.trip();
+      if (user && currentTrip) {
+        this.isOwner.set(user.id === currentTrip.owner_user_id);
+      }
     } catch (error) {
       console.error('Error al cargar el viaje:', error);
       this.notificationService.error('Error al cargar el viaje');
@@ -150,6 +162,35 @@ export class TripDetailComponent implements OnInit, OnDestroy {
     } catch (error) {
       console.error('Error al eliminar el viaje:', error);
       this.notificationService.error('Error al eliminar el viaje');
+    }
+  }
+
+  /**
+   * Permite al participante salir del viaje
+   * Usa el servicio de participantes para remover al usuario actual
+   */
+  async leaveTrip(): Promise<void> {
+    const currentTrip = this.trip();
+    if (!currentTrip) return;
+
+    const user = await this.authService.getAuthUser();
+    if (!user) {
+      this.notificationService.error('Usuario no autenticado');
+      return;
+    }
+
+    const confirmed = confirm(`¿Estás seguro de que deseas salir del viaje "${currentTrip.name}"?`);
+
+    if (!confirmed) return;
+
+    try {
+      await this.participantService.removeParticipant(currentTrip.id, user.id);
+      this.notificationService.success('Has salido del viaje correctamente');
+      this.tripService.loadUserTrips();
+      this.router.navigate(['/overview']);
+    } catch (error: any) {
+      console.error('Error al salir del viaje:', error);
+      this.notificationService.error(error.message || 'Error al salir del viaje');
     }
   }
 

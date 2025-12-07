@@ -9,10 +9,11 @@ import type { TripDocumentWithUrl } from '@core/trips/models/trip-document.model
  * Widget de documentos para mostrar en el dashboard del viaje
  *
  * Funcionalidades:
- * - Muestra los 4 documentos más recientes con vista previa
+ * - Muestra los 2 documentos más recientes con vista previa
  * - Permite subir documentos mediante click o drag & drop
  * - Muestra estado de carga durante la subida
  * - Abre el modal de documentos para ver todos los documentos
+ * - Loading solo se muestra en la primera carga
  */
 @Component({
   selector: 'app-document-widget',
@@ -40,7 +41,7 @@ import type { TripDocumentWithUrl } from '@core/trips/models/trip-document.model
         </button>
       </div>
 
-      <!-- Loading state -->
+      <!-- Loading state (solo primera carga) -->
       @if (isLoading()) {
       <div class="flex justify-center py-8">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
@@ -159,6 +160,7 @@ export class DocumentWidgetComponent implements OnInit {
   isLoading = signal(true);
   isUploading = signal(false);
   isDragging = signal(false);
+  private isFirstLoad = signal(true);
 
   /**
    * Computed: Primeros 2 documentos para mostrar en la lista
@@ -170,7 +172,8 @@ export class DocumentWidgetComponent implements OnInit {
       const closed = this.modalService.closedModal();
 
       if (closed === 'documents') {
-        void this.loadDocuments();
+        // Recargar sin loading cuando se cierra el modal
+        void this.loadDocuments(false);
       }
     });
   }
@@ -181,13 +184,21 @@ export class DocumentWidgetComponent implements OnInit {
 
   /**
    * Carga los documentos del viaje
+   * Solo muestra loading en la primera carga
    */
-  private async loadDocuments(): Promise<void> {
+  private async loadDocuments(showLoading: boolean = true): Promise<void> {
     try {
-      this.isLoading.set(true);
+      // Solo mostrar loading si es la primera carga Y showLoading es true
+      if (this.isFirstLoad() && showLoading) {
+        this.isLoading.set(true);
+      }
+
       const docs = await this.documentService.getTripDocumentsWithUrl(this.tripId);
       this.documents.set(docs);
       this.displayedDocuments.set(docs.slice(0, 2));
+
+      // Marcar que ya no es la primera carga
+      this.isFirstLoad.set(false);
     } catch (error: any) {
       console.error('Error loading documents:', error);
       this.notificationService.error(error.message || 'No se pudieron cargar los documentos');
@@ -261,7 +272,8 @@ export class DocumentWidgetComponent implements OnInit {
           : `${files.length} documentos subidos correctamente`
       );
 
-      await this.loadDocuments();
+      // Recargar sin loading
+      await this.loadDocuments(false);
     } catch (error: any) {
       console.error('Error uploading files:', error);
       this.notificationService.error(error.message || 'Error al subir los documentos');
