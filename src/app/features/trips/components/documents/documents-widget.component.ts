@@ -1,6 +1,6 @@
 import { Component, effect, inject, Input, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ModalService } from '@core/modal/modal.service';
+import { WidgetModalService } from '@core/modal/widget-modal.service';
 import { TripDocumentService } from '@core/trips/services/trip-document.service';
 import { NotificationService } from '@core/notifications/notification.service';
 import type { TripDocumentWithUrl } from '@core/trips/models/trip-document.model';
@@ -126,8 +126,12 @@ import type { TripDocumentWithUrl } from '@core/trips/models/trip-document.model
               <i class="pi pi-plus text-gray-400" style="font-size: 1.25rem"></i>
             </div>
             <div class="flex-1">
-              <p class="text-sm text-gray-600">
-                {{ isDragging() ? 'Suelta aquí el archivo' : 'Subir documento' }}
+              <p class="text-sm text-gray-500">
+                {{
+                  isDragging()
+                    ? 'Suelta aquí el archivo'
+                    : 'Arrastra archivos o haz click para seleccionar'
+                }}
               </p>
             </div>
           </div>
@@ -152,7 +156,7 @@ import type { TripDocumentWithUrl } from '@core/trips/models/trip-document.model
 export class DocumentWidgetComponent implements OnInit {
   @Input() tripId!: string;
 
-  private modalService = inject(ModalService);
+  private widgetModalService = inject(WidgetModalService);
   documentService = inject(TripDocumentService);
   private notificationService = inject(NotificationService);
 
@@ -169,7 +173,7 @@ export class DocumentWidgetComponent implements OnInit {
 
   constructor() {
     effect(() => {
-      const closed = this.modalService.closedModal();
+      const closed = this.widgetModalService.closedModal();
 
       if (closed === 'documents') {
         // Recargar sin loading cuando se cierra el modal
@@ -310,6 +314,6 @@ export class DocumentWidgetComponent implements OnInit {
    * Abre el modal con todos los documentos
    */
   openDocumentsModal(): void {
-    this.modalService.openDocumentsModal(this.tripId);
+    this.widgetModalService.openDocumentsModal(this.tripId);
   }
 }

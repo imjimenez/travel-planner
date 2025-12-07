@@ -1,5 +1,4 @@
-import { Injectable, signal, computed, inject } from '@angular/core';
-import { TripDocumentService } from '@core/trips';
+import { Injectable, signal, computed } from '@angular/core';
 
 /**
  * Tipos de modales disponibles en la aplicación
@@ -20,7 +19,7 @@ export type ModalType = 'participants' | 'documents' | 'checklist' | null;
 @Injectable({
   providedIn: 'root',
 })
-export class ModalService {
+export class WidgetModalService {
   // Modal actualmente abierto
   private activeModal = signal<ModalType>(null);
 

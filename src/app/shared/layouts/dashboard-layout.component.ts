@@ -6,11 +6,13 @@ import { AuthService, User } from '../../core/authentication';
 import { Observable } from 'rxjs';
 import { TripWizardComponent } from '@shared/components/trips/tripWizard/trip-wizard.component';
 import { TripModalService } from '@core/trips/services/trip-modal.service.ts';
-import { ModalService } from '@core/modal/modal.service';
+import { WidgetModalService } from '@core/modal/widget-modal.service';
+import { ConfirmModalService } from '@core/modal/confirm-modal.service';
 import { ParticipantsModalComponent } from '@features/trips/components/participants/participants-modal-component';
-import { ModalWrapperComponent } from '@shared/components/modal-wrapper/modal-wrapper.component';
+import { ModalWrapperComponent } from '@shared/components/modal-wrapper/widget-modal-wrapper.component';
 import { DocumentsModalComponent } from '@features/trips/components/documents/documents-modal-component';
 import { ChecklistModalComponent } from '@features/trips/components/checklist/checklist-modal-component';
+import { ConfirmModalComponent } from '@shared/components/modal-wrapper/confirm-modal-wrapper.component';
 
 /**
  * Layout principal del dashboard
@@ -38,6 +40,7 @@ import { ChecklistModalComponent } from '@features/trips/components/checklist/ch
     ParticipantsModalComponent,
     DocumentsModalComponent,
     ChecklistModalComponent,
+    ConfirmModalComponent,
   ],
   template: `
     <div class="min-h-screen bg-white p-6 flex gap-6 relative overflow-hidden">
@@ -85,26 +88,33 @@ import { ChecklistModalComponent } from '@features/trips/components/checklist/ch
       </app-trip-wizard>
       }
 
-      <!-- MODALES NUEVOS -->
-      @if (modalService.type() === 'participants') {
-      <app-modal-wrapper title="Participantes">
+      <!-- Modales para los widgets -->
+      @if (widgetModalService.type() === 'participants') {
+      <app-widget-modal-wrapper title="Participantes">
         <app-participants-modal />
-      </app-modal-wrapper>
-      } @if (modalService.type() === 'documents') {
-      <app-modal-wrapper title="Documentos">
+      </app-widget-modal-wrapper>
+      } @if (widgetModalService.type() === 'documents') {
+      <app-widget-modal-wrapper title="Documentos">
         <app-documents-modal />
-      </app-modal-wrapper>
-      } @if (modalService.type() === 'checklist') {
-      <app-modal-wrapper title="Checklist">
+      </app-widget-modal-wrapper>
+      } @if (widgetModalService.type() === 'checklist') {
+      <app-widget-modal-wrapper title="Checklist">
         <app-checklist-modal />
-      </app-modal-wrapper>
+      </app-widget-modal-wrapper>
+      }
+
+      <!-- Modal de confirmación global -->
+      @if (confirmModalService.isOpen()) {
+      <app-confirm-modal (closed)="confirmModalService.close()"></app-confirm-modal>
       }
     </div>
   `,
 })
 export default class DashboardLayoutComponent implements OnInit {
   private tripModalService = inject(TripModalService);
-  modalService = inject(ModalService);
+  widgetModalService = inject(WidgetModalService);
+  confirmModalService = inject(ConfirmModalService);
+
   /**
    * Observable del usuario actual
    * Se pasa al sidebar para mostrar información del usuario

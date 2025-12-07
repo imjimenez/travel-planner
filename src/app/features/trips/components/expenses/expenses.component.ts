@@ -11,6 +11,7 @@ import {
   type ExpenseCategory,
   type ExpenseWithUser,
 } from '@core/trips';
+import { ConfirmModalService } from '@core/modal/confirm-modal.service';
 
 /**
  * Componente para gestionar gastos de un viaje
@@ -260,6 +261,7 @@ export class ExpensesComponent implements OnInit {
   private tripService = inject(TripService);
   private authService = inject(AuthService);
   private notificationService = inject(NotificationService);
+  private confirmModalService = inject(ConfirmModalService);
 
   // Signals del servicio
   expenses = this.expenseService.expenses;
@@ -408,17 +410,17 @@ export class ExpensesComponent implements OnInit {
   async saveEdit(expense: ExpenseWithUser): Promise<void> {
     const title = this.editTitle.trim();
     if (!title) {
-      this.notificationService.error('El título no puede estar vacío');
+      this.notificationService.warning('El título no puede estar vacío');
       return;
     }
 
     if (!this.editAmount || this.editAmount <= 0) {
-      this.notificationService.error('El importe debe ser mayor que 0');
+      this.notificationService.warning('El importe debe ser mayor que 0');
       return;
     }
 
     if (!this.editCategory) {
-      this.notificationService.error('Selecciona una categoría');
+      this.notificationService.warning('Selecciona una categoría');
       return;
     }
 
@@ -447,7 +449,7 @@ export class ExpensesComponent implements OnInit {
     event.preventDefault();
 
     if (!this.newExpense.title?.trim() || !this.newExpense.amount || !this.newExpense.category) {
-      this.notificationService.error('Completa todos los campos');
+      this.notificationService.warning('Completa todos los campos');
       return;
     }
 
@@ -483,20 +485,23 @@ export class ExpensesComponent implements OnInit {
    * Elimina un gasto
    */
   async deleteExpense(expenseId: string): Promise<void> {
-    const confirmed = confirm('¿Estás seguro de que deseas eliminar este gasto?');
+    this.confirmModalService.open(
+      'Eliminar gasto',
+      '¿Estás seguro de que deseas eliminar este gasto?',
+      async () => {
+        try {
+          await this.expenseService.deleteExpense(this.tripId, expenseId);
+          this.notificationService.success('Gasto eliminado correctamente');
 
-    if (!confirmed) return;
-
-    try {
-      await this.expenseService.deleteExpense(this.tripId, expenseId);
-      this.notificationService.success('Gasto eliminado correctamente');
-
-      // Recargar gastos SIN mostrar loading (actualización silenciosa)
-      await this.loadExpenses(false);
-    } catch (error: any) {
-      console.error('Error al eliminar gasto:', error);
-      this.notificationService.error(error.message || 'Error al eliminar el gasto');
-    }
+          // Recargar gastos SIN mostrar loading (actualización silenciosa)
+          await this.loadExpenses(false);
+        } catch (error: any) {
+          console.error('Error al eliminar gasto:', error);
+          this.notificationService.error(error.message || 'Error al eliminar el gasto');
+        }
+      },
+      'Eliminar'
+    );
   }
 
   /**

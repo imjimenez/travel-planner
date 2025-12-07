@@ -187,14 +187,19 @@ export class TripParticipantService {
     }
 
     // Remover participante
-    const { error } = await this.supabaseService.client
+    const { error, count } = await this.supabaseService.client
       .from('trip_user')
-      .delete()
-      .eq('trip_id', tripId)
-      .eq('user_id', userId);
+      .delete({ count: 'exact' })
+      .eq('user_id', userId)
+      .eq('trip_id', tripId);
 
     if (error) {
       throw new Error(`Error al remover participante: ${error.message}`);
+    }
+
+    // Detectar si RLS bloqueó la operación
+    if (count === 0) {
+      throw new Error('No se pudo eliminar. Verifica las políticas RLS.');
     }
   }
 

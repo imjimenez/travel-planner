@@ -10,6 +10,8 @@ import {
   EventEmitter,
   computed,
   OnInit,
+  AfterViewInit,
+  effect,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -57,12 +59,12 @@ type WizardStep = 0 | 1 | 2 | 3;
   styles: [
     `
       ::ng-deep .p-component {
-        color-scheme: light; /* fuerza colores claros */
+        color-scheme: light;
       }
     `,
   ],
 })
-export class TripWizardComponent implements OnInit, OnDestroy {
+export class TripWizardComponent implements OnInit, AfterViewInit, OnDestroy {
   // Configuración del componente
   @Input() showWelcome = true;
   @Input() redirectAfterCreate = '/trips';
@@ -81,12 +83,10 @@ export class TripWizardComponent implements OnInit, OnDestroy {
 
   @ViewChild('mapRef') mapComponent?: MapComponent;
 
-  rangeDates: Date[] = [];
-
   currentStep = signal<WizardStep>(0);
   isLoading = signal(false);
 
-  // Convertir tripData a signals para mejor reactividad
+  // Signals para datos del viaje
   tripName = signal('');
   tripCity = signal('');
   tripCountry = signal('');
@@ -96,7 +96,11 @@ export class TripWizardComponent implements OnInit, OnDestroy {
   tripEndDate = signal('');
   tripInvites = signal<string[]>([]);
 
-  // Computed signal para verificar si hay ubicación seleccionada
+  // Signals para los datepickers - USAMOS DATE OBJECTS DIRECTAMENTE
+  startDate = signal<Date | null>(null);
+  endDate = signal<Date | null>(null);
+
+  // Computed signals
   hasLocationSelected = computed(() => {
     return (
       this.tripLatitude() !== null &&
@@ -106,7 +110,6 @@ export class TripWizardComponent implements OnInit, OnDestroy {
     );
   });
 
-  // Computed signal para las coordenadas actuales
   currentCoordinates = computed<MapCoordinates | null>(() => {
     const lat = this.tripLatitude();
     const lng = this.tripLongitude();
@@ -125,7 +128,6 @@ export class TripWizardComponent implements OnInit, OnDestroy {
     return new Date().toISOString().split('T')[0];
   }
 
-  // Mantener compatibilidad con el código existente mediante getters
   get tripData(): WizardTripData {
     return {
       name: this.tripName(),
@@ -140,8 +142,23 @@ export class TripWizardComponent implements OnInit, OnDestroy {
   }
 
   constructor() {
-    // Establecer paso inicial según configuración
     this.currentStep.set(this.showWelcome ? 0 : 1);
+
+    // Effect para sincronizar startDate con tripStartDate
+    effect(() => {
+      const date = this.startDate();
+      if (date) {
+        this.tripStartDate.set(date.toISOString().split('T')[0]);
+      }
+    });
+
+    // Effect para sincronizar endDate con tripEndDate
+    effect(() => {
+      const date = this.endDate();
+      if (date) {
+        this.tripEndDate.set(date.toISOString().split('T')[0]);
+      }
+    });
   }
 
   ngOnInit(): void {
@@ -153,13 +170,32 @@ export class TripWizardComponent implements OnInit, OnDestroy {
     }
   }
 
+  ngAfterViewInit(): void {
+    // Actualizar el mapa en modo edición después de que la vista esté inicializada
+    if (this.mode === 'edit' && this.currentStep() === 1 && this.mapComponent) {
+      const lat = this.tripLatitude();
+      const lng = this.tripLongitude();
+
+      if (lat !== null && lng !== null) {
+        setTimeout(() => {
+          if (this.mapComponent) {
+            this.mapComponent.centerMap({ lat, lng }, 10);
+            this.mapComponent.addSimpleMarker({ lat, lng });
+          }
+        }, 150);
+      }
+    }
+  }
+
   ngOnDestroy(): void {
     if (this.searchSubscription) {
       this.searchSubscription.unsubscribe();
     }
   }
 
-  // Método para cargar datos del viaje
+  /**
+   * Método para cargar datos del viaje en modo edición
+   */
   private loadTripData(trip: Trip): void {
     this.tripName.set(trip.name);
     this.tripCity.set(trip.city!);
@@ -169,13 +205,9 @@ export class TripWizardComponent implements OnInit, OnDestroy {
     this.tripStartDate.set(trip.start_date);
     this.tripEndDate.set(trip.end_date);
 
-    // Centrar el mapa en la ubicación del viaje
-    if (this.mapComponent && trip.latitude && trip.longitude) {
-      setTimeout(() => {
-        this.mapComponent?.centerMap({ lat: trip.latitude!, lng: trip.longitude! }, 10);
-        this.mapComponent?.addSimpleMarker({ lat: trip.latitude!, lng: trip.longitude! });
-      }, 100);
-    }
+    // Convertir strings a Date para los datepickers
+    this.startDate.set(new Date(trip.start_date));
+    this.endDate.set(new Date(trip.end_date));
   }
 
   get minStep(): WizardStep {
@@ -184,14 +216,6 @@ export class TripWizardComponent implements OnInit, OnDestroy {
 
   get maxStep(): WizardStep {
     return this.mode === 'edit' ? 2 : 3;
-  }
-
-  get startDate(): Date | null {
-    return this.rangeDates[0] || null;
-  }
-
-  get endDate(): Date | null {
-    return this.rangeDates[0] || null;
   }
 
   nextStep(): void {
@@ -224,15 +248,15 @@ export class TripWizardComponent implements OnInit, OnDestroy {
 
       case 1:
         if (!this.tripName().trim()) {
-          this.notificationService.error('Por favor, introduce un nombre para el viaje');
+          this.notificationService.warning('Por favor, introduce un nombre para el viaje');
           return false;
         }
         if (!this.tripLatitude() || !this.tripLongitude()) {
-          this.notificationService.error('Por favor, selecciona un destino en el mapa');
+          this.notificationService.warning('Por favor, selecciona un destino en el mapa');
           return false;
         }
         if (!this.tripCity() || !this.tripCountry()) {
-          this.notificationService.error(
+          this.notificationService.warning(
             'Por favor, espera a que se complete la información del destino'
           );
           return false;
@@ -241,15 +265,17 @@ export class TripWizardComponent implements OnInit, OnDestroy {
 
       case 2:
         if (!this.tripStartDate()) {
-          this.notificationService.error('Por favor, selecciona la fecha de inicio');
+          this.notificationService.warning('Por favor, selecciona la fecha de inicio');
           return false;
         }
         if (!this.tripEndDate()) {
-          this.notificationService.error('Por favor, selecciona la fecha de fin');
+          this.notificationService.warning('Por favor, selecciona la fecha de fin');
           return false;
         }
         if (new Date(this.tripEndDate()) < new Date(this.tripStartDate())) {
-          this.notificationService.error('La fecha de fin debe ser posterior a la fecha de inicio');
+          this.notificationService.warning(
+            'La fecha de fin debe ser posterior a la fecha de inicio'
+          );
           return false;
         }
         return true;
@@ -282,19 +308,12 @@ export class TripWizardComponent implements OnInit, OnDestroy {
         if (results.length > 0) {
           const firstResult = results[0];
 
-          // Actualizar coordenadas usando signals
           this.tripLatitude.set(firstResult.coordinates.lat);
           this.tripLongitude.set(firstResult.coordinates.lng);
-
-          // Extraer ciudad y país
           this.extractCityAndCountry(firstResult);
 
-          // Centrar el mapa en las nuevas coordenadas
           if (this.mapComponent) {
             this.mapComponent.centerMap(firstResult.coordinates, 10);
-
-            // Añadir marker simple programáticamente en el mapa
-            // Usar addSimpleMarker en lugar de addMarker
             this.mapComponent.addSimpleMarker(firstResult.coordinates);
           }
 
@@ -432,7 +451,9 @@ export class TripWizardComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Método para actualizar viaje
+  /**
+   * Método para actualizar viaje
+   */
   private async updateTrip(): Promise<void> {
     if (!this.tripToEdit) return;
 
@@ -446,17 +467,16 @@ export class TripWizardComponent implements OnInit, OnDestroy {
       end_date: this.tripEndDate(),
     });
 
-    // Emite evento global
-
     this.modalBus.tripUpdated.emit(this.tripToEdit.id);
-
     this.notificationService.success('Viaje actualizado correctamente');
     this.closed.emit();
     await this.router.navigate(['/trips', this.tripToEdit.id]);
     await this.tripService.loadUserTrips();
   }
 
-  // Lógica de creación
+  /**
+   * Lógica de creación
+   */
   private async createTrip(): Promise<void> {
     const trip = await this.tripService.createTrip({
       name: this.tripName(),
@@ -490,17 +510,14 @@ export class TripWizardComponent implements OnInit, OnDestroy {
   }
 
   onBackdropClick(event: Event): void {
-    // Solo cerrar si no es onboarding
     if (!this.showWelcome) {
       this.closeWizard();
     }
   }
 
   closeWizard(): void {
-    // Siempre emitir el evento de cierre
     this.closed.emit();
 
-    // Si es onboarding, también marcar como cerrado
     if (this.backgroundStyle === 'onboarding') {
       sessionStorage.setItem('onboardingDismissed', 'true');
       this.router.navigate(['/overview']);
