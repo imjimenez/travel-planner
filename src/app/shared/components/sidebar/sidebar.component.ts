@@ -28,20 +28,20 @@ import { TripInviteService } from '@core/trips';
       <div
         class="sticky top-6 bg-white/50 backdrop-blur-xl rounded-2xl shadow-sm h-[calc(100vh-3rem)] border border-gray-200 overflow-hidden"
       >
-        <div class="h-full flex flex-col p-6">
+        <div class="h-full flex flex-col">
           <!-- Header -->
-          <div class="mb-8">
-            <h2 class="text-xl font-semibold text-gray-900">TravelApp</h2>
+          <div class="mb-8 p-6">
+            <h2 class="text-3xl font-semibold text-gray-900">TravelApp</h2>
           </div>
 
           <!-- Navigation -->
-          <nav class="flex-1 overflow-y-auto -mx-3">
+          <nav class="flex-1 overflow-y-auto -mx-3 px-6">
             <!-- Dashboard/Overview -->
             <a
               routerLink="/overview"
               routerLinkActive="active-link"
               [routerLinkActiveOptions]="{ exact: true }"
-              class="relative flex items-center gap-3 px-3 py-2 mx-3 rounded-lg text-gray-800 text-sm mb-2 transition-all hover:bg-white hover:shadow-sm overflow-clip"
+              class="relative flex items-center gap-3 px-3 py-2 mx-3 rounded-lg text-gray-800 text-sm transition-all hover:bg-white hover:shadow-sm overflow-clip"
               [class.bg-white]="isActiveRoute('/overview')"
               [class.shadow-sm]="isActiveRoute('/overview')"
               [class.text-black]="isActiveRoute('/overview')"
@@ -51,28 +51,12 @@ import { TripInviteService } from '@core/trips';
                 class="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-6 rounded-r-full transition-all"
                 [class.bg-gray-900]="isActiveRoute('/overview')"
               ></div>
-              <span class="text-black">Dashboard</span>
+              <i class="pi pi-th-large" style="font-size: 1rem"></i>
+              <span class="text-base text-black">Dashboard</span>
             </a>
 
             <!-- Divider -->
-            <div class="h-px bg-gray-200 my-4 mx-3"></div>
-
-            <!-- Trips Section Header con botón -->
-            <div class="flex items-center justify-between px-3 py-2 mb-2 mx-3">
-              <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                Mis Viajes
-              </h3>
-              @if (!isLoading() && trips().length > 0) {
-              <button
-                type="button"
-                (click)="openModal()"
-                class="w-6 h-6 flex p-3 text-white bg-black hover:bg-black/90 shadow-sm rounded items-center justify-center transition-colors cursor-pointer"
-                title="Crear nuevo viaje"
-              >
-                <i class="pi pi-plus" style="color: white; font-size: 0.7rem"></i>
-              </button>
-              }
-            </div>
+            <div class="h-px bg-gray-400 my-4 mx-3"></div>
 
             <!-- Loading trips -->
             @if (isLoading()) {
@@ -97,12 +81,17 @@ import { TripInviteService } from '@core/trips';
                   [class.bg-gray-900]="isTripActive(trip.id)"
                   [class.bg-transparent]="!isTripActive(trip.id)"
                 ></div>
-                <span class="text-base font-medium text-gray-900 truncate">
-                  {{ trip.name }}
-                </span>
-                <span class="text-xs text-gray-500 truncate">
-                  {{ trip.city }}, {{ trip.country }}
-                </span>
+                <div class="flex gap-3 justify-start items-center">
+                  <i class="pi pi-map-marker" style="color: black; font-size: 1.2rem"></i>
+                  <div class="flex flex-col">
+                    <span class="text-base font-medium text-gray-900 truncate">
+                      {{ trip.name }}
+                    </span>
+                    <span class="text-xs text-gray-500 truncate">
+                      {{ trip.city }}, {{ trip.country }}
+                    </span>
+                  </div>
+                </div>
               </a>
               }
             </div>
@@ -111,20 +100,22 @@ import { TripInviteService } from '@core/trips';
             <!-- Empty state -->
             @if (!isLoading() && trips().length === 0) {
             <div class="px-3 py-4 text-center mx-3">
-              <p class="text-xs text-gray-400 mb-2">No tienes viajes aún</p>
-              <button
-                (click)="openModal()"
-                class="inline-block px-4 py-2 bg-gray-900 text-white text-xs rounded-lg hover:bg-gray-800 transition-colors"
-              >
-                Crear viaje
-              </button>
+              <p class="text-sm text-gray-500 mb-2">No tienes viajes aún</p>
             </div>
             }
           </nav>
 
           <!-- Footer -->
-          <div class="border-t border-gray-200 pt-4 shrink-0">
-            <!-- User info - AHORA ES UN BOTÓN -->
+          <div class="shrink-0 p-3">
+            <button
+              (click)="openModal()"
+              class="w-full px-4 py-2 bg-gray-900 text-white text-sm rounded-lg hover:bg-gray-800 transition-colors cursor-pointer"
+            >
+              Crear viaje
+            </button>
+            <!-- Divider -->
+            <div class="h-px bg-gray-400 my-4 mx-3"></div>
+            <!-- User info-->
             @if (user) {
             <button
               (click)="goToSettings()"

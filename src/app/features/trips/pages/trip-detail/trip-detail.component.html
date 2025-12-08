@@ -116,7 +116,8 @@
       <!-- Contenido del tab activo -->
       <div class="flex-1 overflow-y-auto">
         @if (activeTab() === 'itinerary') {
-        <app-itinerary-empty-state (addStopClicked)="handleAddStop()" />
+        <app-itinerary-detail [tripId]="trip()!.id" />
+
         } @if (activeTab() === 'expenses') {
         <app-expenses [tripId]="trip()!.id" />
         }

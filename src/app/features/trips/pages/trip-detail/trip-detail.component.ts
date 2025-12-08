@@ -13,10 +13,10 @@ import { Subscription } from 'rxjs';
 import { ParticipantWidgetComponent } from '@features/trips/components/participants/participants-widget.component';
 import { DocumentWidgetComponent } from '@features/trips/components/documents/documents-widget.component';
 import { ChecklistWidgetComponent } from '@features/trips/components/checklist/checklist-widget.component';
-import { ItineraryEmptyStateComponent } from '@features/trips/components/itinerary/itinerary-emptystate.component';
 import { TripModalService } from '@core/trips/services/trip-modal.service.ts';
 import { ExpensesComponent } from '@features/trips/components/expenses/expenses.component';
 import { ConfirmModalService } from '@core/modal/confirm-modal.service';
+import { ItineraryDetailComponent } from '@features/trips/components/itinerary/itinerary-detail.component';
 
 /**
  * Componente para mostrar el detalle de un viaje
@@ -32,9 +32,9 @@ import { ConfirmModalService } from '@core/modal/confirm-modal.service';
     ParticipantWidgetComponent,
     DocumentWidgetComponent,
     ChecklistWidgetComponent,
-    ItineraryEmptyStateComponent,
     ParticipantWidgetComponent,
     ExpensesComponent,
+    ItineraryDetailComponent,
   ],
   templateUrl: './trip-detail.component.html',
 })
