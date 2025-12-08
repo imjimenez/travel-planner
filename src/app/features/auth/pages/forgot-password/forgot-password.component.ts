@@ -1,9 +1,14 @@
-import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
-import { AuthService } from '../../../../core/authentication';
-import { NotificationService } from '../../../../core/notifications/notification.service';
+import {
+	ChangeDetectionStrategy,
+	Component,
+	inject,
+	signal,
+} from "@angular/core";
+import { RouterLink } from "@angular/router";
+import { AuthService } from "@core/authentication";
+import { NotificationService } from "@core/notifications/notification.service";
+import { ButtonModule } from "primeng/button";
+import ForgotPasswordForm from "./../../components/forgot-password-form/forgot-password-form";
 
 /**
  * Componente de recuperación de contraseña
@@ -18,73 +23,41 @@ import { NotificationService } from '../../../../core/notifications/notification
  * 4. Muestra confirmación visual de que el email fue enviado
  *
  * Estados:
- * - emailSent = false: Muestra formulario de solicitud
- * - emailSent = true: Muestra mensaje de confirmación
+ * - emailSent = null: Muestra formulario de solicitud
+ * - emailSent = email enviado: Muestra mensaje de confirmación indicando el email al que se envió el enlace
  */
 @Component({
-  selector: 'app-forgot-password',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
-  templateUrl: './forgot-password.component.html',
-  styleUrls: ['./forgot-password.component.scss'],
+	selector: "app-forgot-password",
+	imports: [ForgotPasswordForm, ButtonModule, RouterLink],
+	templateUrl: "./forgot-password.component.html",
+	styles: ``,
+	changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ForgotPasswordComponent {
-  /** Formulario reactivo para capturar el email */
-  forgotForm: FormGroup;
+	#auth = inject(AuthService);
+	#notification = inject(NotificationService);
+	/** Indica si hay una operación en curso */
+	loading = signal(false);
 
-  /** Indica si hay una operación en curso */
-  loading = false;
+	/** Indica si el email de recuperación fue enviado con éxito */
+	emailSent: string | null = null;
 
-  /** Indica si el email de recuperación fue enviado con éxito */
-  emailSent = false;
+	/**
+	 * Maneja el envío del formulario de recuperación
+	 *
+	 * 1. Solicita el email de recuperación al servicio
+	 * 2. Muestra notificación y cambia el estado a "emailSent"
+	 * 3. El usuario puede reenviar el email si no lo recibió
+	 */
+	async onSendEmail(email: string) {
+		this.loading.set(true);
+		const response = await this.#auth.resetPassword(email);
 
-  constructor(
-    private fb: FormBuilder,
-    private authService: AuthService,
-    private notificationService: NotificationService,
-    private router: Router
-  ) {
-    // Formulario simple con solo email
-    this.forgotForm = this.fb.group({
-      email: ['', [Validators.required, Validators.email]],
-    });
-  }
-
-  /**
-   * Maneja el envío del formulario de recuperación
-   *
-   * 1. Valida que el email sea correcto
-   * 2. Solicita el email de recuperación al servicio
-   * 3. Muestra notificación y cambia el estado a "emailSent"
-   * 4. El usuario puede reenviar el email si no lo recibió
-   */
-  async onSubmit() {
-    if (this.forgotForm.invalid) {
-      this.forgotForm.markAllAsTouched();
-      return;
-    }
-
-    this.loading = true;
-    const { email } = this.forgotForm.value;
-    const response = await this.authService.resetPassword(email);
-
-    if (response.error) {
-      this.notificationService.error(response.error);
-      this.loading = false;
-    } else {
-      this.emailSent = true;
-      this.notificationService.success('Email enviado. Revisa tu bandeja de entrada');
-      this.loading = false;
-    }
-  }
-
-  // Getter para acceder al control de email en el template
-  get email() {
-    return this.forgotForm.get('email');
-  }
-
-  /** Navega de vuelta a la página de login */
-  goToLogin() {
-    this.router.navigate(['/auth/login']);
-  }
+		if (response.error) {
+			this.#notification.error(response.error);
+		} else {
+			this.emailSent = email;
+		}
+		this.loading.set(false);
+	}
 }
