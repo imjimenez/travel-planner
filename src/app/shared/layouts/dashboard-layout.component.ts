@@ -13,6 +13,9 @@ import { ModalWrapperComponent } from '@shared/components/modal-wrapper/widget-m
 import { DocumentsModalComponent } from '@features/trips/components/documents/documents-modal-component';
 import { ChecklistModalComponent } from '@features/trips/components/checklist/checklist-modal-component';
 import { ConfirmModalComponent } from '@shared/components/modal-wrapper/confirm-modal-wrapper.component';
+import { ItineraryModalService } from '@core/modal/itinerary-modal.service';
+import { ItineraryDetailComponent } from '@features/trips/components/itinerary/itinerary-detail.component';
+import { ItineraryModalWrapperComponent } from '@shared/components/modal-wrapper/itinerary-modal-wrapper.component';
 
 /**
  * Layout principal del dashboard
@@ -40,6 +43,7 @@ import { ConfirmModalComponent } from '@shared/components/modal-wrapper/confirm-
     ParticipantsModalComponent,
     DocumentsModalComponent,
     ChecklistModalComponent,
+    ItineraryModalWrapperComponent,
     ConfirmModalComponent,
   ],
   template: `
@@ -103,6 +107,11 @@ import { ConfirmModalComponent } from '@shared/components/modal-wrapper/confirm-
       </app-widget-modal-wrapper>
       }
 
+      <!-- Modal para las paradas del viaje -->
+      @if (itineraryModalService.isOpen()) {
+      <app-itinerary-modal-wrapper />
+      }
+
       <!-- Modal de confirmación global -->
       @if (confirmModalService.isOpen()) {
       <app-confirm-modal (closed)="confirmModalService.close()"></app-confirm-modal>
@@ -113,6 +122,7 @@ import { ConfirmModalComponent } from '@shared/components/modal-wrapper/confirm-
 export default class DashboardLayoutComponent implements OnInit {
   private tripModalService = inject(TripModalService);
   widgetModalService = inject(WidgetModalService);
+  itineraryModalService = inject(ItineraryModalService);
   confirmModalService = inject(ConfirmModalService);
 
   /**

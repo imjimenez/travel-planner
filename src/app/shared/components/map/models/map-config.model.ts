@@ -3,12 +3,12 @@ import { MapCoordinates } from './map-coordinates.model';
 /**
  * Modos de interacción del componente de mapa.
  */
-export type MapMode = 
-  | 'view-only'           // Solo visualización, sin interacción
-  | 'select-location'     // Seleccionar una ubicación (click o búsqueda)
-  | 'add-marker'          // Añadir marcadores (múltiples clicks)
-  | 'view-markers'        // Ver marcadores existentes
-  | 'edit-markers';       // Editar/mover marcadores existentes
+export type MapMode =
+  | 'view-only' // Solo visualización, sin interacción
+  | 'select-location' // Seleccionar una ubicación (click o búsqueda)
+  | 'add-marker' // Añadir marcadores (múltiples clicks)
+  | 'view-markers' // Ver marcadores existentes
+  | 'edit-markers'; // Editar/mover marcadores existentes
 
 /**
  * Configuración del componente de mapa.
@@ -55,7 +55,7 @@ export const DEFAULT_MAP_CONFIG: Partial<MapConfig> = {
   showScaleControl: true,
   enableClustering: false,
   showRoute: false,
-  routeColor: '#3388ff',
+  routeColor: '#727472',
   routeWeight: 3,
-  routeStyle: 'solid'
+  routeStyle: 'solid',
 };
