@@ -17,77 +17,62 @@ import ResetPasswordForm from "./../../components/reset-password-form/reset-pass
 	selector: "app-reset-password",
 	imports: [ResetPasswordForm, ButtonModule, RouterLink],
 	template: `
-    <div
-      class="min-h-screen bg-white p-6 flex items-center justify-center relative overflow-hidden"
-    >
-      <!-- SVG de fondo -->
-      <img
-        src="/images/mapamundi.svg"
-        alt="Mapa mundial"
-        class="absolute inset-0 w-full h-full object-cover opacity-50 pointer-events-none transform scale-135"
-        style="filter: invert(70%) sepia(1%) saturate(209%) hue-rotate(4deg) brightness(94%) contrast(85%);"
-      />
-
-      <!-- Contenido -->
-      <div class="relative z-10 w-full max-w-md">
-        <div class="bg-white/50 backdrop-blur-xl rounded-3xl shadow-2xl border border-gray-200 p-10 space-y-6">
-        @if(!isPasswordRestored()) {
-          <!-- Header -->
-          <div class="text-center mb-8">
-            <div
-              class="w-16 h-16 bg-linear-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg"
-            >
-              <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
-                />
-              </svg>
-            </div>
-            <h1 class="text-2xl font-bold text-gray-900 mb-2">Nueva contraseña</h1>
-            <p class="text-gray-600">Ingresa tu nueva contraseña para acceder a tu cuenta</p>
+    <div class="space-y-6">
+      @if(!isPasswordRestored()) {
+        <!-- Header -->
+        <div class="text-center mb-8">
+          <div
+            class="w-16 h-16 bg-linear-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg"
+          >
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+              />
+            </svg>
           </div>
-
-          <!-- Formulario -->
-          <app-reset-password-form class="block" [loading]="loading()" (resetPassword)="onResetPassword($event)" />
-
-          <div class="text-center pt-2">
-              <p class="text-sm text-gray-600">
-                ¿Recordaste tu contraseña?
-                <a routerLink="/auth/login" class="text-blue-600 hover:text-blue-700 font-medium transition-colors">
-                  Inicia sesión
-                </a>
-              </p>
-          </div>
-          }@else{
-            <div class="text-center space-y-4">
-              <div class="w-16 h-16 bg-green-100 rounded-full mx-auto flex items-center justify-center">
-                <div class="flex justify-center items-center w-16 h-16 bg-green-100 rounded-full mx-auto">
-                  <i class="pi pi-check-circle text-green-600 text-4xl"></i>
-                </div>
-              </div>
-              <h2 class="text-2xl font-bold text-gray-900">¡Contraseña restablecida!</h2>
-              <p class="text-gray-600 text-sm">
-                Tu contraseña ha sido actualizada correctamente.
-              </p>
-              <p class="text-gray-600 text-sm">
-                Serás redirigido a la página principal en unos segundos.
-              </p>
-            </div>
-
-            <div class="pt-4">
-              <p-button
-                styleClass="w-full py-3 rounded-lg font-medium transform hover:scale-[1.02] transition-all"
-                routerLink="/overview"
-              >
-                Continuar
-              </p-button>
-            </div>
-          }
+          <h1 class="text-2xl font-bold text-gray-900 mb-2">Nueva contraseña</h1>
+          <p class="text-gray-600">Ingresa tu nueva contraseña para acceder a tu cuenta</p>
         </div>
-      </div>
+
+        <!-- Formulario -->
+        <app-reset-password-form class="block" [loading]="loading()" (resetPassword)="onResetPassword($event)" />
+
+        <div class="text-center pt-2">
+            <p class="text-sm text-gray-600">
+              ¿Recordaste tu contraseña?
+              <a routerLink="/auth/login" class="text-blue-600 hover:text-blue-700 font-medium transition-colors">
+                Inicia sesión
+              </a>
+            </p>
+        </div>
+        }@else{
+          <div class="text-center space-y-4">
+            <div class="w-16 h-16 bg-green-100 rounded-full mx-auto flex items-center justify-center">
+              <div class="flex justify-center items-center w-16 h-16 bg-green-100 rounded-full mx-auto">
+                <i class="pi pi-check-circle text-green-600 text-4xl"></i>
+              </div>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-900">¡Contraseña restablecida!</h2>
+            <p class="text-gray-600 text-sm">
+              Tu contraseña ha sido actualizada correctamente.
+            </p>
+            <p class="text-gray-600 text-sm">
+              Serás redirigido a la página principal en unos segundos.
+            </p>
+          </div>
+
+          <div class="pt-4">
+            <p-button
+              styleClass="w-full py-3 rounded-lg font-medium transform hover:scale-[1.02] transition-all"
+              routerLink="/dashboard"
+            >
+              Continuar
+            </p-button>
+          </div>
+      }
     </div>
   `,
 	changeDetection: ChangeDetectionStrategy.OnPush,

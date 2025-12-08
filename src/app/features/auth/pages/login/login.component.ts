@@ -27,7 +27,7 @@ import OAuthButton from "./../../components/oauth-button/oauth-button";
 	imports: [RouterLink, LoginForm, OAuthButton],
 	templateUrl: "./login.component.html",
 	styles: [],
-	changeDetection: ChangeDetectionStrategy.OnPush
+	changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LoginComponent {
 	#authService = inject(AuthService);
