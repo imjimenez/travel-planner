@@ -1,5 +1,6 @@
 import { inject } from "@angular/core";
 import { type CanMatchFn, Router } from "@angular/router";
+import { NotificationService } from "@core/notifications/notification.service";
 import { AuthService } from "../services/auth.service";
 
 /**
@@ -45,6 +46,25 @@ export const noAuthGuard: CanMatchFn = async () => {
 	const user = await authService.getAuthUser();
 	if (user) {
 		return false;
+	}
+	return true;
+};
+
+/**
+ * Guarda para rutas de restablecimiento de contraseña
+ * Comprueba si existe un usuario autenticado
+ * Devuelve true si hay usuario autenticado, si no redirige a la página de recuperación de contraseña
+ * @returns boolean
+ */
+export const resetPasswordGuard: CanMatchFn = async () => {
+	const authService = inject(AuthService);
+	const notifications = inject(NotificationService);
+	const router = inject(Router);
+	// Verificar que hay un usuario autenticado (viene del magic link)
+	const user = await authService.getAuthUser();
+	if (!user) {
+		notifications.error("Enlace de recuperación inválido o expirado");
+		return router.parseUrl("/auth/forgot-password");
 	}
 	return true;
 };
