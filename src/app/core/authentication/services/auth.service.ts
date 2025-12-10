@@ -155,7 +155,11 @@ export class AuthService {
 	async getSession(): Promise<AuthSession | null> {
 		const {
 			data: { session },
+			error,
 		} = await this.#supabaseService.auth.getSession();
+		if (error) {
+			throw error;
+		}
 		return session;
 	}
 

@@ -60,9 +60,14 @@ export const resetPasswordGuard: CanMatchFn = async () => {
 	const authService = inject(AuthService);
 	const notifications = inject(NotificationService);
 	const router = inject(Router);
-	// Verificar que hay un usuario autenticado (viene del magic link)
-	const user = await authService.getAuthUser();
-	if (!user) {
+	try {
+		// Verificar que hay un usuario autenticado (viene del magic link)
+		const session = await authService.getSession();
+		if (!session?.user) {
+			throw new Error("Usuario no autenticado");
+		}
+	} catch (error) {
+		console.error("Error al procesar la sesión:", error);
 		notifications.error("Enlace de recuperación inválido o expirado");
 		return router.parseUrl("/auth/forgot-password");
 	}

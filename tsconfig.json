@@ -18,7 +18,8 @@
     "paths": {
       "@core/*": ["src/app/core/*"],
       "@features/*": ["src/app/features/*"],
-      "@shared/*": ["src/app/shared/*"],
+      "@features/auth": ["src/app/features/auth/auth.routes.ts"],
+      "@shared/*": ["src/app/shared/*","src/app/shared/components/*/index.ts"],
       "@environments/*": ["src/environments/*"]
     }
   },

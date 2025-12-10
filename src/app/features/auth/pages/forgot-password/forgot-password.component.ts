@@ -7,6 +7,7 @@ import {
 import { RouterLink } from "@angular/router";
 import { AuthService } from "@core/authentication";
 import { NotificationService } from "@core/notifications/notification.service";
+import { Card } from "@shared/components/card";
 import { ButtonModule } from "primeng/button";
 import ForgotPasswordForm from "./../../components/forgot-password-form/forgot-password-form";
 
@@ -27,13 +28,14 @@ import ForgotPasswordForm from "./../../components/forgot-password-form/forgot-p
  * - emailSent = email enviado: Muestra mensaje de confirmación indicando el email al que se envió el enlace
  */
 @Component({
-	selector: "app-forgot-password",
-	imports: [ForgotPasswordForm, ButtonModule, RouterLink],
+	imports: [Card, ForgotPasswordForm, ButtonModule, RouterLink],
 	templateUrl: "./forgot-password.component.html",
-	styles: ``,
+	host: {
+		class: "flex items-center justify-center h-full",
+	},
 	changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ForgotPasswordComponent {
+export default class ForgotPasswordComponent {
 	#auth = inject(AuthService);
 	#notification = inject(NotificationService);
 	/** Indica si hay una operación en curso */
