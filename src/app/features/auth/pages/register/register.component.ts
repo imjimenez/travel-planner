@@ -13,6 +13,7 @@ import {
 import { NotificationService } from "@core/notifications/notification.service";
 import OAuthButton from "./../../components/oauth-button/oauth-button";
 import RegisterForm from "./../../components/register-form/register-form";
+import { Card } from "@shared/components/card";
 
 /**
  * Componente de registro de nuevos usuarios
@@ -22,20 +23,18 @@ import RegisterForm from "./../../components/register-form/register-form";
  * - OAuth con Google, GitHub o Apple
  *
  * Características:
- * - Validación personalizada de fortaleza de contraseña
- * - Validación de coincidencia de contraseñas
- * - Indicador visual de fortaleza de contraseña
  * - Toggle para mostrar/ocultar contraseñas
  * - Redirección automática al dashboard tras registro exitoso
  */
 @Component({
-	selector: "app-register",
-	standalone: true,
-	imports: [RegisterForm, OAuthButton, RouterLink],
+	imports: [Card, RegisterForm, OAuthButton, RouterLink],
 	templateUrl: "./register.component.html",
 	changeDetection: ChangeDetectionStrategy.OnPush,
+	host: {
+		class: "flex flex-col items-center justify-center h-full",
+	},
 })
-export class RegisterComponent {
+export default class RegisterComponent {
 	#authService = inject(AuthService);
 	#notificationService = inject(NotificationService);
 	#router = inject(Router);

@@ -1,13 +1,14 @@
 import { ChangeDetectionStrategy, Component, inject } from "@angular/core";
 import { Router, RouterLink } from "@angular/router";
 import {
-  AuthService,
-  type LoginCredentials,
-  type OAuthProvider,
+	AuthService,
+	type LoginCredentials,
+	type OAuthProvider,
 } from "@core/authentication";
 import { NotificationService } from "@core/notifications/notification.service";
 import LoginForm from "./../../components/login-form/login-form";
 import OAuthButton from "./../../components/oauth-button/oauth-button";
+import Card from "@shared/components/card/card";
 
 /**
  * Componente de inicio de sesión
@@ -24,12 +25,15 @@ import OAuthButton from "./../../components/oauth-button/oauth-button";
  */
 @Component({
 	selector: "app-login",
-	imports: [RouterLink, LoginForm, OAuthButton],
+	imports: [Card ,RouterLink, LoginForm, OAuthButton],
 	templateUrl: "./login.component.html",
 	styles: [],
+	host: {
+		class: "flex items-center justify-center h-full",
+	},
 	changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class LoginComponent {
+export default class LoginComponent {
 	#authService = inject(AuthService);
 	#notificationService = inject(NotificationService);
 	#router = inject(Router);

@@ -1,20 +1,19 @@
 import type { Routes } from "@angular/router";
 import { OnboardingComponent } from "@features/onboarding/pages/onboarding.component";
+import MainLayoutComponent from "@shared/layouts/main-layout/main-layout.component";
 import {
-	authGuard,
-	noAuthGuard,
-	oauthCallbackGuard,
-	onboardingCheckGuard,
-	resetPasswordGuard,
+  authGuard,
+  oauthCallbackGuard,
+  onboardingCheckGuard
 } from "./core/authentication";
 import { HomeComponent } from "./features/landing/pages/home/home.component";
-import AuthLayout from "@features/auth/components/layout/layout";
 
 /**
  * Configuración de rutas de la aplicación
  */
 export const routes: Routes = [
 	{
+		// Ruta para gestionar el retorno de OAuth
 		path: "oauth/callback",
 		canMatch: [oauthCallbackGuard],
 		children: [],
@@ -26,23 +25,13 @@ export const routes: Routes = [
 		pathMatch: "full",
 	},
 	{
-		// Rutas de autenticación (públicas)
-		// Incluye: /auth/login, /auth/register, /auth/forgot-password, etc.
-		path: "auth",
-		loadComponent: () => import("@features/auth/components/layout/layout"),
+		// Ruta raíz para establecer un layout a las rutas internas
+		path: "",
+		component: MainLayoutComponent,
 		children: [
 			{
-				path: "reset-password",
-				canMatch: [resetPasswordGuard],
-				loadComponent: () =>
-					import(
-						"@features/auth/pages/reset-password/reset-password.component"
-					),
-			},
-			{
-				path: "",
-				canMatch: [noAuthGuard],
-				loadChildren: () => import("./features/auth/auth.routes"),
+				path: "auth",
+				loadChildren: () => import("@features/auth"),
 			},
 		],
 	},
