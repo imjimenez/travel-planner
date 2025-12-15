@@ -58,7 +58,7 @@ export default class LoginComponent {
 				this.#notificationService.error(response.error);
 			} else if (response.user) {
 				this.#notificationService.success("¡Bienvenido de vuelta!");
-				this.#router.navigate(["/dashboard"]);
+				this.#router.navigate(["/app"]);
 			} else {
 				this.#notificationService.error("Error desconocido al iniciar sesión");
 			}

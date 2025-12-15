@@ -8,7 +8,7 @@ import {
 } from "@angular/core";
 // primeNG
 import { provideAnimationsAsync } from "@angular/platform-browser/animations/async";
-import { provideRouter } from "@angular/router";
+import { provideRouter, withComponentInputBinding } from "@angular/router";
 import Aura from "@primeuix/themes/aura"; // Aura, Material, Lara, Nora
 import { providePrimeNG } from "primeng/config";
 import { routes } from "./app.routes";
@@ -37,7 +37,7 @@ export const appConfig: ApplicationConfig = {
 		provideZonelessChangeDetection(),
 
 		// Sistema de routing de Angular
-		provideRouter(routes),
+		provideRouter(routes, withComponentInputBinding()),
 
 		// HttpClient con interceptor que añade token de auth automáticamente
 		// Esto hace que todas las peticiones HTTP incluyan el header Authorization

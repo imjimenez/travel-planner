@@ -1,0 +1,54 @@
+<form [formGroup]="form" class="flex-1 overflow-y-auto px-12 pb-6">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 my-8">
+    <div>
+      <label
+        for="start-date"
+        class="flex justify-center text-xs font-semibold text-gray-900 mb-2 uppercase tracking-wide"
+      >
+        Fecha de inicio
+      </label>
+      <div class="card flex justify-center">
+        <p-datepicker
+          class="max-w-full py-4"
+          formControlName="startDate"
+          [inline]="true"
+          [showWeek]="true"
+          [minDate]="today"
+        />
+      </div>
+    </div>
+
+    <div>
+      <label
+        for="end-date"
+        class="flex justify-center text-xs font-semibold text-gray-900 mb-2 uppercase tracking-wide"
+      >
+        Fecha de finalización
+      </label>
+      <div class="card flex justify-center">
+        <p-datepicker
+          class="max-w-full py-4"
+          formControlName="endDate"
+          [inline]="true"
+          [showWeek]="true"
+          [minDate]="today"
+        />
+      </div>
+      @if(form.errors?.['endDateMustBeAfterStartDate']){
+      <p-message severity="error" size="small" variant="simple"
+        >La fecha de finalización debe ser posterior a la fecha de inicio</p-message
+      >}
+    </div>
+  </div>
+
+  <div
+    class="flex min-h-20 p-5 items-center gap-6 bg-gray-50 border border-gray-300 rounded-xl mb-6"
+  >
+    <span class="text-md font-normal text-gray-900 uppercase tracking-wide">
+      Duración del viaje:
+    </span>
+    <p class="text-xl font-medium text-gray-900 m-0">
+      {{ tripDuration() < 0 ? '-' : tripDuration() }} días
+    </p>
+  </div>
+</form>

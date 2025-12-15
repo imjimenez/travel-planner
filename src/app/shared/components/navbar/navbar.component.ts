@@ -32,7 +32,7 @@ import { AuthService } from "../../../core/authentication";
 
         <div class="nav-links">
           @if (currentUser$ | async; as user) {
-            <a routerLink="/dashboard" class="btn btn-outline">Dashboard</a>
+            <a routerLink="/app" class="btn btn-outline">Dashboard</a>
           } @else {
             <a routerLink="/auth/login" class="btn btn-outline">Iniciar Sesión</a>
             <a routerLink="/auth/register" class="btn btn-primary">Registrarse</a>

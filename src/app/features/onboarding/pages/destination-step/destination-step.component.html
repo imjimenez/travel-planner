@@ -1,0 +1,12 @@
+<app-step-header
+  title="Información básica"
+  description="Define el nombre y destino principal de tu viaje"
+></app-step-header>
+<app-destination-form
+  [destination]="currentDestination()"
+  (onValue)="destinationValue = $event"
+></app-destination-form>
+<div class="flex justify-between items-center px-12 py-6 border-t border-gray-200 shrink-0">
+  <p-button routerLink="./../welcome">Atrás</p-button>
+  <p-button [disabled]="!destinationValue" (click)="completeStep()">Siguiente</p-button>
+</div>

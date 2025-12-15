@@ -1,11 +1,7 @@
 import type { Routes } from "@angular/router";
+import landingRoutes from "@features/landing";
 import MainLayoutComponent from "@shared/layouts/main-layout/main-layout.component";
-import {
-    authGuard,
-    oauthCallbackGuard,
-    onboardingCheckGuard
-} from "./core/authentication";
-import { HomeComponent } from "./features/landing/pages/home/home.component";
+import { authGuard, oauthCallbackGuard } from "./core/authentication";
 
 /**
  * Configuración de rutas de la aplicación
@@ -18,21 +14,17 @@ export const routes: Routes = [
 		children: [],
 	},
 	{
-		// Landing page pública
-		path: "",
-		component: HomeComponent,
-		pathMatch: "full",
+		path: "auth",
+		component: MainLayoutComponent,
+		loadChildren: () => import("@features/auth"),
 	},
 	{
-		// Ruta raíz para establecer un layout a las rutas internas
-		path: "",
+		// Rutas privadas (protegidas)
+		// Requiere autenticación vía authGuard
+		path: "app",
+		canMatch: [authGuard],
 		component: MainLayoutComponent,
-		children: [
-			{
-				path: "auth",
-				loadChildren: () => import("@features/auth"),
-			},
-		],
+		loadChildren: () => import("@features/main"),
 	},
 	{
 		path: "invite/:token",
@@ -40,43 +32,12 @@ export const routes: Routes = [
 			import("./features/trips/pages/accept-invite/accept-invite.component"),
 	},
 	{
-		path: "onboarding",
-		canMatch: [authGuard],
-		loadComponent: () => import("@features/onboarding/pages/onboarding.component"),
-	},
-	{
-		// Rutas privadas (protegidas)
-		// Requiere autenticación vía authGuard
-		// Usa DashboardLayout con sidebar para todas las rutas hijas
+		// Landing page pública
 		path: "",
-		canMatch: [authGuard],
-		loadComponent: () => import("./shared/layouts/dashboard-layout.component"),
-		children: [
-			{
-				// Overview - página principal del dashboard
-				path: "overview",
-				canActivate: [onboardingCheckGuard],
-				loadChildren: () => import("./features/dashboard/dashboard.routes"),
-			},
-			{
-				// Trips - gestión de viajes
-				path: "trips",
-				loadChildren: () => import("./features/trips/trips.routes"),
-			},
-			{
-				path: "settings",
-				loadChildren: () => import("./features/settings/settings.routes"),
-			},
-			{
-				// Redirige ráiz a overview
-				path: "**",
-				redirectTo: "overview",
-			},
-		],
+		children: landingRoutes,
 	},
 	{
-		// Wildcard - rutas no encontradas redirigen a home
 		path: "**",
-		redirectTo: "",
+		redirectTo: "/",
 	},
 ];

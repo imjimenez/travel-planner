@@ -1,0 +1,16 @@
+<app-step-header
+  title="Fechas del viaje"
+  description="Establece el período de tu viaje"
+></app-step-header>
+<app-dates-form
+  [dates]="tripDates()"
+  [isLoading]="isLoading()"
+  (onValue)="value = $event"
+></app-dates-form>
+<div class="flex justify-between items-center px-12 py-6 border-t border-gray-200 shrink-0">
+  <p-button [disabled]="isLoading()" routerLink="./../destination">Atrás</p-button>
+  <p-button [disabled]=" !value ||isLoading()" [loading]="isLoading()" (click)="upsertTrip()">
+    @if(tripDates()){ {{ isLoading() ? 'Actualizando...' : 'Actualizar viaje' }} }@else{ {{ isLoading() ?
+    'Creando...' : 'Crear viaje' }} }
+  </p-button>
+</div>
