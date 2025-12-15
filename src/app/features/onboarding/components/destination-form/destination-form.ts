@@ -1,11 +1,11 @@
 import {
-	Component,
-	effect,
-	inject,
-	input,
-	Output,
-	signal,
-	viewChild,
+  Component,
+  effect,
+  inject,
+  input,
+  Output,
+  signal,
+  viewChild,
 } from "@angular/core";
 import { FormBuilder, ReactiveFormsModule, Validators } from "@angular/forms";
 import { MapComponent } from "@shared/components/map/map.component";
@@ -18,9 +18,9 @@ import { InputTextModule } from "primeng/inputtext";
 import { MessageModule } from "primeng/message";
 import { combineLatest, firstValueFrom, map } from "rxjs";
 import {
-	DEFAULT_COORDINATES,
-	type Destination,
-	INVALID_COORDINATE,
+  DEFAULT_COORDINATES,
+  type Destination,
+  INVALID_COORDINATE,
 } from "./../../model";
 
 @Component({
@@ -47,7 +47,7 @@ export default class DestinationForm {
 
 	destination = input<Destination | null>(null);
 
-	form = this.#fb.group({
+	form = this.#fb.nonNullable.group({
 		name: this.#fb.nonNullable.control("", [Validators.required]),
 		latitude: this.#fb.nonNullable.control(INVALID_COORDINATE, [
 			Validators.required,
@@ -67,8 +67,9 @@ export default class DestinationForm {
 			if (
 				status !== "VALID" ||
 				[latitude, longitude].includes(INVALID_COORDINATE)
-			)
+			) {
 				return null;
+			}
 			return { name, latitude, longitude };
 		}),
 	);

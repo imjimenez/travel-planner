@@ -1,0 +1,12 @@
+<app-step-header
+  title="Participantes"
+  description="Invita a las personas que participarán en el viaje"
+></app-step-header>
+<app-invitation-form
+  [emails]="emailsToInvite()"
+  (onAddEmail)="onAddEmail($event)"
+  (onRemoveEmail)="onRemoveEmail($event)"
+/>
+<div class="flex justify-end items-center px-12 py-6 border-t border-gray-200 shrink-0">
+  <p-button (click)="close()" [loading]="isLoading()" [disabled]="isLoading()">Finalizar</p-button>
+</div>

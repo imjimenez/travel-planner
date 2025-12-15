@@ -19,7 +19,7 @@ export default class DatesStep {
 	#router = inject(Router);
 
 	isLoading = this.#onboardingStore.isLoading;
-	tripDates = this.#onboardingStore.tripDates;
+	tripDates = this.#onboardingStore.dates;
 
 	value: TripDates | null = null;
 
@@ -27,9 +27,9 @@ export default class DatesStep {
 		if (!this.value) return;
 		this.#onboardingStore.updateTrip(this.value);
 		this.#onboardingStore.completeCurrentStep();
-		const error = await this.#onboardingStore.upsertTrip();
+		const error = await this.#onboardingStore.createTrip();
 		if (!error) {
-			this.#router.navigate(["app", "onboarding", "members"]);
+			this.#router.navigate(["app", "onboarding", "invitation"]);
 		}
 	}
 }

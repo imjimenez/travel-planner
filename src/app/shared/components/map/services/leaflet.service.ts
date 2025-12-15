@@ -4,11 +4,11 @@ import * as L from "leaflet";
 import { catchError, from, map, type Observable } from "rxjs";
 import {
 	DEFAULT_MAP_CONFIG,
-	NominatimResponse,
 	type GeocodingResult,
 	type MapConfig,
 	type MapCoordinates,
 	type MapMarker,
+	type NominatimResponse,
 } from "../models";
 
 /**
@@ -145,8 +145,8 @@ export class LeafletService {
 				if (!data.length) {
 					return null;
 				}
-				const [item] = data
-				return  {
+				const [item] = data;
+				return {
 					displayName: item.display_name,
 					coordinates: {
 						lat: parseFloat(item.lat),
@@ -512,5 +512,37 @@ export class LeafletService {
 	 */
 	destroyMap(map: L.Map): void {
 		map.remove();
+	}
+
+	/**
+	 * Extrae ciudad y país del resultado de geocoding
+	 */
+	extractCityAndCountry(result?: GeocodingResult | null) {
+		if (!result) {
+			return { city: "Desconocida", country: "Desconocido" };
+		}
+		const raw = result.raw;
+
+		if (raw?.address) {
+			const addr = raw.address;
+			const city =
+				addr.city ||
+				addr.town ||
+				addr.village ||
+				addr.municipality ||
+				addr.county ||
+				addr.state ||
+				"Desconocida";
+			const country = addr.country || "Desconocido";
+
+			return { city, country };
+		} else {
+			const parts = result.displayName.split(",").map((p) => p.trim());
+			if (parts.length >= 2) {
+				return { city: parts[0], country: parts.at(-1) };
+			} else {
+				return { city: parts[0], country: parts[0] };
+			}
+		}
 	}
 }

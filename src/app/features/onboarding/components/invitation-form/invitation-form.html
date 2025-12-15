@@ -1,0 +1,52 @@
+<form [formGroup]="addForm" (ngSubmit)="addEmail()" class="mb-8">
+  <label class="block text-xs font-semibold text-gray-900 mb-2 uppercase tracking-wide" for="email">
+    Correo electrónico
+  </label>
+  <div class="flex gap-3">
+    <input
+      id="email"
+      pInputText
+      type="email"
+      formControlName="email"
+      placeholder="nombre@ejemplo.com"
+      class="w-full"
+    />
+    <p-button type="submit" [disabled]="addForm.invalid || !addForm.value.email"> Añadir </p-button>
+  </div>
+  @if (addForm.controls.email.invalid && addForm.controls.email.touched &&
+  addForm.controls.email.errors?.['email']) {
+  <p-message severity="error" size="small" variant="simple">
+    Correo electrónico no válido
+  </p-message>
+  }
+</form>
+
+@if (emails().length) {
+<div class="mb-6">
+  <h3 class="text-xs font-semibold text-gray-900 mb-3 uppercase tracking-wide">
+    Invitaciones pendientes ({{ emails().length }})
+  </h3>
+  <div class="space-y-2 max-h-64 overflow-y-auto">
+    @for (email of emails(); track email) {
+    <div class="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-xl">
+      <span class="text-gray-900">{{ email }}</span>
+      <p-button
+        type="button"
+        icon="pi pi-trash"
+        (click)="onRemoveEmail.emit(email)"
+        title="Eliminar"
+        [text]="true"
+      >
+      </p-button>
+    </div>
+    }
+  </div>
+</div>
+}@else {
+<div class="p-8 bg-gray-50 border border-gray-200 rounded-xl text-center">
+  <p class="text-gray-600 mb-2">No se han añadido invitaciones</p>
+  <small class="text-gray-500 text-sm">
+    Podrás invitar a más personas después de crear el viaje
+  </small>
+</div>
+}
