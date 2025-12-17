@@ -20,4 +20,4 @@ import { TripWizardComponent } from '@shared/components/trips/tripWizard/trip-wi
     </app-trip-wizard>
   `,
 })
-export class OnboardingComponent {}
+export default class OnboardingComponent {}

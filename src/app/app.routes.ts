@@ -1,10 +1,9 @@
 import type { Routes } from "@angular/router";
-import { OnboardingComponent } from "@features/onboarding/pages/onboarding.component";
 import MainLayoutComponent from "@shared/layouts/main-layout/main-layout.component";
 import {
-  authGuard,
-  oauthCallbackGuard,
-  onboardingCheckGuard
+    authGuard,
+    oauthCallbackGuard,
+    onboardingCheckGuard
 } from "./core/authentication";
 import { HomeComponent } from "./features/landing/pages/home/home.component";
 
@@ -43,7 +42,7 @@ export const routes: Routes = [
 	{
 		path: "onboarding",
 		canMatch: [authGuard],
-		component: OnboardingComponent,
+		loadComponent: () => import("@features/onboarding/pages/onboarding.component"),
 	},
 	{
 		// Rutas privadas (protegidas)
