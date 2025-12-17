@@ -1,6 +1,5 @@
 // Configuración de OAuth (redirect URLs, scopes, etc)
 
-import { environment } from "../../../../environments/environment";
 import type { OAuthOptions } from "./auth-provider.type";
 
 /**
@@ -31,5 +30,5 @@ export const OAuthConfig: Record<string, OAuthOptions> = {
  * @returns URL completa del callback OAuth (ej: https://miapp.com/auth/callback)
  */
 export function getRedirectURL(): string {
-	return `${window.location.origin}${environment.oauthCallbackPath}`;
+	return `${window.location.origin}/oauth/callback`;
 }

@@ -1,4 +1,5 @@
 # Travel Planner
+
 Aplicación para planificación colaborativa de viajes con gestión de itinerarios, gastos compartidos, documentos y tareas.
 
 ## Tecnologías
@@ -17,60 +18,47 @@ Aplicación para planificación colaborativa de viajes con gestión de itinerari
 ## Configuración Inicial
 
 ### 1. Clonar el repositorio
+
 ```bash
 git clone git@github.com:imjimenez/travel-planner.git
 cd travel-planner
 ```
+
 ### 2. Instalar dependencias
+
 ```bash
 npm install
 ```
 
 ### 3. Configurar variables de entorno
 
-Los archivos de configuración con credenciales reales **NO** están en el repositorio por seguridad. Debes crearlos localmente:
+Las configuraciones necesarias para el desarrollo y producción están en el archivo `.env.example`. Copia este archivo y renómbralo a `.env`:
+
 ```bash
 # Copiar los archivos de ejemplo
-cp src/environments/environment.example.ts src/environments/environment.ts
-cp src/environments/environment.prod.example.ts src/environments/environment.prod.ts
+cp .env.example .env
 ```
 
-Luego edita `src/environments/environment.ts` y añade tus credenciales de Supabase:
-```typescript
-export const environment = {
-  production: false,
-  supabase: {
-    url: 'https://TU-PROJECT-ID.supabase.co',    // Reemplazar
-    anonKey: 'TU-SUPABASE-ANON-KEY'              // Reemplazar
-  },
-  resendApiKey:'RESEND_API_KEY',
-  appURL: 'http://localhost:4200',
-  oauthCallbackPath: '/auth/callback'
-};
+Luego edita el archivo `.env` y añade tus credenciales de Supabase y Resend:
+
+```
+NG_APP_SUPABASE_URL=https://TU-PROJECT-ID.supabase.co
+NG_APP_SUPABASE_ANON_KEY=TU-SUPABASE-ANON-KEY
+NG_APP_RESEND_API_KEY=RESEND_API_KEY
 ```
 
-Y `src/environments/environment.prod.ts` para producción:
-```typescript
-export const environment = {
-  production: true,
-  supabase: {
-    url: 'https://TU-PROJECT-ID.supabase.co',    // Reemplazar
-    anonKey: 'TU-SUPABASE-ANON-KEY'              // Reemplazar
-  },
-  resendApiKey:'RESEND_API_KEY',
-  appURL: 'https://tuapp.com',                   // URL de producción
-  oauthCallbackPath: '/auth/callback',
-
-};
-```
 
 **¿Dónde conseguir las credenciales?**
+
 1. Ve a tu proyecto en [Supabase Dashboard](https://supabase.com/dashboard)
 2. Settings → API → Project URL (copia la URL)
 3. Settings → API → Project API keys → `anon` `public` (copia la key)
 4. Ve a [Resend Dashboard - Api Keys](https://resend.com/api-keys) y copia la key Travel planner web
 
+Para inyectar la configuración en el proyecto se utiliza la librería [`@ngx-env/builder`](https://www.npmjs.com/package/@ngx-env/builder).
+
 ### 4. Ejecutar el proyecto
+
 ```bash
 npm start
 ```
@@ -78,6 +66,7 @@ npm start
 La aplicación estará disponible en [http://localhost:4200](http://localhost:4200)
 
 ## Estructura del Proyecto
+
 ```
 src/app/
 ├── core/                         # Servicios core y configuración
@@ -107,6 +96,7 @@ src/app/
 ## Arquitectura de Autenticación
 
 El sistema de autenticación usa **Dependency Injection** para inyectar la configuración de Supabase:
+
 ```typescript
 // app.config.ts
 {
@@ -116,11 +106,13 @@ El sistema de autenticación usa **Dependency Injection** para inyectar la confi
 ```
 
 Esto permite:
+
 - Tests más fáciles (inyectar configuración mock)
 - Mayor flexibilidad (cambiar config sin tocar servicios)
 - Mejor separación de responsabilidades
 
 ## Comandos Disponibles
+
 ```bash
 # Desarrollo
 npm start                 # Iniciar servidor de desarrollo
@@ -140,6 +132,7 @@ npm run lint              # Ejecutar ESLint
 ## Funcionalidades Implementadas
 
 ### Autenticación completa
+
 - Login/registro con email y password
 - OAuth (Google, GitHub)
 - Recuperación de contraseña
@@ -150,6 +143,7 @@ npm run lint              # Ejecutar ESLint
 - Manejo de errores
 
 ### UI Base
+
 - Dashboard layout con sidebar
 - Sistema de notificaciones (toast)
 - Landing page
@@ -172,7 +166,8 @@ npm run lint              # Ejecutar ESLint
 
 ## Notas de Seguridad
 
-**IMPORTANTE**: 
+**IMPORTANTE**:
+
 - Los archivos `environment.ts` y `environment.prod.ts` contienen credenciales y **NUNCA** deben subirse a Git
 - Solo se suben los archivos `.example.ts` como plantilla
 - Cada desarrollador debe crear sus propios archivos de configuración localmente
@@ -181,6 +176,7 @@ npm run lint              # Ejecutar ESLint
 ## Soporte
 
 Si tienes problemas con la configuración:
+
 1. Verifica que has copiado correctamente los archivos `.example.ts`
 2. Confirma que tus credenciales de Supabase son correctas
 3. Asegúrate de tener la versión correcta de Node.js (v22.20.0)
