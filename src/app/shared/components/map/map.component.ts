@@ -7,6 +7,7 @@ import {
   type ElementRef,
   EventEmitter,
   inject,
+  input,
   Input,
   type OnDestroy,
   type OnInit,
@@ -22,6 +23,7 @@ import {
   type MapMarker,
 } from "./models";
 import { LeafletService } from "./services/leaflet.service";
+import { DEFAULT_COORDINATES } from "@core/trips";
 
 /**
  * Componente reutilizable de mapa con Leaflet.
@@ -57,6 +59,7 @@ import { LeafletService } from "./services/leaflet.service";
         #mapContainer
         [id]="mapId"
         class="map-container"
+        [class.pointer-events-none]="disabled()"
         [style.height]="config.height || '500px'"
       ></div>
     </div>
@@ -65,6 +68,8 @@ import { LeafletService } from "./services/leaflet.service";
 })
 export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 	@ViewChild("mapContainer", { static: true }) mapContainer!: ElementRef;
+
+  disabled = input(false);
 
 	/**
 	 * Configuración del mapa.
@@ -81,7 +86,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 	 * Coordenadas iniciales para centrar el mapa.
 	 * Si se proporciona, sobrescribe el center del config.
 	 */
-	@Input() initialCoordinates?: MapCoordinates;
+	@Input() initialCoordinates?: MapCoordinates = DEFAULT_COORDINATES;
 
 	/**
 	 * Se emite cuando el usuario selecciona una ubicación.

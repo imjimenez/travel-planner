@@ -1,11 +1,11 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { WidgetModalService } from '@core/modal/widget-modal.service';
+import { WidgetModalService } from '@core/dialog/widget-modal.service';
 import { NotificationService } from '@core/notifications/notification.service';
 import { TripDocumentService } from '@core/trips/services/trip-document.service';
 import type { TripDocumentWithUrl } from '@core/trips/models/trip-document.model';
-import { ConfirmModalService } from '@core/modal/confirm-modal.service';
+import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
 
 /**
  * Modal de gestión de documentos

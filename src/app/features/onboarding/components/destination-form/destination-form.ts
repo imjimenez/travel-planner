@@ -18,10 +18,9 @@ import { InputTextModule } from "primeng/inputtext";
 import { MessageModule } from "primeng/message";
 import { combineLatest, firstValueFrom, map } from "rxjs";
 import {
-  DEFAULT_COORDINATES,
   type Destination,
-  INVALID_COORDINATE,
 } from "./../../model";
+import { DEFAULT_COORDINATES, INVALID_COORDINATE } from "@core/trips";
 
 @Component({
 	selector: "app-destination-form",

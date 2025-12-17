@@ -11,7 +11,7 @@ import {
   type ExpenseCategory,
   type ExpenseWithUser,
 } from '@core/trips';
-import { ConfirmModalService } from '@core/modal/confirm-modal.service';
+import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
 
 /**
  * Componente para gestionar gastos de un viaje

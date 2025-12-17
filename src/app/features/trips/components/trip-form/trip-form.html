@@ -1,4 +1,4 @@
-<form [formGroup]="form" class="flex-1 px-12 pb-6">
+<form #ngForm="ngForm" [formGroup]="form" (ngSubmit)="onSubmit()">
   <div class="mb-8">
     <label for="name" class="block text-xs font-semibold text-gray-900 mb-2 uppercase tracking-wide"
       >Nombre del viaje:</label
@@ -12,6 +12,11 @@
       class="w-full px-4 py-3 rounded-lg border bg-white border-gray-100 outline-none focus:ring-2 focus:ring-transparent focus:border-green-600 transition-all text-gray-900 placeholder-gray-400"
       aria-describedby="name-help"
     />
+    @if(form.controls['name'].touched && form.controls['name'].errors?.['required']){
+    <p-message severity="error" size="small" variant="simple"
+      >El nombre del viaje es requerido</p-message
+    >
+    }
     <small id="name-help" class="block mt-2 text-xs text-gray-500 pl-2">
       Utiliza un nombre descriptivo y memorable
     </small>
@@ -25,11 +30,9 @@
         >Destino principal:</label
       >
 
-      @if (destinationName(); as name) {
       <p class="block text-xs font-semibold text-gray-900 mb-2 uppercase tracking-wide">
-        {{ name }}
+        {{ destinationName() }}
       </p>
-      }
     </div>
 
     <div class="gap-3 mb-4">
@@ -39,14 +42,14 @@
           pInputText
           id="destination"
           type="text"
-          [disabled]="isSearching()"
+          [disabled]="isSearching() || isLoading()"
           placeholder="Buscar ciudad o país..."
           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none pr-12"
         />
         <p-inputgroup-addon>
           <p-button
             (click)="searchLocation(searchInput.value)"
-            [disabled]="!searchInput.value"
+            [disabled]="!searchInput.value || isLoading()"
             icon="pi pi-search"
             severity="secondary"
             [loading]="isSearching()"
@@ -67,6 +70,7 @@
           height: '280px',
           zoom: 6
         }"
+        [disabled]="isSearching() || isLoading()"
         (locationSelected)="onMapLocationSelected($event)"
       >
       </app-map>
@@ -76,4 +80,67 @@
       Utiliza el buscador o selecciona directamente en el mapa
     </small>
   </div>
+  <!-- Fechas -->
+  <div formGroupName="dates" class="grid grid-cols-1 md:grid-cols-2 gap-6 my-8">
+    <div>
+      <label
+        for="startDate"
+        class="flex justify-center text-xs font-semibold text-gray-900 mb-2 uppercase tracking-wide"
+      >
+        Fecha de inicio
+      </label>
+      <div class="card flex justify-center">
+        <p-datepicker
+          id="startDate"
+          class="max-w-full py-4"
+          formControlName="startDate"
+          [inline]="true"
+          [showWeek]="true"
+          [minDate]="today"
+        />
+      </div>
+    </div>
+
+    <div>
+      <label
+        for="endDate"
+        class="flex justify-center text-xs font-semibold text-gray-900 mb-2 uppercase tracking-wide"
+      >
+        Fecha de finalización
+      </label>
+      <div class="card flex justify-center">
+        <p-datepicker
+          id="endDate"
+          class="max-w-full py-4"
+          formControlName="endDate"
+          [inline]="true"
+          [showWeek]="true"
+          [minDate]="today"
+        />
+      </div>
+      @if(form.errors?.['endDateMustBeAfterStartDate']){
+      <p-message severity="error" size="small" variant="simple"
+        >La fecha de finalización debe ser posterior a la fecha de inicio</p-message
+      >}
+    </div>
+  </div>
+
+  <div
+    class="flex min-h-20 p-5 items-center gap-6 bg-gray-50 border border-gray-300 rounded-xl mb-6"
+  >
+    <span class="text-md font-normal text-gray-900 uppercase tracking-wide">
+      Duración del viaje:
+    </span>
+    <p class="text-xl font-medium text-gray-900 m-0">
+      {{ tripDuration() < 0 ? '-' : tripDuration() }} días
+    </p>
+  </div>
+  <p-button
+    label="{{trip()?.id ? 'Editar' : 'Crear'}} viaje"
+    type="submit"
+    styleClass="mb-8 w-full"
+    [raised]="true"
+    [disabled]="form.invalid || isLoading()"
+    ></p-button
+  >
 </form>

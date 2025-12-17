@@ -5,8 +5,8 @@ import { CommonModule } from '@angular/common';
 import { TripParticipantService } from '@core/trips/services/trip-participant.service';
 import { AuthService } from '@core/authentication';
 import { NotificationService } from '@core/notifications/notification.service';
-import { WidgetModalService } from '@core/modal/widget-modal.service';
-import { ConfirmModalService } from '@core/modal/confirm-modal.service';
+import { WidgetModalService } from '@core/dialog/widget-modal.service';
+import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
 
 /**
  * Widget de participantes para mostrar en el detalle del viaje

@@ -1,0 +1,13 @@
+<!-- Trip content -->
+<div class="h-full flex flex-col gap-6">
+  <!-- SECCIÓN 1: Header con nombre, ubicación, fechas y acciones -->
+  <div class="flex items-start justify-between">
+    <!-- Nombre del viaje, ciudad, país y fechas -->
+    <div class="flex-1">
+      <div class="flex items-baseline gap-3 mb-2">
+        <h1 class="text-3xl font-medium text-gray-900">Crea tu nuevo viaje</h1>
+      </div>
+    </div>
+  </div>
+  <app-trip-form [isLoading]="isCreating()" (onSubmitTrip)="createTrip($event)" />
+</div>

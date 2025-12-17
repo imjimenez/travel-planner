@@ -3,11 +3,11 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { WidgetModalService } from '@core/modal/widget-modal.service';
+import { WidgetModalService } from '@core/dialog/widget-modal.service';
 import { TripInviteService, TripParticipantService } from '@core/trips';
 import { NotificationService } from '@core/notifications/notification.service';
 import { AuthService } from '@core/authentication';
-import { ConfirmModalService } from '@core/modal/confirm-modal.service';
+import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
 
 @Component({
   selector: 'app-participants-modal',

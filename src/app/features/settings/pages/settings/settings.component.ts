@@ -7,7 +7,7 @@ import { Router } from '@angular/router';
 import { AuthService } from '@core/authentication';
 import { TripInviteService } from '@core/trips';
 import { NotificationService } from '@core/notifications/notification.service';
-import { ConfirmModalService } from '@core/modal/confirm-modal.service';
+import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
 
 @Component({
   selector: 'app-settings',

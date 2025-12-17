@@ -2,7 +2,7 @@
 import { Component, Input, inject, OnInit, OnDestroy, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ItineraryService } from '@core/trips';
-import { ItineraryModalService } from '@core/modal/itinerary-modal.service';
+import { ItineraryModalService } from '@core/dialog/itinerary-modal.service';
 import { TripService } from '@core/trips/services/trip.service';
 import { NotificationService } from '@core/notifications/notification.service';
 import type { ItineraryItem, Trip } from '@core/trips';

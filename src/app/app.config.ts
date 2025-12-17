@@ -1,16 +1,17 @@
 import { provideHttpClient, withInterceptors } from "@angular/common/http";
 import {
-	type ApplicationConfig,
-	inject,
-	provideAppInitializer,
-	provideBrowserGlobalErrorListeners,
-	provideZonelessChangeDetection,
+    type ApplicationConfig,
+    inject,
+    provideAppInitializer,
+    provideBrowserGlobalErrorListeners,
+    provideZonelessChangeDetection,
 } from "@angular/core";
 // primeNG
 import { provideAnimationsAsync } from "@angular/platform-browser/animations/async";
 import { provideRouter, withComponentInputBinding } from "@angular/router";
 import Aura from "@primeuix/themes/aura"; // Aura, Material, Lara, Nora
 import { providePrimeNG } from "primeng/config";
+import { DialogService } from "primeng/dynamicdialog";
 import { routes } from "./app.routes";
 import { AuthService } from "./core/authentication";
 import { authInterceptor } from "./core/authentication/interceptors/auth.interceptor";
@@ -53,6 +54,7 @@ export const appConfig: ApplicationConfig = {
 				},
 			},
 		}),
+		DialogService,
 		// Inicializamos el servicio de autenticación al inicio de la aplicación
 		provideAppInitializer(() => {
 			const authService = inject(AuthService);

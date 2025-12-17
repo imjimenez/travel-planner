@@ -1,6 +1,6 @@
 import { Component, effect, inject, Input, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { WidgetModalService } from '@core/modal/widget-modal.service';
+import { WidgetModalService } from '@core/dialog/widget-modal.service';
 import { TripDocumentService } from '@core/trips/services/trip-document.service';
 import { NotificationService } from '@core/notifications/notification.service';
 import type { TripDocumentWithUrl } from '@core/trips/models/trip-document.model';

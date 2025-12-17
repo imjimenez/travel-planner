@@ -1,13 +1,13 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { WidgetModalService } from '@core/modal/widget-modal.service';
+import { WidgetModalService } from '@core/dialog/widget-modal.service';
 import { NotificationService } from '@core/notifications/notification.service';
 import { TripTodoService } from '@core/trips/services/trip-todo.service';
 import { TripParticipantService } from '@core/trips/services/trip-participant.service';
 import type { TripTodo } from '@core/trips/models/trip-todo.model';
 import type { ParticipantWithUser } from '@core/trips/models/trip-participant.model';
-import { ConfirmModalService } from '@core/modal/confirm-modal.service';
+import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
 
 /**
  * Modal de gestión de checklist
