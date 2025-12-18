@@ -340,6 +340,7 @@ export class ParticipantsModalComponent implements OnInit {
     } catch (error: any) {
       this.notificationService.error(error.message || 'Error al enviar la invitación');
       console.error('Error sending invite:', error);
+      await this.loadPendingInvites(tripId);
     } finally {
       this.isSendingInvite.set(false);
     }

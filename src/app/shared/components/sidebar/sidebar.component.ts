@@ -189,7 +189,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
   async ngOnInit() {
     this.loadingSignal.set(true);
     await this.tripService.loadUserTrips();
-    console.log('Ejecutando..');
     this.loadingSignal.set(false);
 
     // Cargar invitaciones pendientes

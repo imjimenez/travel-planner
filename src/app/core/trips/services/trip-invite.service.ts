@@ -399,9 +399,7 @@ export class TripInviteService {
     }
   }
 
-  /**
-   * Verifica si el usuario es miembro del viaje
-   */
+  // Verifica si el usuario es miembro del viaje
   private async verifyMembership(tripId: string, userId: string): Promise<void> {
     const { data, error } = await this.supabaseService.client
       .from('trip_user')
@@ -415,19 +413,14 @@ export class TripInviteService {
     }
   }
 
-  /**
-   * Genera un token único para la invitación
-   */
+  // Genera un token único (aleatorio de 32 caracteres) para la invitación
   private generateToken(): string {
-    // Genera un token aleatorio de 32 caracteres
     const array = new Uint8Array(24);
     crypto.getRandomValues(array);
     return Array.from(array, (byte) => byte.toString(16).padStart(2, '0')).join('');
   }
 
-  /**
-   * Genera el link completo de invitación
-   */
+  // Genera el link completo de invitación
   private generateInviteLink(token: string): string {
     const baseUrl = window.location.origin;
     return `${baseUrl}/invite/${token}`;

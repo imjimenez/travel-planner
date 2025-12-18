@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TripInviteService } from '@core/trips';
 import { NotificationService } from '@core/notifications/notification.service';
+import { AuthService } from '@core/authentication/services/auth.service';
 
 @Component({
   selector: 'app-accept-invite',
@@ -39,8 +40,10 @@ import { NotificationService } from '@core/notifications/notification.service';
                 class="animate-spin rounded-full h-12 w-12 border-4 border-gray-900 border-t-transparent"
               ></div>
             </div>
-            <h2 class="text-2xl font-bold text-gray-900 mb-3">Procesando invitación</h2>
-            <p class="text-gray-600">Estamos verificando tu invitación al viaje...</p>
+            <h2 class="text-2xl font-bold text-gray-900 mb-3">
+              {{ loadingMessage() }}
+            </h2>
+            <p class="text-gray-600">{{ loadingSubMessage() }}</p>
             <div class="mt-6 flex justify-center gap-1">
               <div
                 class="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
@@ -146,8 +149,7 @@ import { NotificationService } from '@core/notifications/notification.service';
 
             <p class="text-sm text-gray-500 mt-4 animate-pulse">Redirigiendo al viaje...</p>
           </div>
-          }
-
+          } @else if (error()) {
           <!-- Logo/Branding en la parte inferior -->
           <div class="text-center mt-8">
             <p class="text-gray-600 text-sm">
@@ -155,6 +157,7 @@ import { NotificationService } from '@core/notifications/notification.service';
               <span class="text-gray-900 font-semibold"> Contacta con el organizador </span>
             </p>
           </div>
+          }
         </div>
       </div>
     </div>
@@ -194,11 +197,14 @@ export default class AcceptInviteComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private inviteService = inject(TripInviteService);
+  private authService = inject(AuthService);
   private notificationService = inject(NotificationService);
 
   isLoading = signal(true);
   error = signal<string | null>(null);
   success = signal(false);
+  loadingMessage = signal('Procesando invitación');
+  loadingSubMessage = signal('Estamos verificando tu invitación al viaje...');
 
   async ngOnInit() {
     const token = this.route.snapshot.paramMap.get('token');
@@ -209,12 +215,32 @@ export default class AcceptInviteComponent implements OnInit {
       return;
     }
 
+    // Verificar si el usuario está autenticado
+    const user = await this.authService.getAuthUser();
+
+    if (!user) {
+      // Usuario no autenticado → redirigir al login
+      // No mostramos error, simplemente informamos y redirigimos
+      this.loadingMessage.set('Redirigiendo al inicio de sesión');
+      this.loadingSubMessage.set('Inicia sesión o regístrate para ver esta invitación en tu panel');
+
+      this.notificationService.info('Inicia sesión para aceptar la invitación');
+
+      setTimeout(() => {
+        this.router.navigate(['/auth/login']);
+      }, 2500);
+      return;
+    }
+
+    // Usuario autenticado → procesar invitación
     await this.acceptInvitation(token);
   }
 
   private async acceptInvitation(token: string) {
     try {
       this.isLoading.set(true);
+      this.loadingMessage.set('Procesando invitación');
+      this.loadingSubMessage.set('Estamos agregándote al viaje...');
 
       const result = await this.inviteService.acceptInvite(token);
 
@@ -227,9 +253,7 @@ export default class AcceptInviteComponent implements OnInit {
     } catch (error: any) {
       console.error('Error accepting invite:', error);
 
-      if (error.message.includes('iniciar sesión')) {
-        this.error.set('Debes iniciar sesión para aceptar la invitación');
-      } else if (error.message.includes('expirada')) {
+      if (error.message.includes('expirada')) {
         this.error.set(
           'Esta invitación ha expirado o es inválida. Solicita una nueva al organizador del viaje'
         );
