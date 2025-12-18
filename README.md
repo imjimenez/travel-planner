@@ -44,9 +44,7 @@ Luego edita el archivo `.env` y añade tus credenciales de Supabase y Resend:
 ```
 NG_APP_SUPABASE_URL=https://TU-PROJECT-ID.supabase.co
 NG_APP_SUPABASE_ANON_KEY=TU-SUPABASE-ANON-KEY
-NG_APP_RESEND_API_KEY=RESEND_API_KEY
 ```
-
 
 **¿Dónde conseguir las credenciales?**
 
