@@ -14,30 +14,34 @@ export const routes: Routes = [
 		children: [],
 	},
 	{
-		path: "auth",
-		component: MainLayoutComponent,
-		loadChildren: () => import("@features/auth"),
-	},
-	{
-		// Rutas privadas (protegidas)
-		// Requiere autenticación vía authGuard
-		path: "app",
-		canMatch: [authGuard],
-		component: MainLayoutComponent,
-		loadChildren: () => import("@features/main"),
-	},
-	{
-		path: "invite/:token",
-		loadComponent: () =>
-			import("./features/trips/pages/accept-invite/accept-invite.component"),
-	},
-	{
 		// Landing page pública
 		path: "",
+		pathMatch: "full",
 		children: landingRoutes,
 	},
 	{
-		path: "**",
-		redirectTo: "/",
-	},
+		path: "",
+		component: MainLayoutComponent,
+		children: [
+			{
+				path: "auth",
+				loadChildren: () => import("@features/auth"),
+			},
+			{
+				// Rutas privadas (protegidas)
+				// Requiere autenticación vía authGuard
+				path: "app",
+				canMatch: [authGuard],
+				loadChildren: () => import("@features/main"),
+			},
+			{
+				path: "invite/:token",
+				loadComponent: () => import("@features/invitation"),
+			},
+			{
+				path: "**",
+				redirectTo: "/",
+			}
+		],
+	}
 ];

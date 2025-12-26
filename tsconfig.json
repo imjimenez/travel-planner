@@ -19,6 +19,7 @@
       "@core/*": ["src/app/core/*"],
       "@features/*": ["src/app/features/*"],
       "@features/auth": ["src/app/features/auth/auth.routes.ts"],
+      "@features/invitation": ["src/app/features/invitation/invitation-page/invitation-page.ts"],
       "@features/landing": ["src/app/features/landing/landing.routes.ts"],
       "@features/main": ["src/app/features/main/main.routes.ts"],
       "@features/trips": ["src/app/features/trips/trips.routes.ts"],

@@ -1,0 +1,83 @@
+<!-- Contenido -->
+<div class="relative z-10 w-full max-w-2xl">
+  <div class="bg-white/50 backdrop-blur-xl rounded-3xl shadow-2xl border border-gray-200 p-18">
+    @if (isLoading()) {
+    <!-- Estado de carga -->
+    <div class="text-center">
+      <div class="w-20 h-20 flex items-center justify-center mx-auto mb-6">
+        <p-progress-spinner
+          strokeWidth="5"
+          fill="transparent"
+          aria-label="Loading"
+        ></p-progress-spinner>
+      </div>
+      <h2 class="text-2xl font-bold text-gray-900 mb-3">{{ loadingMessage() }}</h2>
+      <p class="text-gray-600">{{ loadingSubMessage() }}</p>
+    </div>
+    } @else if (error()) {
+    <!-- Estado de error -->
+    <div class="text-center">
+      <div
+        class="w-15 h-15 bg-linear-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg"
+      >
+        <span class="pi pi-times text-white text-9xl"></span>
+      </div>
+      <h2 class="text-2xl font-bold text-gray-900 mb-3">No se pudo aceptar la invitación</h2>
+      <p class="text-gray-600 mb-8 leading-relaxed">{{ error() }}</p>
+
+      <div class="flex items-center justify-center gap-4">
+        <p-button
+          [routerLink]="['/auth/login']"
+          [rounded]="true"
+          icon="pi pi-sign-in"
+          label="Iniciar sesión"
+          size="large"
+          severity="secondary"
+        >
+        </p-button>
+
+        <p-button
+          routerLink="/app"
+          [rounded]="true"
+          icon="pi pi-home"
+          label="Ir al inicio"
+          size="large"
+          severity="success"
+        >
+        </p-button>
+      </div>
+    </div>
+    } @else if (success()) {
+    <!-- Estado de éxito -->
+    <div class="text-center">
+      <div
+        class="w-15 h-15 bg-linear-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg animate-bounce-slow"
+      >
+        <span class="pi pi-check text-white text-9xl"></span>
+      </div>
+      <h2 class="text-2xl font-bold text-gray-900 mb-3">¡Invitación aceptada!</h2>
+      <p class="text-gray-600 mb-8 leading-relaxed">
+        Te has unido al viaje correctamente.<br />
+        Serás redirigido en unos segundos...
+      </p>
+
+      <!-- Barra de progreso -->
+      <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+        <div
+          class="h-full bg-linear-to-r from-green-500 to-green-600 rounded-full animate-progress"
+        ></div>
+      </div>
+
+      <p class="text-sm text-gray-500 mt-4 animate-pulse">Redirigiendo al viaje...</p>
+    </div>
+    } @if (error()) {
+    <!-- Logo/Branding en la parte inferior -->
+    <div class="text-center mt-8">
+      <p class="text-gray-600 text-sm">
+        ¿Problemas con la invitación?
+        <span class="text-gray-900 font-semibold"> Contacta con el organizador </span>
+      </p>
+    </div>
+    }
+  </div>
+</div>
