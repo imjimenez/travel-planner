@@ -12,27 +12,28 @@ import {
 import { Router } from "@angular/router";
 import { AuthService } from "@core/authentication/services/auth.service";
 import { ConfirmModalService } from "@core/dialog/confirm-modal.service";
+import { ItineraryModalService } from "@core/dialog/itinerary-modal.service";
 import { DialogService } from "@core/dialog/services/dialog.service";
 import { WidgetModalService } from "@core/dialog/widget-modal.service";
 import { NotificationService } from "@core/notifications/notification.service";
 import type { Trip } from "@core/trips/models/trip.model";
 import { TripService } from "@core/trips/services/trip.service";
 import { TripParticipantService } from "@core/trips/services/trip-participant.service";
+import { ChecklistModalComponent } from "@features/trips/components/checklist/checklist-modal-component";
 import { ChecklistWidgetComponent } from "@features/trips/components/checklist/checklist-widget.component";
+import { DocumentsModalComponent } from "@features/trips/components/documents/documents-modal-component";
 import { DocumentWidgetComponent } from "@features/trips/components/documents/documents-widget.component";
 import EditTripDialog from "@features/trips/components/edit-trip-dialog/edit-trip-dialog";
 import { ExpensesComponent } from "@features/trips/components/expenses/expenses.component";
 import { ItineraryDetailComponent } from "@features/trips/components/itinerary/itinerary-detail.component";
+import { ParticipantsModalComponent } from "@features/trips/components/participants/participants-modal-component";
 // Componentes de la vista
 import { ParticipantWidgetComponent } from "@features/trips/components/participants/participants-widget.component";
+import { ConfirmModalComponent } from "@shared/components/modal-wrapper/confirm-modal-wrapper.component";
+import { ItineraryModalWrapperComponent } from "@shared/components/modal-wrapper/itinerary-modal-wrapper.component";
+import { ModalWrapperComponent } from "@shared/components/modal-wrapper/widget-modal-wrapper.component";
 import { ConfirmationService } from "primeng/api";
 import { ConfirmPopupModule } from "primeng/confirmpopup";
-import { ParticipantsModalComponent } from "@features/trips/components/participants/participants-modal-component";
-import { DocumentsModalComponent } from "@features/trips/components/documents/documents-modal-component";
-import { ChecklistModalComponent } from "@features/trips/components/checklist/checklist-modal-component";
-import { ModalWrapperComponent } from "@shared/components/modal-wrapper/widget-modal-wrapper.component";
-import { ItineraryModalService } from "@core/dialog/itinerary-modal.service";
-import { ItineraryModalWrapperComponent } from "@shared/components/modal-wrapper/itinerary-modal-wrapper.component";
 
 /**
  * Componente para mostrar el detalle de un viaje
@@ -56,7 +57,8 @@ import { ItineraryModalWrapperComponent } from "@shared/components/modal-wrapper
 		ParticipantsModalComponent,
 		DocumentsModalComponent,
 		ChecklistModalComponent,
-		ItineraryModalWrapperComponent
+		ItineraryModalWrapperComponent,
+		ConfirmModalComponent,
 	],
 	templateUrl: "./trip-detail.component.html",
 	providers: [ConfirmationService],
@@ -69,7 +71,7 @@ export class TripDetailComponent {
 	private participantService = inject(TripParticipantService);
 	private authService = inject(AuthService);
 	private notificationService = inject(NotificationService);
-	private confirmModalService = inject(ConfirmModalService);
+	confirmModalService = inject(ConfirmModalService);
 	widgetModalService = inject(WidgetModalService);
 	itineraryModalService = inject(ItineraryModalService);
 

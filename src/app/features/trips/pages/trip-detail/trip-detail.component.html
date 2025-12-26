@@ -132,22 +132,27 @@
     </div>
   }
 
-
-    <!-- Modales para los widgets -->
-    @if (widgetModalService.type() === 'participants') {
+  <!-- Modales para los widgets -->
+  @if (widgetModalService.type() === 'participants') {
     <app-widget-modal-wrapper title="Participantes">
       <app-participants-modal />
     </app-widget-modal-wrapper>
-    } @if (widgetModalService.type() === 'documents') {
+  }
+  @if (widgetModalService.type() === 'documents') {
     <app-widget-modal-wrapper title="Documentos">
       <app-documents-modal />
     </app-widget-modal-wrapper>
-    } @if (widgetModalService.type() === 'checklist') {
+  }
+  @if (widgetModalService.type() === 'checklist') {
     <app-widget-modal-wrapper title="Checklist">
       <app-checklist-modal />
     </app-widget-modal-wrapper>
-    }
-    @if (itineraryModalService.isOpen()) {s
-      <app-itinerary-modal-wrapper />
-    }
+  }
+  @if (itineraryModalService.isOpen()) {
+    s
+    <app-itinerary-modal-wrapper />
+  }
+  @if (confirmModalService.isOpen()) {
+    <app-confirm-modal (closed)="confirmModalService.close()"></app-confirm-modal>
+  }
 </div>
