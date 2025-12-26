@@ -13,6 +13,7 @@ import { Router } from "@angular/router";
 import { AuthService } from "@core/authentication/services/auth.service";
 import { ConfirmModalService } from "@core/dialog/confirm-modal.service";
 import { DialogService } from "@core/dialog/services/dialog.service";
+import { WidgetModalService } from "@core/dialog/widget-modal.service";
 import { NotificationService } from "@core/notifications/notification.service";
 import type { Trip } from "@core/trips/models/trip.model";
 import { TripService } from "@core/trips/services/trip.service";
@@ -26,6 +27,12 @@ import { ItineraryDetailComponent } from "@features/trips/components/itinerary/i
 import { ParticipantWidgetComponent } from "@features/trips/components/participants/participants-widget.component";
 import { ConfirmationService } from "primeng/api";
 import { ConfirmPopupModule } from "primeng/confirmpopup";
+import { ParticipantsModalComponent } from "@features/trips/components/participants/participants-modal-component";
+import { DocumentsModalComponent } from "@features/trips/components/documents/documents-modal-component";
+import { ChecklistModalComponent } from "@features/trips/components/checklist/checklist-modal-component";
+import { ModalWrapperComponent } from "@shared/components/modal-wrapper/widget-modal-wrapper.component";
+import { ItineraryModalService } from "@core/dialog/itinerary-modal.service";
+import { ItineraryModalWrapperComponent } from "@shared/components/modal-wrapper/itinerary-modal-wrapper.component";
 
 /**
  * Componente para mostrar el detalle de un viaje
@@ -45,6 +52,11 @@ import { ConfirmPopupModule } from "primeng/confirmpopup";
 		ExpensesComponent,
 		ItineraryDetailComponent,
 		ConfirmPopupModule,
+		ModalWrapperComponent,
+		ParticipantsModalComponent,
+		DocumentsModalComponent,
+		ChecklistModalComponent,
+		ItineraryModalWrapperComponent
 	],
 	templateUrl: "./trip-detail.component.html",
 	providers: [ConfirmationService],
@@ -58,6 +70,8 @@ export class TripDetailComponent {
 	private authService = inject(AuthService);
 	private notificationService = inject(NotificationService);
 	private confirmModalService = inject(ConfirmModalService);
+	widgetModalService = inject(WidgetModalService);
+	itineraryModalService = inject(ItineraryModalService);
 
 	tripInfo = input.required<Trip>();
 
