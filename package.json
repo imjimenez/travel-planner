@@ -29,6 +29,7 @@
     "@angular/forms": "^20.3.13",
     "@angular/platform-browser": "^20.3.13",
     "@angular/router": "^20.3.13",
+    "@ngrx/signals": "^20.1.0",
     "@primeuix/themes": "^1.2.5",
     "@supabase/supabase-js": "^2.81.1",
     "@tailwindcss/postcss": "^4.1.15",

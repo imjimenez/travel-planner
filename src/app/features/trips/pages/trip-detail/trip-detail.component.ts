@@ -1,22 +1,38 @@
 // src/core/trips/components/trip-detail/trip-detail.component.ts
-import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router } from '@angular/router';
-import { TripService } from '@core/trips/services/trip.service';
-import { TripParticipantService } from '@core/trips/services/trip-participant.service';
-import { Trip } from '@core/trips/models/trip.model';
-import { NotificationService } from '@core/notifications/notification.service';
-import { AuthService } from '@core/authentication/services/auth.service';
-import { Subscription } from 'rxjs';
 
+import { CommonModule } from "@angular/common";
+import {
+	Component,
+	computed,
+	inject,
+	input,
+	linkedSignal,
+	signal,
+} from "@angular/core";
+import { Router } from "@angular/router";
+import { AuthService } from "@core/authentication/services/auth.service";
+import { ConfirmModalService } from "@core/dialog/confirm-modal.service";
+import { DialogService } from "@core/dialog/services/dialog.service";
+import { WidgetModalService } from "@core/dialog/widget-modal.service";
+import { NotificationService } from "@core/notifications/notification.service";
+import type { Trip } from "@core/trips/models/trip.model";
+import { TripService } from "@core/trips/services/trip.service";
+import { TripParticipantService } from "@core/trips/services/trip-participant.service";
+import { ChecklistWidgetComponent } from "@features/trips/components/checklist/checklist-widget.component";
+import { DocumentWidgetComponent } from "@features/trips/components/documents/documents-widget.component";
+import EditTripDialog from "@features/trips/components/edit-trip-dialog/edit-trip-dialog";
+import { ExpensesComponent } from "@features/trips/components/expenses/expenses.component";
+import { ItineraryDetailComponent } from "@features/trips/components/itinerary/itinerary-detail.component";
 // Componentes de la vista
-import { ParticipantWidgetComponent } from '@features/trips/components/participants/participants-widget.component';
-import { DocumentWidgetComponent } from '@features/trips/components/documents/documents-widget.component';
-import { ChecklistWidgetComponent } from '@features/trips/components/checklist/checklist-widget.component';
-import { TripModalService } from '@core/trips/services/trip-modal.service.ts';
-import { ExpensesComponent } from '@features/trips/components/expenses/expenses.component';
-import { ConfirmModalService } from '@core/modal/confirm-modal.service';
-import { ItineraryDetailComponent } from '@features/trips/components/itinerary/itinerary-detail.component';
+import { ParticipantWidgetComponent } from "@features/trips/components/participants/participants-widget.component";
+import { ConfirmationService } from "primeng/api";
+import { ConfirmPopupModule } from "primeng/confirmpopup";
+import { ParticipantsModalComponent } from "@features/trips/components/participants/participants-modal-component";
+import { DocumentsModalComponent } from "@features/trips/components/documents/documents-modal-component";
+import { ChecklistModalComponent } from "@features/trips/components/checklist/checklist-modal-component";
+import { ModalWrapperComponent } from "@shared/components/modal-wrapper/widget-modal-wrapper.component";
+import { ItineraryModalService } from "@core/dialog/itinerary-modal.service";
+import { ItineraryModalWrapperComponent } from "@shared/components/modal-wrapper/itinerary-modal-wrapper.component";
 
 /**
  * Componente para mostrar el detalle de un viaje
@@ -25,187 +41,153 @@ import { ItineraryDetailComponent } from '@features/trips/components/itinerary/i
  * el viaje cuando el usuario navega entre diferentes viajes
  */
 @Component({
-  selector: 'app-trip-detail',
-  standalone: true,
-  imports: [
-    CommonModule,
-    ParticipantWidgetComponent,
-    DocumentWidgetComponent,
-    ChecklistWidgetComponent,
-    ParticipantWidgetComponent,
-    ExpensesComponent,
-    ItineraryDetailComponent,
-  ],
-  templateUrl: './trip-detail.component.html',
+	selector: "app-trip-detail",
+	standalone: true,
+	imports: [
+		CommonModule,
+		ParticipantWidgetComponent,
+		DocumentWidgetComponent,
+		ChecklistWidgetComponent,
+		ParticipantWidgetComponent,
+		ExpensesComponent,
+		ItineraryDetailComponent,
+		ConfirmPopupModule,
+		ModalWrapperComponent,
+		ParticipantsModalComponent,
+		DocumentsModalComponent,
+		ChecklistModalComponent,
+		ItineraryModalWrapperComponent
+	],
+	templateUrl: "./trip-detail.component.html",
+	providers: [ConfirmationService],
 })
-export class TripDetailComponent implements OnInit, OnDestroy {
-  private route = inject(ActivatedRoute);
-  private router = inject(Router);
-  private tripService = inject(TripService);
-  private participantService = inject(TripParticipantService);
-  private authService = inject(AuthService);
-  private notificationService = inject(NotificationService);
-  private tripModalService = inject(TripModalService);
-  private confirmModalService = inject(ConfirmModalService);
-  private updateSubscription?: Subscription;
+export class TripDetailComponent {
+	readonly #confirmationService = inject(ConfirmationService);
+	readonly #dialogService = inject(DialogService);
+	private router = inject(Router);
+	private tripService = inject(TripService);
+	private participantService = inject(TripParticipantService);
+	private authService = inject(AuthService);
+	private notificationService = inject(NotificationService);
+	private confirmModalService = inject(ConfirmModalService);
+	widgetModalService = inject(WidgetModalService);
+	itineraryModalService = inject(ItineraryModalService);
 
-  // Signals
-  trip = signal<Trip | null>(null);
-  isLoading = signal(true);
-  activeTab = signal<'itinerary' | 'expenses'>('itinerary');
-  isOwner = signal(false);
+	tripInfo = input.required<Trip>();
 
-  // Suscripción a cambios de parámetros de la URL
-  private paramsSubscription?: Subscription;
+	trip = linkedSignal(() => this.tripInfo());
 
-  ngOnInit(): void {
-    this.paramsSubscription = this.route.params.subscribe(async (params) => {
-      const tripId = params['id'];
+	// Signals
+	isPending = signal<string | null>(null);
+	activeTab = signal<"itinerary" | "expenses">("itinerary");
+	isOwner = computed(
+		() => this.trip()?.owner_user_id === this.authService.currentUser?.id,
+	);
 
-      if (!tripId) {
-        console.error('No se encontró el ID del viaje');
-        this.notificationService.error('ID de viaje no válido');
-        this.router.navigate(['/overview']);
-        return;
-      }
+	calculateDuration(): number {
+		const currentTrip = this.trip();
+		if (!currentTrip?.start_date || !currentTrip?.end_date) {
+			return 0;
+		}
 
-      await this.loadTrip(tripId);
-    });
+		const start = new Date(currentTrip.start_date);
+		const end = new Date(currentTrip.end_date);
 
-    // Cuando el wizard emite "viaje actualizado"
-    this.updateSubscription = this.tripModalService.tripUpdated.subscribe(async (tripId) => {
-      if (String(tripId) === String(this.trip()?.id)) {
-        await this.loadTrip(tripId);
-      }
-    });
-  }
+		// Calcular diferencia en días
+		const diffTime = Math.abs(end.getTime() - start.getTime());
+		const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-  ngOnDestroy(): void {
-    if (this.paramsSubscription) {
-      this.paramsSubscription.unsubscribe();
-    }
-    if (this.updateSubscription) {
-      this.updateSubscription?.unsubscribe();
-    }
-  }
+		// Sumar 1 para incluir ambos días (inicio y fin)
+		return diffDays + 1;
+	}
 
-  private async loadTrip(tripId: string): Promise<void> {
-    this.trip.set(null);
-    this.isLoading.set(true);
+	editTrip() {
+		const currentTrip = this.trip();
+		if (!currentTrip) return;
 
-    try {
-      if (!this.tripService.trips().length) {
-        await this.tripService.loadUserTrips();
-      }
+		const ref = this.#dialogService.openCustomDialog(EditTripDialog, {
+			header: "Editar viaje",
+			data: currentTrip,
+			closable: true,
+		});
+		ref?.onClose.subscribe((updatedTrip) => {
+			if (updatedTrip) {
+				this.trip.update((trip) => ({ ...trip, ...updatedTrip }));
+			}
+		});
+	}
 
-      const tripFromMemory = this.tripService
-        .trips()
-        .find((t) => String(t.id).trim() === String(tripId).trim());
+	deleteTrip(event: Event) {
+		this.#confirmationService.confirm({
+			target: event.currentTarget as EventTarget,
+			header: "Eliminar viaje",
+			message: `¿Estás seguro de que deseas eliminar el viaje? Esta acción no se puede deshacer.`,
+			icon: "pi pi-exclamation-triangle",
+			acceptButtonStyleClass: "p-button-danger",
+			rejectButtonStyleClass: "p-button-secondary",
+			acceptLabel: "Eliminar",
+			rejectLabel: "Cancelar",
+			accept: async () => {
+				try {
+					this.isPending.set("Eliminando viaje");
+					const currentTrip = this.trip();
+					if (!currentTrip) throw new Error("Trip not found");
+					await this.tripService.deleteTrip(currentTrip.id);
+					this.notificationService.success("Viaje eliminado correctamente");
+					this.router.navigate(["/app/overview"]);
+				} catch (error) {
+					console.error("Error al eliminar el viaje:", error);
+					this.notificationService.error("Error al eliminar el viaje");
+					this.isPending.set(null);
+				}
+			},
+		});
+	}
 
-      if (tripFromMemory) {
-        this.trip.set(tripFromMemory);
-      } else {
-        const fetchedTrip = await this.tripService.getTripById(tripId);
-        this.trip.set(fetchedTrip);
-      }
+	/**
+	 * Permite al participante salir del viaje
+	 * Usa el servicio de participantes para remover al usuario actual
+	 */
+	async leaveTrip(): Promise<void> {
+		const currentTrip = this.trip();
+		if (!currentTrip) return;
 
-      // Verificar si el usuario actual es owner
-      const user = await this.authService.getAuthUser();
-      const currentTrip = this.trip();
-      if (user && currentTrip) {
-        this.isOwner.set(user.id === currentTrip.owner_user_id);
-      }
-    } catch (error) {
-      console.error('Error al cargar el viaje:', error);
-      this.notificationService.error('Error al cargar el viaje');
-      this.router.navigate(['/overview']);
-    } finally {
-      this.isLoading.set(false);
-    }
-  }
+		const user = await this.authService.getAuthUser();
+		if (!user) {
+			this.notificationService.error("Usuario no autenticado");
+			return;
+		}
 
-  calculateDuration(): number {
-    const currentTrip = this.trip();
-    if (!currentTrip?.start_date || !currentTrip?.end_date) {
-      return 0;
-    }
+		this.confirmModalService.open(
+			"Salir del viaje",
+			`¿Estás seguro de que deseas salir del viaje "${currentTrip.name}"?`,
+			async () => {
+				try {
+					await this.participantService.removeParticipant(
+						currentTrip.id,
+						user.id,
+					);
+					this.notificationService.success(
+						"Has salido del viaje correctamente",
+					);
+					this.tripService.loadUserTrips();
+					this.router.navigate(["/overview"]);
+				} catch (error: any) {
+					console.error("Error al salir del viaje:", error);
+					this.notificationService.error(
+						error.message || "Error al salir del viaje",
+					);
+				}
+			},
+			"Salir",
+		);
+	}
 
-    const start = new Date(currentTrip.start_date);
-    const end = new Date(currentTrip.end_date);
-
-    // Calcular diferencia en días
-    const diffTime = Math.abs(end.getTime() - start.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    // Sumar 1 para incluir ambos días (inicio y fin)
-    return diffDays + 1;
-  }
-
-  editTrip(): void {
-    const currentTrip = this.trip();
-    if (!currentTrip) return;
-
-    this.tripModalService.openEditTripModal(currentTrip);
-  }
-
-  async deleteTrip(): Promise<void> {
-    const currentTrip = this.trip();
-    if (!currentTrip) return;
-
-    this.confirmModalService.open(
-      'Eliminar viaje',
-      `¿Estás seguro de que deseas eliminar el viaje "${currentTrip.name}"? Esta acción no se puede deshacer.`,
-      async () => {
-        try {
-          await this.tripService.deleteTrip(currentTrip.id);
-          this.notificationService.success('Viaje eliminado correctamente');
-          this.router.navigate(['/overview']);
-        } catch (error) {
-          console.error('Error al eliminar el viaje:', error);
-          this.notificationService.error('Error al eliminar el viaje');
-        }
-      },
-      'Eliminar'
-    );
-  }
-
-  /**
-   * Permite al participante salir del viaje
-   * Usa el servicio de participantes para remover al usuario actual
-   */
-  async leaveTrip(): Promise<void> {
-    const currentTrip = this.trip();
-    if (!currentTrip) return;
-
-    const user = await this.authService.getAuthUser();
-    if (!user) {
-      this.notificationService.error('Usuario no autenticado');
-      return;
-    }
-
-    this.confirmModalService.open(
-      'Salir del viaje',
-      `¿Estás seguro de que deseas salir del viaje "${currentTrip.name}"?`,
-      async () => {
-        try {
-          await this.participantService.removeParticipant(currentTrip.id, user.id);
-          this.notificationService.success('Has salido del viaje correctamente');
-          this.tripService.loadUserTrips();
-          this.router.navigate(['/overview']);
-        } catch (error: any) {
-          console.error('Error al salir del viaje:', error);
-          this.notificationService.error(error.message || 'Error al salir del viaje');
-        }
-      },
-      'Salir'
-    );
-  }
-
-  /**
-   * Maneja el evento de añadir parada al itinerario
-   */
-  handleAddStop(): void {
-    this.notificationService.info('Funcionalidad de itinerario próximamente');
-    console.log('Añadir parada al itinerario');
-  }
+	/**
+	 * Maneja el evento de añadir parada al itinerario
+	 */
+	handleAddStop(): void {
+		this.notificationService.info("Funcionalidad de itinerario próximamente");
+		console.log("Añadir parada al itinerario");
+	}
 }

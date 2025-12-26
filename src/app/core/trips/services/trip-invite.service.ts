@@ -51,17 +51,6 @@ export class TripInviteService {
       throw new Error('Usuario no autenticado');
     }
 
-    // Verificar que el usuario es miembro del viaje
-    await this.verifyMembership(data.tripId, user.id);
-
-    // Verificar que el email NO es ya miembro
-    const alreadyMember = await this.isEmailAlreadyMember(data.tripId, data.email);
-    if (alreadyMember) throw new Error('Este usuario ya es miembro del viaje');
-
-    // Verificar que NO tiene invitación pendiente
-    const hasPendingInvite = await this.hasPendingInvite(data.tripId, data.email);
-    if (hasPendingInvite) throw new Error('Este usuario ya tiene una invitación pendiente');
-
     // Crear invitación
     const result = await this.createInvite(data.tripId, data.email, user.id);
 

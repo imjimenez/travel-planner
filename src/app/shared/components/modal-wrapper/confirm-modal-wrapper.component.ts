@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ConfirmModalService } from '@core/modal/confirm-modal.service';
+import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
 
 @Component({
   selector: 'app-confirm-modal',

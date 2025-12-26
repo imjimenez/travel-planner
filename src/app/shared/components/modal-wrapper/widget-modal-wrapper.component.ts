@@ -1,7 +1,7 @@
 // shared/components/modal-wrapper/modal-wrapper.component.ts
 import { Component, Input, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { WidgetModalService } from '@core/modal/widget-modal.service';
+import { WidgetModalService } from '@core/dialog/widget-modal.service';
 
 @Component({
   selector: 'app-widget-modal-wrapper',

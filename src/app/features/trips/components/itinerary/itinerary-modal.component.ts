@@ -12,7 +12,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ItineraryModalService } from '@core/modal/itinerary-modal.service';
+import { ItineraryModalService } from '@core/dialog/itinerary-modal.service';
 import { ItineraryService } from '@core/trips';
 import { LeafletService } from '@shared/components/map/services/leaflet.service';
 import { MapComponent } from '@shared/components/map/map.component';
@@ -21,7 +21,7 @@ import type { ItineraryItem, ItineraryItemInsert } from '@core/trips';
 import type { MapCoordinates, GeocodingResult } from '@shared/components/map/models';
 import { Subscription } from 'rxjs';
 import { DatePickerModule } from 'primeng/datepicker';
-import { ConfirmModalService } from '@core/modal/confirm-modal.service';
+import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
 import { TripDocumentService } from '@core/trips/services/trip-document.service';
 import type { TripDocumentWithUrl } from '@core/trips/models/trip-document.model';
 

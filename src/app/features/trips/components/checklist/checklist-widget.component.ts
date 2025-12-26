@@ -1,7 +1,7 @@
 import { Component, effect, inject, Input, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { WidgetModalService } from '@core/modal/widget-modal.service';
+import { WidgetModalService } from '@core/dialog/widget-modal.service';
 import { TripTodoService } from '@core/trips/services/trip-todo.service';
 import { NotificationService } from '@core/notifications/notification.service';
 import type { TripTodo } from '@core/trips/models/trip-todo.model';

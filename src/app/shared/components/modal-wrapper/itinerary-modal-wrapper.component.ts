@@ -1,7 +1,7 @@
 // src/core/trips/components/itinerary-modal-wrapper/itinerary-modal-wrapper.component.ts
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ItineraryModalService } from '@core/modal/itinerary-modal.service';
+import { ItineraryModalService } from '@core/dialog/itinerary-modal.service';
 import { ItineraryModalComponent } from '@features/trips/components/itinerary/itinerary-modal.component';
 
 /**

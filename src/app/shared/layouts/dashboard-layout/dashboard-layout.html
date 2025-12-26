@@ -1,0 +1,8 @@
+<app-sidebar [user]="user" [trips]="trips()"></app-sidebar>
+<section class="flex-1">
+  <div
+    class="bg-white/50 backdrop-blur-xl rounded-2xl shadow-sm border border-gray-200 h-[calc(100vh-3rem)] p-6 overflow-auto"
+  >
+    <router-outlet />
+  </div>
+</section>
