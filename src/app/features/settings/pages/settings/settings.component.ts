@@ -8,11 +8,12 @@ import { AuthService } from '@core/authentication';
 import { TripInviteService } from '@core/trips';
 import { NotificationService } from '@core/notifications/notification.service';
 import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
+import { ConfirmModalComponent } from '@shared/components/modal-wrapper/confirm-modal-wrapper.component';
 
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ConfirmModalComponent],
   template: `
     <div class="w-full mx-auto max-w-6xl">
       <!-- Header con avatar centrado (sin fondo) -->
@@ -264,6 +265,10 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
         </div>
       </div>
     </div>
+
+    @if (confirmModalService.isOpen()) {
+      <app-confirm-modal (closed)="confirmModalService.close()"></app-confirm-modal>
+    }
   `,
 })
 export default class SettingsComponent implements OnInit {
@@ -271,7 +276,7 @@ export default class SettingsComponent implements OnInit {
   private inviteService = inject(TripInviteService);
   private notificationService = inject(NotificationService);
   private router = inject(Router);
-  private confirmModalService = inject(ConfirmModalService);
+  confirmModalService = inject(ConfirmModalService);
 
   user = signal<any>(null);
   pendingInvites = signal<any[]>([]);

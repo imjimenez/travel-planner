@@ -173,7 +173,7 @@ export class TripDetailComponent {
 						"Has salido del viaje correctamente",
 					);
 					this.tripService.loadUserTrips();
-					this.router.navigate(["/overview"]);
+					this.router.navigate(["/app/overview"]);
 				} catch (error: any) {
 					console.error("Error al salir del viaje:", error);
 					this.notificationService.error(

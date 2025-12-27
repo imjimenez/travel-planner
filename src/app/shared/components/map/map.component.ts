@@ -58,8 +58,9 @@ import { DEFAULT_COORDINATES } from "@core/trips";
       <div
         #mapContainer
         [id]="mapId"
-        class="map-container"
+        class="map-container z-10"
         [class.pointer-events-none]="disabled()"
+
         [style.height]="config.height || '500px'"
       ></div>
     </div>

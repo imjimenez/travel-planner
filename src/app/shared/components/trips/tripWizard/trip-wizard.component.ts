@@ -520,7 +520,7 @@ export class TripWizardComponent implements OnInit, AfterViewInit, OnDestroy {
 
     if (this.backgroundStyle === 'onboarding') {
       sessionStorage.setItem('onboardingDismissed', 'true');
-      this.router.navigate(['/overview']);
+      this.router.navigate(['/app/overview']);
     }
   }
 }

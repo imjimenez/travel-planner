@@ -55,7 +55,7 @@ export default class ResetPasswordComponent {
 	redirectAfterRestore = effect(async () => {
 		if (this.isPasswordRestored()) {
 			setTimeout(() => {
-				this.#router.navigate(["/overview"]);
+				this.#router.navigate(["/app/overview"]);
 			}, this.redirectionDelay);
 		}
 	});

@@ -9,7 +9,7 @@ export const oauthCallbackGuard: CanMatchFn = async () => {
   try {
     await auth.getSession();
     // Redirigimos una vez autenticado
-    return router.parseUrl('/overview');
+    return router.parseUrl('/app/overview');
   } catch (error) {
     console.error('Error al procesar la sesión:', error);
   }
