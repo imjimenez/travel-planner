@@ -118,7 +118,7 @@
           [minDate]="today"
         />
       </div>
-      @if(form.errors?.['endDateMustBeAfterStartDate']){
+      @if(form.controls.dates.errors?.['endDateMustBeAfterStartDate']){
       <p-message severity="error" size="small" variant="simple"
         >La fecha de finalización debe ser posterior a la fecha de inicio</p-message
       >}

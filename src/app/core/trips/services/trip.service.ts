@@ -63,7 +63,7 @@ export class TripService {
         .from('trip')
         .select('*')
         .in('id', tripIds)
-        .order('created_at', { ascending: false });
+        .order('start_date', { ascending: true });
 
       if (error) throw error;
 
