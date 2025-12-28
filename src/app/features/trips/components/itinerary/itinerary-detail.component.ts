@@ -67,16 +67,16 @@ interface DateGroup {
       </div>
       } @else {
       <!-- Vista dividida: Timeline + Mapa -->
-      <div class="flex-1 flex overflow-hidden">
+      <div class="flex-1 flex flex-col lg:flex-row items-center lg:justify-between">
         <!-- Columna izquierda: Timeline -->
-        <div class="w-3/4 flex flex-col ">
+        <div class="w-full lg:w-1/2 flex flex-col ">
           <!-- Timeline scrolleable -->
           <div class="flex-1 overflow-y-auto pt-10 px-4 hide-scrollbar">
             <div class="space-y-12 pb-6">
               @for (dateGroup of groupedItems(); track dateGroup.date) {
               <div class="">
                 <!-- Contador de paradas y fecha -->
-                <div class="grid grid-cols-3 items-center gap-8 mb-6">
+                <div class="flex items-center gap-8 mb-6">
                   <!-- Círculo contador con línea vertical -->
                   <div class="flex flex-col items-start">
                     <!-- Círculo contador -->
@@ -89,23 +89,22 @@ interface DateGroup {
 
                   <!-- Fecha -->
                   <div
-                    class="flex justify-center px-6 py-2 bg-white border border-gray-200 rounded-full shadow-sm text-sm font-medium text-gray-900"
+                    class="flex-1 flex justify-center px-6 py-2 bg-white border border-gray-200 rounded-full shadow-sm text-sm font-medium text-gray-900"
                   >
                     {{ formatGroupDate(dateGroup.date) }}
                   </div>
-                  <div></div>
                 </div>
 
                 <!-- Lista de paradas del día -->
                 <div class="space-y-6 expand">
                   @for (item of dateGroup.items; track item.id; let idx = $index) {
                   <div
-                    class="flex group gap-8 items-center transition-all cursor-pointer"
+                    class="flex group gap-8 items-center justify-center transition-all cursor-pointer"
                     (click)="selectItem(item)"
                   >
                     <!-- Icono del tipo de parada -->
                     <div
-                      class="w-10 h-10 bg-white border border-gray-300 rounded-full flex items-center justify-center shadow-sm z-10 relative
+                      class="min-w-10 min-h-10 bg-white border border-gray-300 rounded-full flex items-center justify-center shadow-sm z-10 relative
              group-hover:bg-black group-hover:text-white transition-colors"
                     >
                       <i
@@ -121,7 +120,9 @@ interface DateGroup {
                         <h4 class="font-semibold text-gray-900 mb-1 group-hover:text-gray-700">
                           {{ item.name }}
                         </h4>
-                        <p class="text-sm text-gray-600">{{ item.city }}, {{ item.country }}</p>
+                        @if (item.city || item.country) {
+                          <p class="text-sm text-gray-600">{{ item.city }}, {{ item.country }}</p>
+                        }
                       </div>
 
                       <!-- Hora -->
@@ -146,7 +147,7 @@ interface DateGroup {
         </div>
 
         <!-- Columna derecha: Mapa -->
-        <div class="w-1/4 min-w-[400px] h-full p-6 rounded-2xl">
+        <div class="w-full md:w-1/4 md:min-w-100 h-full p-6 rounded-2xl">
           <app-map
             [config]="{
               mode: 'view-markers',

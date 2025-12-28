@@ -1,5 +1,5 @@
 <!-- src/app/features/trips/pages/trip-detail/trip-detail.component.html -->
-<div class="h-full overflow-y-auto">
+<div class="h-full overflow-y-auto w-full">
   @if (isPending(); as pendingMessage) {
     <!-- Loading state -->
     <div class="flex flex-col gap-4 items-center justify-center h-full">
@@ -8,25 +8,27 @@
     </div>
   } @else if (trip()) {
     <!-- Trip content -->
-    <div class="h-full flex flex-col gap-6">
+    <div class="h-full flex flex-col gap-6 w-full">
       <!-- SECCIÓN 1: Header con nombre, ubicación, fechas y acciones -->
       <div class="flex items-start justify-between">
         <!-- Nombre del viaje, ciudad, país y fechas -->
         <div class="flex-1">
-          <div class="flex items-baseline gap-3 mb-2">
-            <h1 class="text-3xl font-medium text-gray-900">{{ trip().name }}</h1>
+          <div class="flex flex-col sm:flex-row items-baseline sm:gap-3 mb-2">
+            <h3 class="max-w-70 text-2xl sm:text-3xl font-medium text-gray-900">{{ trip().name }}</h3>
             <span class="text-sm text-gray-500">{{ trip().city }}, {{ trip().country }}</span>
           </div>
 
-          <p class="text-sm text-gray-600">
+          <div class="w-full">
+            <p class="text-sm text-gray-600">
             {{ trip().start_date | date: 'dd MMM yyyy' }} -
             {{ trip().end_date | date: 'dd MMM yyyy' }}
             ({{ calculateDuration() }} días)
           </p>
+          </div>
         </div>
 
         <!-- Botones de acción alineados a la derecha -->
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3 absolute right-3 top-3">
           @if (isOwner()) {
             <!-- Botones para el owner -->
             <button
@@ -62,14 +64,14 @@
       </div>
 
       <!-- SECCIÓN 2: Tres widgets (Participantes, Documentos, Checklist) -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <app-participant-widget [tripId]="trip()!.id" />
         <app-document-widget [tripId]="trip()!.id" />
         <app-checklist-widget [tripId]="trip()!.id" />
       </div>
 
       <!-- SECCIÓN 3: Pestañas (itinerary/gastos) -->
-      <div class="flex-1 flex flex-col overflow-hidden">
+      <div class="flex-1 flex flex-col lg:overflow-hidden w-full">
         <!-- Pestañas estilo iOS picker -->
         <div class="relative bg-white rounded-xl shadow-sm border border-gray-200 p-2">
           <!-- Indicador deslizante (fondo) -->

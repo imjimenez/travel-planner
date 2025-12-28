@@ -31,7 +31,7 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="h-full flex flex-col">
+    <div class="h-full flex flex-col ">
       <!-- Loading state -->
       @if (isLoading()) {
       <div class="flex flex-col gap-4 items-center justify-center h-full">
@@ -46,7 +46,7 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
       <div class="flex-1 overflow-y-auto pt-10 px-4">
         @if (expenses().length === 0) {
         <!-- Empty state -->
-        <div class="flex flex-col items-center justify-center h-full text-center">
+        <div class="flex flex-col items-center justify-center h-full w-full text-center">
           <div class="max-w-md">
             <i class="pi pi-wallet" style="font-size: 3.5rem; padding: 1.5rem"></i>
             <h3 class="text-lg font-medium text-gray-900 mb-2">Gestiona tus gastos</h3>
@@ -204,8 +204,8 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
 
       }
       <!-- Formulario fijo en la parte inferior -->
-      <div class="py-4 border-t border-gray-200">
-        <form (submit)="addExpense($event)" class="flex gap-3">
+      <div class="w-full py-4 border-t border-gray-200">
+        <form (submit)="addExpense($event)" class="w-full flex flex-col md:flex-row gap-3">
           <!-- Título del gasto -->
           <input
             type="text"
@@ -224,7 +224,7 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
             placeholder="Importe"
             step="0.01"
             min="0.01"
-            class="w-32 px-4 py-3 outline-none focus:ring-2 focus:ring-transparent focus:border-green-600 transition-all text-gray-900 border border-gray-300 rounded-lg focus:outline-none "
+            class="flex-1 px-4 py-3 outline-none focus:ring-2 focus:ring-transparent focus:border-green-600 transition-all text-gray-900 border border-gray-300 rounded-lg focus:outline-none "
             required
           />
 
@@ -232,7 +232,7 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
           <select
             [(ngModel)]="newExpense.category"
             name="category"
-            class="w-40 px-4 py-3 bg-white outline-none focus:ring-2 focus:ring-transparent focus:border-green-600 transition-all text-gray-900 border border-gray-300 rounded-lg focus:outline-none "
+            class="flex-1 md:max-w-60 px-4 py-3 bg-white outline-none focus:ring-2 focus:ring-transparent focus:border-green-600 transition-all text-gray-900 border border-gray-300 rounded-lg focus:outline-none "
             required
           >
             <option value="" disabled selected>Categoría</option>

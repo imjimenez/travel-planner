@@ -1,12 +1,12 @@
 <!-- Side bar -->
-<aside class="w-80 hidden md:block">
+<aside class="w-full block">
   <div
-    class="sticky top-6 bg-white/50 backdrop-blur-xl rounded-2xl shadow-sm h-[calc(100vh-3rem)] border border-gray-200 overflow-hidden"
+    class="sticky top-6 bg-white/50 backdrop-blur-xl rounded-2xl shadow-sm md:h-[calc(100vh-3rem)] border border-gray-200 overflow-hidden"
   >
-    <div class="h-full flex flex-col">
+    <div class="md:h-full flex flex-col">
       <!-- Header -->
-      <div class="mb-8 p-6">
-        <h2 class="text-3xl font-semibold text-gray-900">TravelApp</h2>
+      <div class=" md:mb-8 px-6 py-2 md:p-6">
+        <h2 class="hidden md:block text-3xl font-semibold text-gray-900">TravelApp</h2>
       </div>
 
       <!-- Navigation -->
@@ -27,7 +27,7 @@
             [class.bg-gray-900]="isActiveRoute('/app/overview')"
           ></div>
           <i class="pi pi-th-large" style="font-size: 1rem"></i>
-          <span class="text-base text-black">Dashboard</span>
+          <span class="text-base text-black">Mis viajes</span>
         </a>
 
         <!-- Divider -->
