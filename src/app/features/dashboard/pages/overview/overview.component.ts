@@ -1,25 +1,32 @@
 // src/app/(dashboard)/overview/overview.component.ts
+
 import { Component, inject } from "@angular/core";
 import { RouterLink } from "@angular/router";
 import { TripService } from "@core/trips/services/trip.service";
-import { TripModalService } from "@core/trips/services/trip-modal.service.ts";
-import { DatePipe } from "@angular/common";
+import { ButtonModule } from "primeng/button";
+import { CardModule } from "primeng/card";
+import { ProgressBarModule } from "primeng/progressbar";
+import { TagModule } from "primeng/tag";
+import { TimelineModule } from "primeng/timeline";
+import TripsTimeline from "./../../components/trips-timeline/trips-timeline";
 
 @Component({
 	selector: "app-overview",
 	standalone: true,
-	imports: [DatePipe, RouterLink],
+	imports: [
+		CardModule,
+		ButtonModule,
+		ProgressBarModule,
+		TagModule,
+		TimelineModule,
+		RouterLink,
+		TripsTimeline,
+	],
 	templateUrl: "./overview.component.html",
 	styles: [],
 })
 export class OverviewComponent {
-	private tripService = inject(TripService);
-	private tripModalService = inject(TripModalService);
+	#tripService = inject(TripService);
 
-	trips = this.tripService.trips;
-	loading = this.tripService.loading;
-
-	openModal() {
-		this.tripModalService.openCreateTripModal();
-	}
+	trips = this.#tripService.trips;
 }
