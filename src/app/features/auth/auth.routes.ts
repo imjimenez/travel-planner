@@ -36,6 +36,10 @@ const authRoutes: Routes = [
 			},
 		],
 	},
+	{
+		path: "**",
+		redirectTo: "/app",
+	},
 ];
 
 export default authRoutes;
