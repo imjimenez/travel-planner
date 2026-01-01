@@ -23,13 +23,13 @@ import type { TripTodo } from '@core/trips/models/trip-todo.model';
   imports: [CommonModule, FormsModule],
   template: `
     <div
-      class="h-62 flex flex-col bg-white border border-gray-200 rounded-xl p-4 shadow-sm transition-shadow"
+      class="md:h-62 flex flex-col bg-white border border-gray-200 rounded-xl p-4 shadow-sm transition-shadow"
     >
       <!-- Header -->
-      <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center justify-between mb-2 md:mb-4">
         <div>
-          <h3 class="text-md font-medium text-gray-900 uppercase tracking-wide">Checklist</h3>
-          <p class="text-sm text-gray-500">{{ completedCount() }}/{{ totalCount() }} completadas</p>
+          <h3 class="text-sm md:text-base font-medium text-gray-900 uppercase tracking-wide">Checklist</h3>
+          <p class="text-xs md:text-sm text-gray-500">{{ completedCount() }}/{{ totalCount() }} completadas</p>
         </div>
 
         <!-- Menu button -->
@@ -52,23 +52,21 @@ import type { TripTodo } from '@core/trips/models/trip-todo.model';
 
       <!-- Content -->
       @if (!isLoading()) {
-      <div class="flex-1 flex flex-col">
+      <div class="flex-1 flex flex-col justify-between">
         <!-- Empty state simple -->
         @if (pendingTodos().length === 0) {
-        <div class="flex items-center h-2 justify-center mb-3"></div>
         <div class="flex items-center gap-2 h-13 justify-center text-gray-500 mb-3">
           <p class="text-sm">No hay tareas pendientes</p>
         </div>
-        <div class="flex items-center h-2 justify-center mb-3"></div>
 
         }
 
         <!-- Lista de tareas y input -->
-        <div class="space-y-3">
+        <div class="space-y-3 flex flex-col">
           <!-- Primeras 2 tareas pendientes -->
           @for (todo of displayedTodos(); track todo.id) {
           <div
-            class="group flex items-center gap-2 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
+            class="group mb-0 flex items-center gap-2 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <!-- Checkbox -->
             <div
@@ -101,7 +99,9 @@ import type { TripTodo } from '@core/trips/models/trip-todo.model';
           }
 
           <!-- Input para nueva tarea (siempre visible) -->
-          <div
+          
+        </div>
+        <div
             class="flex items-center gap-2 border-2 border-dashed border-gray-300 hover:border-gray-400 rounded-lg transition-colors"
           >
             <div class="shrink-0 w-10 h-10 rounded flex items-center justify-center">
@@ -116,7 +116,6 @@ import type { TripTodo } from '@core/trips/models/trip-todo.model';
               class="flex-1 text-sm bg-transparent border-none outline-none text-gray-900 placeholder-gray-400"
             />
           </div>
-        </div>
       </div>
       }
     </div>
