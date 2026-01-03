@@ -62,7 +62,7 @@ import type { TripTodo } from '@core/trips/models/trip-todo.model';
         }
 
         <!-- Lista de tareas y input -->
-        <div class="space-y-3 flex flex-col">
+        <div class="flex flex-col gap-2">
           <!-- Primeras 2 tareas pendientes -->
           @for (todo of displayedTodos(); track todo.id) {
           <div
@@ -102,7 +102,7 @@ import type { TripTodo } from '@core/trips/models/trip-todo.model';
           
         </div>
         <div
-            class="flex items-center gap-2 border-2 border-dashed border-gray-300 hover:border-gray-400 rounded-lg transition-colors"
+            class="flex items-center mt-2 gap-2 border-2 border-dashed border-gray-300 hover:border-gray-400 rounded-lg transition-colors"
           >
             <div class="shrink-0 w-10 h-10 rounded flex items-center justify-center">
               <i class="pi pi-plus text-gray-400" style="font-size: 1.25rem"></i>

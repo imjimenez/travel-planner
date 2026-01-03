@@ -21,7 +21,7 @@ import type { TripDocumentWithUrl } from '@core/trips/models/trip-document.model
   imports: [CommonModule],
   template: `
     <div
-      class="h-62 flex flex-col bg-white border border-gray-200 rounded-xl p-4 shadow-sm transition-shadow"
+      class="md:h-62 flex flex-col bg-white border border-gray-200 rounded-xl p-4 shadow-sm transition-shadow"
     >
       <!-- Header -->
       <div class="flex items-center justify-between mb-4">
@@ -115,7 +115,7 @@ import type { TripDocumentWithUrl } from '@core/trips/models/trip-document.model
         } @else {
         <!-- Botón para agregar más -->
         <div
-          class="flex items-center gap-3 border-2 border-dashed border-gray-300 hover:border-gray-400 rounded-lg transition-colors cursor-pointer"
+          class="flex items-center mt-1 gap-3 border-2 border-dashed border-gray-300 hover:border-gray-400 rounded-lg transition-colors cursor-pointer"
           (click)="fileInput.click()"
           (dragover)="onDragOver($event)"
           (dragleave)="onDragLeave($event)"

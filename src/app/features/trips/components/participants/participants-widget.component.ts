@@ -18,7 +18,7 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
   imports: [CommonModule],
   template: `
     <div
-      class="h-62 flex flex-col bg-white border border-gray-200 rounded-xl p-4 shadow-sm transition-shadow"
+      class="md:h-62 flex flex-col bg-white border border-gray-200 rounded-xl p-4 shadow-sm transition-shadow"
     >
       <!-- Header -->
       <div class="flex items-center justify-between mb-4">
