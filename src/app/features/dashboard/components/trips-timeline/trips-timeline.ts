@@ -24,9 +24,6 @@ import { TimelineModule } from "primeng/timeline";
 		RouterLink,
 	],
 	templateUrl: "./trips-timeline.html",
-	host: {
-		class: 'p-4'
-	},
 	changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export default class TripsTimeline {

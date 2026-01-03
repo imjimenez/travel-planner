@@ -11,7 +11,7 @@ import { SidebarComponent } from "@shared/components/sidebar/sidebar.component";
 	imports: [SidebarComponent, RouterOutlet],
 	templateUrl: "./dashboard-layout.html",
 	changeDetection: ChangeDetectionStrategy.OnPush,
-	host: { class: "w-full flex gap-6" },
+	host: { class: "w-full flex flex-col-reverse md:flex-row gap-6" },
 })
 export default class DashboardLayout {
 	readonly #auth = inject(AuthService);

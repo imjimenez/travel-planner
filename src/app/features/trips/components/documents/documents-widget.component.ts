@@ -26,8 +26,8 @@ import type { TripDocumentWithUrl } from '@core/trips/models/trip-document.model
       <!-- Header -->
       <div class="flex items-center justify-between mb-4">
         <div>
-          <h3 class="text-md font-medium text-gray-900 uppercase tracking-wide">Documentos</h3>
-          <p class="text-sm text-gray-500">{{ documents().length }} documento(s)</p>
+          <h3 class="text-sm md:text-base font-medium text-gray-900 uppercase tracking-wide">Documentos</h3>
+          <p class="text-xs md:text-sm text-gray-500">{{ documents().length }} documento(s)</p>
         </div>
 
         <!-- Menu button -->
@@ -50,7 +50,7 @@ import type { TripDocumentWithUrl } from '@core/trips/models/trip-document.model
 
       <!-- Content -->
       @if (!isLoading()) {
-      <div class="flex-1 overflow-y-auto">
+      <div class="flex-1 flex flex-col justify-between">
         <!-- Empty state con drag & drop -->
         @if (documents().length === 0) {
         <div
@@ -81,7 +81,7 @@ import type { TripDocumentWithUrl } from '@core/trips/models/trip-document.model
         <div class="space-y-3">
           @for (doc of displayedDocuments(); track doc.id) {
           <div
-            class="group flex items-center gap-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+            class="group mb-1 flex items-center gap-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
             (click)="viewDocument(doc)"
           >
             <!-- Thumbnail / Icono -->
@@ -105,39 +105,39 @@ import type { TripDocumentWithUrl } from '@core/trips/models/trip-document.model
           </div>
           }
 
-          <!-- Uploading indicator -->
-          @if (isUploading()) {
-          <div class="mt-3 p-2 bg-gray-50 rounded-lg flex items-center gap-2">
-            <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
-            <span class="text-sm text-gray-900">Subiendo documento...</span>
+        </div>
+        <!-- Uploading indicator -->
+        @if (isUploading()) {
+        <div class="mt-3 p-2 bg-gray-50 rounded-lg flex items-center gap-2">
+          <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+          <span class="text-sm text-gray-900">Subiendo documento...</span>
+        </div>
+        } @else {
+        <!-- Botón para agregar más -->
+        <div
+          class="flex items-center gap-3 border-2 border-dashed border-gray-300 hover:border-gray-400 rounded-lg transition-colors cursor-pointer"
+          (click)="fileInput.click()"
+          (dragover)="onDragOver($event)"
+          (dragleave)="onDragLeave($event)"
+          (drop)="onDrop($event)"
+          [class.border-green-500]="isDragging()"
+          [class.bg-green-50]="isDragging()"
+        >
+          <div class="shrink-0 w-10 h-10 rounded flex items-center justify-center">
+            <i class="pi pi-plus text-gray-400" style="font-size: 1.25rem"></i>
           </div>
-          } @else {
-          <!-- Botón para agregar más -->
-          <div
-            class="flex items-center gap-3 border-2 border-dashed border-gray-300 hover:border-gray-400 rounded-lg transition-colors cursor-pointer"
-            (click)="fileInput.click()"
-            (dragover)="onDragOver($event)"
-            (dragleave)="onDragLeave($event)"
-            (drop)="onDrop($event)"
-            [class.border-green-500]="isDragging()"
-            [class.bg-green-50]="isDragging()"
-          >
-            <div class="shrink-0 w-10 h-10 rounded flex items-center justify-center">
-              <i class="pi pi-plus text-gray-400" style="font-size: 1.25rem"></i>
-            </div>
-            <div class="flex-1">
-              <p class="text-sm text-gray-500">
-                {{
-                  isDragging()
-                    ? 'Suelta aquí el archivo'
-                    : 'Arrastra archivos o haz click para seleccionar'
-                }}
-              </p>
-            </div>
+          <div class="flex-1">
+            <p class="text-sm text-gray-500">
+              {{
+                isDragging()
+                  ? 'Suelta aquí el archivo'
+                  : 'Arrastra archivos o haz click para seleccionar'
+              }}
+            </p>
           </div>
-          }
         </div>
         }
+      }
       </div>
       }
 

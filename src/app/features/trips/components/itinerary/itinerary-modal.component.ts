@@ -62,23 +62,23 @@ interface ItineraryFormData {
   template: `
     <div class="flex flex-col h-full overflow-hidden">
       <!-- Header -->
-      <div class="flex items-center justify-between px-8 pt-8 pb-6 shrink-0">
+      <div class="flex items-center justify-between px-4 pt-4 md:px-8 md:pt-8 pb-6 shrink-0 relative">
         <div class="flex items-center gap-4">
           <!-- Icono según modo -->
           <div
-            class="w-12 h-12 rounded-full flex items-center justify-center bg-white shadow-sm border border-gray-200"
+            class="min-w-12 min-h-12 rounded-full flex items-center justify-center bg-white shadow-sm border border-gray-200"
           >
             <i class="pi pi-map-marker" style="font-size: 1.25rem"></i>
           </div>
 
           <!-- Título según modo -->
           <div>
-            <h2 class="text-2xl font-semibold text-gray-900">
+            <h2 class="text-xl md:text-2xl font-semibold text-gray-900">
               @if (modalService.mode() === 'create') { Nueva parada } @if (modalService.mode() ===
               'view') { Detalles de la parada } @if (modalService.mode() === 'edit') { Editar parada
               }
             </h2>
-            <p class="text-sm text-gray-500 mt-0.5">
+            <p class="text-sm w-4/5 md:w-full text-gray-500 mt-0.5">
               @if (modalService.mode() === 'create') { Añade un nuevo destino a tu itinerario } @if
               (modalService.mode() === 'view') { Información completa de la parada } @if
               (modalService.mode() === 'edit') { Modifica los detalles de la parada }
@@ -90,7 +90,7 @@ interface ItineraryFormData {
         <button
           type="button"
           (click)="close()"
-          class="w-10 h-10 flex items-center justify-center rounded-full bg-white hover:bg-gray-100 border border-gray-200 transition-colors cursor-pointer"
+          class="min-w-10 min-h-10 absolute right-3 top-3 flex items-center justify-center rounded-full bg-white hover:bg-gray-100 border border-gray-200 transition-colors cursor-pointer"
           title="Cerrar"
         >
           <i class="pi pi-times text-gray-600" style="font-size: 1rem"></i>
@@ -328,7 +328,7 @@ interface ItineraryFormData {
             }
           </div>
 
-          <div class="flex gap-3 mb-4">
+          <div class="flex flex-col md:flex-row gap-3 mb-4">
             <input
               type="text"
               [(ngModel)]="locationSearch"
@@ -369,7 +369,7 @@ interface ItineraryFormData {
         </div>
 
         <!-- Fechas CON HORA -->
-        <div class="grid grid-cols-2 gap-4 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div>
             <label class="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
               Fecha y hora inicio

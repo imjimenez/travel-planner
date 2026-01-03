@@ -10,7 +10,7 @@ import { RouterOutlet } from "@angular/router";
 	standalone: true,
 	imports: [RouterOutlet],
 	template: `
-    <div class="min-h-screen bg-white p-6 flex gap-6 relative overflow-hidden">
+    <div class="min-h-screen bg-white p-6 flex md:gap-6 relative overflow-hidden">
       <!-- SVG como imagen con filtro verde -->
       <img
         src="/images/mapamundi.svg"

@@ -23,8 +23,8 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
       <!-- Header -->
       <div class="flex items-center justify-between mb-4">
         <div>
-          <h3 class="text-md font-medium text-gray-900 uppercase tracking-wide">Participantes</h3>
-          <p class="text-sm text-gray-500">
+          <h3 class="text-sm md:text-base font-medium text-gray-900 uppercase tracking-wide">Participantes</h3>
+          <p class="text-xs md:text-sm text-gray-500">
             {{ participantService.participants().length }} acompañante(s)
           </p>
         </div>
