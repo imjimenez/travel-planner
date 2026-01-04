@@ -62,7 +62,9 @@ interface ItineraryFormData {
   template: `
     <div class="flex flex-col h-full overflow-hidden">
       <!-- Header -->
-      <div class="flex items-center justify-between px-4 pt-4 md:px-8 md:pt-8 pb-6 shrink-0 relative">
+      <div
+        class="flex items-center justify-between px-4 pt-4 md:px-8 md:pt-8 pb-6 shrink-0 relative"
+      >
         <div class="flex items-center gap-4">
           <!-- Icono según modo -->
           <div
@@ -629,7 +631,9 @@ export class ItineraryModalComponent implements OnInit, AfterViewInit, OnDestroy
     effect(() => {
       const date = this.startDate();
       if (date) {
-        this.formData.start_date = date.toISOString();
+        // Convierte la fecha a formato ISO local sin cambiar la hora
+        const offsetMs = date.getTimezoneOffset() * 60000;
+        this.formData.start_date = new Date(date.getTime() - offsetMs).toISOString();
 
         // Siempre actualizar fecha fin
         const endDateTime = new Date(date);

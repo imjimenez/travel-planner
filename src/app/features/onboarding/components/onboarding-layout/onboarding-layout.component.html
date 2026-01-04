@@ -1,5 +1,5 @@
 <div
-  class="flex flex-col rounded-lg shadow-xl w-full h-[70vh] bg-gray-300/30 backdrop-blur-md border border-white relative z-10"
+  class="flex flex-col rounded-lg shadow-xl w-full max-w-5xl h-[70vh] bg-gray-300/30 backdrop-blur-md border border-white relative z-10"
   (click)="$event.stopPropagation()"
 >
   <!-- Header: progreso + botón cerrar -->
@@ -9,14 +9,14 @@
     <!-- Indicador de progreso -->
     <div class="flex justify-center gap-2">
       @for (step of steps(); track step.id) {
-        <div
-          class="h-1 transition-all duration-300 rounded-full w-8"
-          [ngClass]="{
+      <div
+        class="h-1 transition-all duration-300 rounded-full w-8"
+        [ngClass]="{
             'w-12 bg-black': step.id === currentStep(),
             'bg-gray-200': step.id !== currentStep(),
             'bg-green-600': step.completed,
           }"
-        ></div>
+      ></div>
       }
     </div>
 

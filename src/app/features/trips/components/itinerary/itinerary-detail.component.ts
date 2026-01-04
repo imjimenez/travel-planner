@@ -69,7 +69,7 @@ interface DateGroup {
       <!-- Vista dividida: Timeline + Mapa -->
       <div class="flex-1 flex flex-col lg:flex-row items-center lg:justify-between">
         <!-- Columna izquierda: Timeline -->
-        <div class="w-full lg:w-1/2 flex flex-col ">
+        <div class="w-full h-full xs:w-1/2 flex flex-col ">
           <!-- Timeline scrolleable -->
           <div class="flex-1 overflow-y-auto pt-10 px-4 hide-scrollbar">
             <div class="space-y-12 pb-6">
@@ -121,7 +121,7 @@ interface DateGroup {
                           {{ item.name }}
                         </h4>
                         @if (item.city || item.country) {
-                          <p class="text-sm text-gray-600">{{ item.city }}, {{ item.country }}</p>
+                        <p class="text-sm text-gray-600">{{ item.city }}, {{ item.country }}</p>
                         }
                       </div>
 

@@ -8,3 +8,7 @@ body {
   margin: 0; /* Quitamos márgenes por defecto */
   padding: 0;
 }
+
+html {
+  scroll-behavior: smooth; /* Desplazamiento suave para anclas */
+}
