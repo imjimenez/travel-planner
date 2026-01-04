@@ -1,169 +1,188 @@
 <div class="min-h-screen bg-white">
-      <!-- Navigation -->
-      <nav class="fixed w-full bg-white/95 backdrop-blur-sm border-b border-gray-100 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="flex justify-between items-center h-16">
-            <div class="flex items-center gap-2">
-              <i class="pi pi-map-marker text-emerald-600 text-2xl"></i>
-              <span class="text-xl font-semibold text-gray-900">Travel Planner</span>
-            </div>
-
-            <div class="hidden md:flex items-center gap-8">
-              <a href="#features" class="text-gray-600 hover:text-gray-900 transition-colors">Características</a>
-              <a href="#how-it-works" class="text-gray-600 hover:text-gray-900 transition-colors">Cómo funciona</a>
-              <p-button
-                routerLink="/auth"
-                label="Comenzar"
-                styleClass="bg-emerald-600 border-emerald-600 hover:bg-emerald-700 hover:border-emerald-700" />
-            </div>
-
-            <button
-              class="md:hidden"
-              (click)="toggleMobileMenu()">
-              <i [class]="mobileMenuOpen() ? 'pi pi-times text-2xl' : 'pi pi-bars text-2xl'"></i>
-            </button>
+  <!-- Navigation -->
+  <nav class="fixed w-full bg-white/95 backdrop-blur-sm border-b border-gray-100 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <a href="#home">
+          <div class="flex items-center gap-2">
+            <i class="pi pi-map-marker text-emerald-600 text-2xl"></i>
+            <span class="text-xl font-semibold text-gray-900">Travel Planner</span>
           </div>
+        </a>
+        <div class="hidden md:flex items-center gap-8">
+          <a href="#features" class="text-gray-600 hover:text-gray-900 transition-colors"
+            >Características</a
+          >
+          <a href="#how-it-works" class="text-gray-600 hover:text-gray-900 transition-colors"
+            >Cómo funciona</a
+          >
+          <p-button
+            routerLink="/auth"
+            label="Comenzar"
+            styleClass="bg-emerald-600 border-emerald-600 hover:bg-emerald-700 hover:border-emerald-700"
+          />
         </div>
 
-        <!-- Mobile menu -->
-        @if (mobileMenuOpen()) {
-          <div class="md:hidden border-t border-gray-100 bg-white">
-            <div class="px-4 py-4 space-y-3">
-              <a href="#features" class="block text-gray-600 hover:text-gray-900">Características</a>
-              <a href="#how-it-works" class="block text-gray-600 hover:text-gray-900">Cómo funciona</a>
-              <p-button
-                routerLink="/auth"
-                label="Comenzar"
-                styleClass="w-full bg-emerald-600 border-emerald-600" />
-            </div>
-          </div>
-        }
-      </nav>
+        <button class="md:hidden" (click)="toggleMobileMenu()">
+          <i [class]="mobileMenuOpen() ? 'pi pi-times text-2xl' : 'pi pi-bars text-2xl'"></i>
+        </button>
+      </div>
+    </div>
 
-      <!-- Hero Section -->
-      <section class="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-7xl mx-auto">
-          <div class="max-w-3xl mx-auto text-center">
-            <h1 class="text-5xl sm:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-              Planifica viajes en grupo,
-              <span class="text-emerald-600">sin complicaciones</span>
-            </h1>
-            <p class="text-xl text-gray-600 mb-10 leading-relaxed">
-              Organiza itinerarios, comparte documentos y coordina con tu equipo.
-              Todo en una webapp simple y colaborativa.
-            </p>
+    <!-- Mobile menu -->
+    @if (mobileMenuOpen()) {
+    <div class="md:hidden border-t border-gray-100 bg-white">
+      <div class="px-4 py-4 space-y-3">
+        <a href="#features" class="block text-gray-600 hover:text-gray-900">Características</a>
+        <a href="#how-it-works" class="block text-gray-600 hover:text-gray-900">Cómo funciona</a>
+        <p-button
+          routerLink="/auth"
+          label="Comenzar"
+          styleClass="w-full bg-emerald-600 border-emerald-600"
+        />
+      </div>
+    </div>
+    }
+  </nav>
 
-            <div class="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-              <p-button
-                routerLink="/auth"
-                label="Comenzar ahora"
-                icon="pi pi-arrow-right"
-                iconPos="right"
-                styleClass="px-8 py-4 bg-emerald-600 border-emerald-600 hover:bg-emerald-700 hover:border-emerald-700 text-lg font-semibold" />
-              <p-button
-                label="Ver demo"
-                icon="pi pi-play-circle"
-                iconPos="right"
-                [outlined]="true"
-                severity="secondary"
-                styleClass="px-8 py-4 text-lg font-semibold hover:border-emerald-600 hover:text-emerald-600" />
-            </div>
+  <!-- Hero Section -->
+  <section id="home" class="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto">
+      <div class="max-w-3xl mx-auto text-center">
+        <h1 class="text-5xl sm:text-6xl font-bold text-gray-900 mb-6 leading-tight">
+          Planifica viajes en grupo,
+          <span class="text-emerald-600"><br />sin complicaciones</span>
+        </h1>
+        <p class="text-xl text-gray-600 mb-10 leading-relaxed">
+          Organiza itinerarios, comparte documentos y coordina con tu equipo. Todo en una webapp
+          simple y colaborativa.
+        </p>
 
-            <p class="text-sm text-gray-500">
-              Gratis • Sin tarjeta de crédito • Listo en 2 minutos
-            </p>
-          </div>
+        <!-- Globe animation -->
+        <div class="flex justify-center mb-10">
+          <dotlottie-wc
+            src="https://lottie.host/44de3a21-ee54-4813-b0dc-46da4828ce63/ITcPJiLLzS.lottie"
+            style="width: 500px; height: 500px"
+            autoplay
+            loop
+          ></dotlottie-wc>
         </div>
-      </section>
 
-      <!-- Features Section -->
-      <section id="features" class="py-20 bg-gray-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="text-center mb-16">
-            <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              Todo lo que necesitas para organizar tu viaje
-            </h2>
-            <p class="text-lg text-gray-600 max-w-2xl mx-auto">
-              Desde la planificación inicial hasta el último detalle, gestiona cada aspecto de tu aventura.
-            </p>
-          </div>
-
-          <div class="grid md:grid-cols-2 gap-8">
-            @for (feature of features(); track feature.title) {
-              <div class="bg-white p-8 rounded-xl border border-gray-100 hover:shadow-lg transition-shadow">
-                <div class="w-12 h-12 rounded-lg flex items-center justify-center mb-4 bg-emerald-50 text-emerald-600">
-                  <i [class]="'pi ' + feature.icon + ' text-2xl'"></i>
-                </div>
-                <h3 class="text-xl font-semibold text-gray-900 mb-3">
-                  {{ feature.title }}
-                </h3>
-                <p class="text-gray-600 leading-relaxed">
-                  {{ feature.description }}
-                </p>
-              </div>
-            }
-          </div>
-        </div>
-      </section>
-
-      <!-- How it Works Section -->
-      <section id="how-it-works" class="py-20">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="text-center mb-16">
-            <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              Simple, rápido, colaborativo
-            </h2>
-          </div>
-
-          <div class="grid md:grid-cols-3 gap-8">
-            @for (item of steps(); track item.step) {
-              <div class="text-center">
-                <div class="text-6xl font-bold mb-4 opacity-20 text-emerald-600">
-                  {{ item.step }}
-                </div>
-                <h3 class="text-xl font-semibold text-gray-900 mb-3">
-                  {{ item.title }}
-                </h3>
-                <p class="text-gray-600">
-                  {{ item.description }}
-                </p>
-              </div>
-            }
-          </div>
-        </div>
-      </section>
-
-      <!-- CTA Section -->
-      <section class="py-20 bg-emerald-600">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 class="text-3xl sm:text-4xl font-bold text-white mb-6">
-            ¿Listo para tu próxima aventura?
-          </h2>
-          <p class="text-xl text-white/90 mb-8">
-            Únete a viajeros que ya están organizando sus viajes de forma inteligente.
-          </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center mb-8">
           <p-button
             routerLink="/auth"
             label="Comenzar ahora"
             icon="pi pi-arrow-right"
             iconPos="right"
+            styleClass="px-8 py-4 bg-emerald-600 border-emerald-600 hover:bg-emerald-700 hover:border-emerald-700 text-lg font-semibold"
+          />
+          <p-button
+            label="Ver demo"
+            icon="pi pi-play-circle"
+            iconPos="right"
+            [outlined]="true"
             severity="secondary"
-            styleClass="px-8 py-4 bg-white text-gray-900 border-white hover:bg-gray-100 text-lg font-semibold" />
+            styleClass="px-8 py-4 text-lg font-semibold hover:border-emerald-600 hover:text-emerald-600"
+          />
         </div>
-      </section>
 
-      <!-- Footer -->
-      <footer class="bg-gray-900 text-gray-400 py-12">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div class="flex items-center gap-2">
-              <i class="pi pi-map-marker text-emerald-600 text-xl"></i>
-              <span class="text-white font-semibold">Travel Planner</span>
-            </div>
-            <p class="text-sm">
-              © 2025 Travel Planner. Todos los derechos reservados.
-            </p>
-          </div>
-        </div>
-      </footer>
+        <p class="text-sm text-gray-500">Gratis • Sin tarjeta de crédito • Listo en 2 minutos</p>
+      </div>
     </div>
+  </section>
+
+  <!-- Features Section -->
+  <section id="features" class="py-20 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-16">
+        <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+          Todo lo que necesitas para organizar tu viaje
+        </h2>
+        <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+          Desde la planificación inicial hasta el último detalle, gestiona cada aspecto de tu
+          aventura.
+        </p>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-8">
+        @for (feature of features(); track feature.title) {
+        <div
+          class="bg-white p-8 rounded-xl border border-gray-100 hover:shadow-lg transition-shadow"
+        >
+          <div
+            class="w-12 h-12 rounded-lg flex items-center justify-center mb-4 bg-emerald-50 text-emerald-600"
+          >
+            <i [class]="'pi ' + feature.icon + ' text-2xl'"></i>
+          </div>
+          <h3 class="text-xl font-semibold text-gray-900 mb-3">
+            {{ feature.title }}
+          </h3>
+          <p class="text-gray-600 leading-relaxed">
+            {{ feature.description }}
+          </p>
+        </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- How it Works Section -->
+  <section id="how-it-works" class="py-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-16">
+        <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+          Simple, rápido, colaborativo
+        </h2>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-8">
+        @for (item of steps(); track item.step) {
+        <div class="text-center">
+          <div class="text-6xl font-bold mb-4 opacity-20 text-emerald-600">
+            {{ item.step }}
+          </div>
+          <h3 class="text-xl font-semibold text-gray-900 mb-3">
+            {{ item.title }}
+          </h3>
+          <p class="text-gray-600">
+            {{ item.description }}
+          </p>
+        </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="py-20 bg-emerald-600">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <h2 class="text-3xl sm:text-4xl font-bold text-white mb-6">
+        ¿Listo para tu próxima aventura?
+      </h2>
+      <p class="text-xl text-white/90 mb-8">
+        Únete a viajeros que ya están organizando sus viajes de forma inteligente.
+      </p>
+      <p-button
+        routerLink="/auth"
+        label="Comenzar ahora"
+        icon="pi pi-arrow-right"
+        iconPos="right"
+        severity="secondary"
+        styleClass="px-8 py-4 bg-white text-gray-900 border-white hover:bg-gray-100 text-lg font-semibold"
+      />
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-black text-gray-400 py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+        <div class="flex items-center gap-2">
+          <i class="pi pi-map-marker text-emerald-600 text-xl"></i>
+          <span class="text-white font-semibold">Travel Planner</span>
+        </div>
+        <p class="text-xs">© 2025 Travel Planner. Todos los derechos reservados.</p>
+      </div>
+    </div>
+  </footer>
+</div>

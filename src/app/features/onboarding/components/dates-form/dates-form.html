@@ -12,8 +12,8 @@
           class="max-w-full py-4"
           formControlName="startDate"
           [inline]="true"
-          [showWeek]="true"
           [minDate]="today"
+          [showWeek]="true"
         />
       </div>
     </div>
@@ -30,8 +30,8 @@
           class="max-w-full py-4"
           formControlName="endDate"
           [inline]="true"
-          [showWeek]="true"
           [minDate]="today"
+          [showWeek]="true"
         />
       </div>
       @if(form.errors?.['endDateMustBeAfterStartDate']){
