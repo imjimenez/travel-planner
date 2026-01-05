@@ -15,7 +15,7 @@ import { RouterOutlet } from "@angular/router";
       <img
         src="/images/mapamundi.svg"
         alt="Mapa mundial"
-        class="absolute inset-0 w-full h-full object-cover opacity-50 pointer-events-none transform scale-135 background-filter"
+        class="absolute inset-0 w-full h-full object-cover opacity-50 pointer-events-none transform md:scale-135 background-filter"
       />
       <main class="flex-1">
         <router-outlet></router-outlet>

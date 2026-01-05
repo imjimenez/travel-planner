@@ -21,7 +21,7 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
       class="md:h-62 flex flex-col bg-white border border-gray-200 rounded-xl p-4 shadow-sm transition-shadow"
     >
       <!-- Header -->
-      <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center justify-between mb-2 md:mb-4">
         <div>
           <h3 class="text-sm md:text-base font-medium text-gray-900 uppercase tracking-wide">Participantes</h3>
           <p class="text-xs md:text-sm text-gray-500">

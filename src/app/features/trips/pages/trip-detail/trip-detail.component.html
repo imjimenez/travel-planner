@@ -8,7 +8,7 @@
     </div>
   } @else if (trip()) {
     <!-- Trip content -->
-    <div class="h-full flex flex-col gap-6 w-full">
+    <div class="h-full flex flex-col gap-4 md:gap-6 w-full">
       <!-- SECCIÓN 1: Header con nombre, ubicación, fechas y acciones -->
       <div class="seccion-1 flex flex-col md:flex-row items-start justify-center gap-4">
         <!-- Nombre del viaje, ciudad, país y fechas -->
@@ -29,23 +29,25 @@
 
         <!-- Botones de acción alineados a la derecha -->
         @if (isOwner()) {
-            <div class="flex items-center gap-3 absolute right-3 top-3">
+            <div class="flex w-full justify-center md:justify-end gap-3 static md:absolute right-3 top-3">
             <!-- Botones para el owner -->
             <button
               type="button"
               (click)="editTrip()"
-              class="flex items-center p-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium cursor-pointer"
+              class="flex w-full md:w-auto justify-evenly md:justify-center p-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium cursor-pointer"
               title="Editar viaje"
             >
               <i class="pi pi-pen-to-square" style="font-size: 1.2rem"></i>
+              <span class="sm:hidden">Editar</span>
             </button>
             <button
               type="button"
               (click)="deleteTrip($event)"
-              class="flex items-center p-2 bg-white border border-red-300 text-red-600 rounded-lg hover:bg-red-100 transition-colors font-medium cursor-pointer"
+              class="flex w-full md:w-auto justify-evenly md:justify-center p-2 bg-white border border-red-300 text-red-600 rounded-lg hover:bg-red-100 transition-colors font-medium cursor-pointer"
               title="Eliminar viaje"
             >
               <i class="pi pi-trash" style="font-size: 1.2rem"></i>
+              <span class="sm:hidden">Eliminar</span>
             </button>
           </div>
             <p-confirmpopup />
