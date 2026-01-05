@@ -1,4 +1,4 @@
-import { Injectable, inject, signal } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import { AuthService } from "@core/authentication/services/auth.service";
 import { SupabaseService } from "@core/supabase/supabase.service";
 import { TripService } from "@core/trips/services/trip.service";
@@ -23,17 +23,6 @@ export class TripParticipantService {
 	private supabaseService = inject(SupabaseService);
 	private authService = inject(AuthService);
 	private tripService = inject(TripService);
-
-	// Signal que guarda la lista de participantes de un viaje
-	private participantsSignal = signal<ParticipantWithUser[]>([]);
-	participants = this.participantsSignal.asReadonly();
-
-	private currentTripIdSignal = signal<string | null>(null);
-	currentTripId = this.currentTripIdSignal.asReadonly();
-
-	// Signal de estado de carga
-	private loadingSignal = signal(false);
-	isLoading = this.loadingSignal.asReadonly();
 
 	/**
 	 * Carga todos los participantes de un viaje y actualiza el signal
@@ -68,58 +57,6 @@ export class TripParticipantService {
 		} catch (error) {
 			console.error(error);
 			throw error;
-		}
-	}
-
-	/**
-	 * Carga todos los participantes de un viaje y actualiza el signal
-	 */
-	async loadParticipants(tripId: string): Promise<void> {
-		this.currentTripIdSignal.set(tripId);
-		this.loadingSignal.set(true);
-		this.participantsSignal.set([]);
-
-		try {
-			const user = await this.authService.getAuthUser();
-			if (!user) throw new Error("Usuario no autenticado");
-
-			// Verifica membresía
-			await this.verifyMembership(tripId, user.id);
-
-			const trip = await this.tripService.getTripById(tripId);
-
-			const { data: participants, error } =
-				await this.supabaseService.client.rpc("get_trip_participants", {
-					p_trip_id: tripId,
-				});
-
-			if (error)
-				throw new Error(`Error al obtener participantes: ${error.message}`);
-			if (!participants) {
-				this.participantsSignal.set([]);
-				return;
-			}
-
-			// Mapear a ParticipantWithUser
-			const mapped = participants.map((p): ParticipantWithUser => {
-				return {
-					id: p.trip_user_id,
-					user_id: p.user_id,
-					trip_id: p.trip_id,
-					added_at: p.added_at,
-					email: p.email || "Email no disponible",
-					fullName: p.full_name || "Usuario",
-					avatarUrl: p.avatar_url || undefined,
-					isOwner: p.user_id === trip.owner_user_id,
-				};
-			});
-
-			this.participantsSignal.set(mapped);
-		} catch (error) {
-			console.error(error);
-			this.participantsSignal.set([]);
-		} finally {
-			this.loadingSignal.set(false);
 		}
 	}
 

@@ -24,7 +24,7 @@ import { TripParticipantStore } from "@core/trips/store/trip-participant.store";
         <div>
           <h3 class="text-sm md:text-base font-medium text-gray-900 uppercase tracking-wide">Participantes</h3>
           <p class="text-xs md:text-sm text-gray-500">
-            {{ participants().length }} acompañante(s)
+              {{isLoading() ? '?' : participants().length }} acompañante(s)
           </p>
         </div>
 

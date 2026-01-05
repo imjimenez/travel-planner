@@ -48,4 +48,5 @@ export interface UploadDocumentData {
 export interface TripDocumentWithUrl extends TripDocument {
   /** URL pública del documento en Supabase Storage */
   publicUrl: string;
+  isImage?: boolean;
 }
