@@ -37,7 +37,7 @@ interface DateGroup {
   standalone: true,
   imports: [CommonModule, MapComponent],
   template: `
-    <div class="h-full flex flex-col">
+    <div class="h-full flex flex-col overflow-hidden">
       <!-- Loading state -->
       @if (isLoading()) {
       <div class="flex flex-col gap-4 items-center justify-center h-full">
@@ -49,7 +49,7 @@ interface DateGroup {
       <!-- Content -->
       @if (!isLoading()) { @if (items().length === 0) {
       <!-- Empty state -->
-      <div class="flex flex-col items-center justify-center h-full text-center">
+      <div class="flex flex-col items-center justify-center h-full text-center py-4">
         <div class="max-w-md">
           <i class="pi pi-map-marker" style="font-size: 3.5rem; padding: 1.5rem"></i>
           <h3 class="text-lg font-medium text-gray-900 mb-2">Planifica tu itinerario</h3>
@@ -67,16 +67,16 @@ interface DateGroup {
       </div>
       } @else {
       <!-- Vista dividida: Timeline + Mapa -->
-      <div class="flex-1 flex flex-col lg:flex-row items-center lg:justify-between">
-        <!-- Columna izquierda: Timeline -->
-        <div class="w-full h-full xs:w-1/2 flex flex-col ">
+      <div class="flex-1 flex flex-col lg:flex-row gap-6 min-h-0">
+        <!-- Columna izquierda: Timeline con scroll -->
+        <div class="flex-1 flex flex-col min-h-0">
           <!-- Timeline scrolleable -->
-          <div class="flex-1 overflow-y-auto pt-10 px-4 hide-scrollbar">
+          <div class="flex-1 overflow-y-auto pt-6 lg:pt-10 lg:px-4 hide-scrollbar">
             <div class="space-y-12 pb-6">
               @for (dateGroup of groupedItems(); track dateGroup.date) {
               <div class="">
                 <!-- Contador de paradas y fecha -->
-                <div class="flex items-center gap-8 mb-6">
+                <div class="flex items-center gap-6 lg:gap-8 mb-6">
                   <!-- Círculo contador con línea vertical -->
                   <div class="flex flex-col items-start">
                     <!-- Círculo contador -->
@@ -99,7 +99,7 @@ interface DateGroup {
                 <div class="space-y-6 expand">
                   @for (item of dateGroup.items; track item.id; let idx = $index) {
                   <div
-                    class="flex group gap-8 items-center justify-center transition-all cursor-pointer"
+                    class="flex group gap-6 lg:gap-8 items-center justify-center transition-all cursor-pointer"
                     (click)="selectItem(item)"
                   >
                     <!-- Icono del tipo de parada -->
@@ -146,8 +146,8 @@ interface DateGroup {
           </div>
         </div>
 
-        <!-- Columna derecha: Mapa -->
-        <div class="w-full md:w-1/4 md:min-w-100 h-full p-6 rounded-2xl">
+        <!-- Columna derecha: Mapa FIJO -->
+        <div class="w-full lg:w-2/5 shrink-0 py-6 rounded-xl overflow-hidden">
           <app-map
             [config]="{
               mode: 'view-markers',
@@ -165,7 +165,7 @@ interface DateGroup {
       </div>
 
       <!-- Botón fijo en la parte inferior -->
-      <div class="py-4 px-4 border-t border-gray-200 shrink-0">
+      <div class="py-4 lg:px-4 border-t border-gray-200 shrink-0">
         <button
           type="button"
           (click)="createStop()"

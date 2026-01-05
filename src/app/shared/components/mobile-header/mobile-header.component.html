@@ -1,0 +1,83 @@
+<header class="w-screen pb-2">
+  <!-- Top bar: Logo y Avatar -->
+  <div class="flex items-center justify-between px-4 py-3">
+    <!-- Logo/Nombre -->
+    <div class="flex items-center gap-2">
+      <i class="pi pi-map-marker text-emerald-600" style="font-size: 1.25rem"></i>
+      <h1 class="text-xl font-semibold text-gray-900">TravelPlanner</h1>
+    </div>
+
+    <!-- Avatar del usuario -->
+    @if (user(); as userInfo) {
+    <button
+      routerLink="/app/settings"
+      class="relative flex items-center gap-2 p-1.5 hover:bg-gray-100 rounded-full transition-colors shrink-0"
+    >
+      @if (userInfo.avatarURL) {
+      <div class="w-9 h-9 rounded-full overflow-hidden bg-gray-200 shrink-0">
+        <img
+          [src]="userInfo.avatarURL"
+          [alt]="getDisplayName(userInfo)"
+          class="w-full h-full object-cover"
+        />
+      </div>
+      } @else {
+      <div
+        class="w-9 h-9 rounded-full bg-gray-300 flex items-center justify-center text-sm font-medium text-gray-600 shrink-0"
+      >
+        {{ getInitial(userInfo) }}
+      </div>
+      }
+
+      <!-- Badge de invitaciones -->
+      @if (pendingInvitesCount() > 0) {
+      <div
+        class="absolute -top-1 -right-1 flex items-center justify-center w-5 h-5 bg-red-500 text-white rounded-full text-xs font-semibold"
+      >
+        {{ pendingInvitesCount() }}
+      </div>
+      }
+    </button>
+    }
+  </div>
+
+  <!-- Navigation slider horizontal -->
+  <div class="overflow-x-auto scrollbar-hide max-w-full">
+    <nav class="flex items-center gap-2 px-4 w-full min-w-0">
+      <!-- Botón crear viaje -->
+      <a
+        routerLink="/app/trips/new"
+        class="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors whitespace-nowrap"
+      >
+        <i class="pi pi-plus" style="font-size: 0.875rem"></i>
+        <span>Nuevo</span>
+      </a>
+
+      <!-- Dashboard/Overview -->
+      <a
+        routerLink="/app/overview"
+        routerLinkActive="bg-gray-900 text-white"
+        [routerLinkActiveOptions]="{ exact: true }"
+        class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors whitespace-nowrap"
+      >
+        <i class="pi pi-th-large" style="font-size: 0.875rem"></i>
+        <span>Mis viajes</span>
+      </a>
+
+      <!-- Divider -->
+      <div class="w-px h-6 bg-gray-300"></div>
+
+      <!-- Lista de viajes -->
+      @for (trip of trips(); track trip.id) {
+      <a
+        [routerLink]="['/app/trips', trip.id]"
+        routerLinkActive="bg-gray-900 text-white"
+        class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors whitespace-nowrap"
+      >
+        <i class="pi pi-map-marker" style="font-size: 0.875rem"></i>
+        <span>{{ trip.name }}</span>
+      </a>
+      }
+    </nav>
+  </div>
+</header>

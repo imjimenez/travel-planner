@@ -7,6 +7,8 @@
   (onAddEmail)="onAddEmail($event)"
   (onRemoveEmail)="onRemoveEmail($event)"
 />
-<div class="flex justify-end items-center px-12 py-6 border-t border-gray-200 shrink-0">
+<div
+  class="flex justify-end items-center px-4 sm:px-6 py-2 mt-auto border-t border-gray-200 shrink-0"
+>
   <p-button (click)="close()" [loading]="isLoading()" [disabled]="isLoading()">Finalizar</p-button>
 </div>

@@ -6,7 +6,9 @@
   [destination]="currentDestination()"
   (onValue)="destinationValue = $event"
 ></app-destination-form>
-<div class="flex justify-between items-center px-12 py-6 border-t border-gray-200 shrink-0">
+<div
+  class="flex justify-between items-center px-4 sm:px-6 py-2 mt-auto sm:py-6 border-t border-gray-200 shrink-0"
+>
   <p-button routerLink="./../welcome">Atrás</p-button>
   <p-button [disabled]="!destinationValue" (click)="completeStep()">Siguiente</p-button>
 </div>

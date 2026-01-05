@@ -1,8 +1,21 @@
-<app-sidebar [user]="user" [trips]="trips()"></app-sidebar>
-<section class="flex-1">
+<!-- Sidebar desktop -->
+<app-sidebar class="hidden lg:block lg:w-80 lg:shrink-0" [user]="user" [trips]="trips()">
+</app-sidebar>
+
+<!-- Contenedor principal -->
+<div class="flex-1 flex flex-col">
+  <!-- Mobile header -->
+  <app-mobile-header
+    class="lg:hidden bg-white/50 backdrop-blur-xl sticky top-0 z-5 shrink-0"
+    [user]="user"
+    [trips]="trips()"
+  >
+  </app-mobile-header>
+
+  <!-- Contenido -->
   <div
-    class="bg-white/50 backdrop-blur-xl rounded-2xl shadow-sm border border-gray-200 h-[calc(100vh-3rem)] p-6 overflow-auto"
+    class="bg-white/50 backdrop-blur-xl lg:rounded-2xl shadow-sm lg:border border-gray-200 flex-1 px-4 lg:p-4 md:p-6 z-10 overflow-y-auto"
   >
     <router-outlet />
   </div>
-</section>
+</div>

@@ -29,14 +29,14 @@ import { ItineraryModalComponent } from '@features/trips/components/itinerary/it
 
       <!-- Modal container deslizante desde la derecha -->
       <div
-        class="relative h-full w-[700px] transform animate-slide-in-right"
+        class="relative h-full w-full lg:w-[700px] transform animate-slide-in-right"
         (click)="$event.stopPropagation()"
       >
         <!-- Padding interno para crear efecto de card -->
-        <div class="h-full p-6">
+        <div class="h-full lg:p-6">
           <!-- Card interna con bordes redondeados -->
           <div
-            class="h-full bg-gray-50 rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden"
+            class="h-full bg-gray-50 lg:rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden"
           >
             <!-- Componente del modal -->
             <app-itinerary-modal class="flex-1 flex flex-col overflow-hidden"></app-itinerary-modal>

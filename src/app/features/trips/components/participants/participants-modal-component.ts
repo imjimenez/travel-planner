@@ -55,7 +55,7 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
               <button
                 type="button"
                 (click)="removeParticipant(participant)"
-                class="opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center w-7 h-7 text-red-600 hover:bg-red-100 rounded-lg mr-1.5 cursor-pointer"
+                class="hidden lg:flex opacity-0 group-hover:opacity-100 transition-opacity items-center justify-center w-7 h-7 text-red-600 hover:bg-red-100 rounded-lg mr-1.5 cursor-pointer"
                 [title]="'Eliminar participante'"
               >
                 <i class="pi pi-trash" style="font-size: 0.875rem"></i>
@@ -71,6 +71,17 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
               >
                 {{ participant.isOwner ? 'Propietario' : 'Acompañante' }}
               </span>
+              <!-- Botón eliminar (solo visible para owner y no puede eliminarse a sí mismo) -->
+              @if (canRemoveParticipant(participant)) {
+              <button
+                type="button"
+                (click)="removeParticipant(participant)"
+                class="flex lg:hidden items-center justify-center w-7 h-7 text-red-600 hover:bg-red-100 rounded-lg cursor-pointer"
+                [title]="'Eliminar participante'"
+              >
+                <i class="pi pi-trash" style="font-size: 0.875rem"></i>
+              </button>
+              }
             </div>
             } @empty {
             <p class="text-gray-500 text-center py-4 text-sm">No hay participantes</p>
@@ -99,11 +110,49 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
               <div class="flex-1 min-w-0">
                 <p class="text-sm font-medium text-gray-900 truncate">{{ invite.email }}</p>
                 <p class="text-xs text-gray-500">Invitado {{ formatDate(invite.created_at) }}</p>
+                <!-- Botones de acción -->
+                <div class="flex lg:hidden items-center gap-1 ">
+                  <!-- Copiar link -->
+                  <button
+                    type="button"
+                    (click)="copyInviteLink(invite.id)"
+                    class="w-7 h-7 flex items-center justify-center text-gray-600 hover:bg-gray-200 rounded transition-colors cursor-pointer"
+                    title="Copiar link"
+                  >
+                    <i class="pi pi-clipboard" style="font-size: 0.85rem"></i>
+                  </button>
+
+                  <!-- Reenviar -->
+                  <button
+                    type="button"
+                    (click)="resendInvite(invite.id)"
+                    class="w-7 h-7 flex items-center justify-center text-green-600 hover:bg-green-100 rounded transition-colors cursor-pointer"
+                    title="Reenviar invitación"
+                  >
+                    @if (isResending()) {
+                    <div
+                      class="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"
+                    ></div>
+                    } @else {
+                    <i class="pi pi-sync" style="font-size: 0.85rem"></i>
+                    }
+                  </button>
+
+                  <!-- Cancelar -->
+                  <button
+                    type="button"
+                    (click)="cancelInvite(invite.id)"
+                    class="w-7 h-7 flex items-center justify-center text-red-600 hover:bg-red-100 rounded transition-colors cursor-pointer"
+                    title="Cancelar invitación"
+                  >
+                    <i class="pi pi-times" style="font-size: 0.85rem"></i>
+                  </button>
+                </div>
               </div>
 
               <!-- Botones de acción -->
               <div
-                class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                class="hidden lg;flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 <!-- Copiar link -->
                 <button
@@ -145,6 +194,7 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
                 >Pendiente</span
               >
             </div>
+
             }
           </div>
         </div>

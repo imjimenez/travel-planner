@@ -1,165 +1,194 @@
 <!-- Hero Card - Next Trip -->
 <div
-  class="mb-6 md:mb-12 relative overflow-hidden rounded-2xl bg-linear-to-r from-emerald-700 to-teal-600"
+  class="mb-6 md:mb-12 relative overflow-hidden rounded-2xl bg-linear-to-r from-emerald-950 to-emerald-600"
 >
-  <div class="relative p-4 md:p-12">
+  <div class="relative p-4 md:p-6">
     <div class="flex flex-col md:flex-row justify-between gap-4 sm:gap-6 mb-4 md:mb-8">
       <div class="flex-1">
-        <p-tag
-          value="Próximo viaje"
-          severity="info"
-          class="mb-3 bg-white/20 border-white/30 text-white w-full md:max-w-60"
-        />
-        <h2 class="text-2xl text-center sm:text-left md:text-4xl lg:text-5xl font-bold text-white mb-3">{{ nextTrip().name }}</h2>
-        <div class="flex items-center justify-center md:justify-start gap-2 text-white/90 md:text-lg">
+        <span
+          class="hidden lg:inline-block px-3 py-1 rounded-md bg-emerald-600 text-white text-sm font-medium mb-4"
+        >
+          Próximo viaje
+        </span>
+        <h2 class="text-2xl text-left md:text-4xl lg:text-5xl font-bold text-white mb-3">
+          {{ nextTrip().name }}
+        </h2>
+        <div class="flex items-center justify-start gap-2 text-white/90 md:text-lg">
           <i class="pi pi-calendar"></i>
           <span>
-            {{ nextTrip().start_date | date:'dd/MM/yyyy' }} - {{ nextTrip().end_date |
-            date:'dd/MM/yyyy' }}
+            {{ nextTrip().start_date | date : 'dd/MM/yyyy' }} -
+            {{ nextTrip().end_date | date : 'dd/MM/yyyy' }}
           </span>
         </div>
       </div>
 
+      <!-- Días restantes - Solo visible en desktop -->
       <div
-        class="bg-white/10 backdrop-blur-md rounded-2xl p-4 text-center border border-white/20 shadow-xl"
+        class="hidden md:flex bg-white/10 backdrop-blur-md rounded-2xl p-4 text-center border border-white/20 shadow-xl"
       >
-        <div class="text-4xl md:text-6xl font-bold text-white mb-2">{{ nextTrip().leftDays }}</div>
-        <div class="text-white/90 text-base font-medium">días restantes</div>
+        <div>
+          <div class="text-4xl md:text-6xl font-bold text-white mb-2">
+            {{ nextTrip().leftDays }}
+          </div>
+          <div class="text-white/90 text-base font-medium">días restantes</div>
+        </div>
       </div>
     </div>
 
-    <div class="grid grid-cols-1 gap-6 mb-4 md:mb-8">
-      <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-        <div class="flex items-center gap-3 text-white">
-          <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
-            <i class="pi pi-clock text-xl"></i>
+    <!-- Grid 2 columnas en mobile, 1 columna en desktop para días restantes y duración -->
+    <div class="grid grid-cols-2 md:grid-cols-1 gap-3 md:gap-6 mb-4 md:mb-8">
+      <!-- Días restantes - Solo visible en mobile -->
+      <div
+        class="md:hidden flex flex-col justify-center items-center bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/20 text-center"
+      >
+        <div class="text-3xl font-bold text-white mb-1">
+          {{ nextTrip().leftDays }}
+        </div>
+        <div class="text-white/90 text-xs font-medium">días restantes</div>
+      </div>
+
+      <!-- Duración -->
+      <div class="bg-white/10 backdrop-blur-sm rounded-xl p-3 md:p-4 border border-white/20">
+        <div
+          class="flex flex-col md:flex-row items-center md:gap-3 text-white text-center md:text-left"
+        >
+          <div
+            class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/20 flex items-center justify-center mb-2 md:mb-0"
+          >
+            <i class="pi pi-clock text-lg md:text-xl"></i>
           </div>
           <div>
-            <p class="text-white/70 text-sm font-medium">Duración</p>
-            <span class="text-xl font-bold">{{ nextTrip().durationDays }} días</span>
+            <p class="text-white/70 text-xs md:text-sm font-medium">Duración</p>
+            <span class="text-lg md:text-xl font-bold">{{ nextTrip().durationDays }} días</span>
           </div>
         </div>
       </div>
     </div>
 
-      <p-button
-        label="Ver detalles del viaje"
-        icon="pi pi-arrow-right"
-        iconPos="right"
-        [routerLink]="['../trips', nextTrip().id]"
-        styleClass="p-button-lg bg-white hover:bg-gray-50 text-emerald-700 border-none shadow-lg w-full md:w-auto"
-      />
+    <p-button
+      label="Ver detalles del viaje"
+      icon="pi pi-arrow-right"
+      iconPos="right"
+      [routerLink]="['../trips', nextTrip().id]"
+      styleClass="p-button-lg bg-white hover:bg-gray-50 text-emerald-700 border-none shadow-lg w-full md:w-auto"
+    />
   </div>
 </div>
 
-<!-- Timeline Section -->
-<div class="mb-2 md:mb-8 flex flex-col">
-  <h3 class="text-2xl font-bold text-gray-800 mb-2 md:mb-6">Timeline de Viajes</h3>
+<!-- ... resto del código igual ... -->
 
-  <!-- Upcoming Trips Timeline -->
-  @if(upcomingTrips().length > 0) {
-  <div class="mb-2 md:mb-4 lg:mb-8">
-    <div class="flex items-center gap-2 mb-6">
-      <div class="h-px flex-1 bg-linear-to-r from-transparent to-emerald-200"></div>
-      <span class="text-sm font-semibold text-emerald-700 px-3">PRÓXIMOS VIAJES</span>
-      <div class="h-px flex-1 bg-linear-to-l from-transparent to-emerald-200"></div>
-    </div>
+<!-- Timeline Section - Upcoming Trips -->
+@if(upcomingTrips().length > 0) {
+<div class="mb-8 md:mb-12">
+  <h3 class="text-2xl font-bold text-gray-800 mb-6">Timeline de Viajes</h3>
 
-    <p-timeline [value]="upcomingTrips()" layout="vertical" class="custom-timeline">
+  <p-timeline [value]="upcomingTrips()" layout="vertical" class="p-2">
+    <ng-template #marker let-trip>
+      <div
+        class="w-4 h-4 rounded-full shadow-md"
+        [ngClass]="{
+          'bg-amber-500': trip.leftDays <= 30 && trip.leftDays > 0,
+          'bg-emerald-500': trip.leftDays > 30
+        }"
+      ></div>
+    </ng-template>
 
-      <ng-template #marker let-trip>
-        <div
-          class="w-5 h-5 rounded-full shadow-lg"
-          [ngClass]="{
-                    'bg-amber-500': trip.leftDays <= 30 && trip.leftDays > 0,
-                    'bg-emerald-500': trip.leftDays > 30
-                  }"
-        ></div>
-      </ng-template>
-
-      <ng-template #content let-trip>
-        <p-card
-          styleClass="shadow-md hover:shadow-xl transition-all cursor-pointer mb-4 border-none hover-card"
-          [routerLink]="['../trips', trip.id]"
-        >
-          <div class="flex items-start justify-between gap-4">
-            <div class="flex-1">
-              <h4 class="text-xl font-bold text-gray-800 mb-2">{{ trip.name }}</h4>
-              
+    <ng-template #content let-trip>
+      <div [routerLink]="['../trips', trip.id]" class="cursor-pointer mb-6 group">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <!-- Nombre del viaje -->
+          <div class="flex-1">
+            <h4
+              class="text-xl font-semibold text-gray-900 mb-1 group-hover:text-emerald-600 transition-colors"
+            >
+              {{ trip.name }}
+            </h4>
+            <div class="flex flex-wrap items-center gap-3 text-sm text-gray-600">
+              <span class="flex items-center gap-1">
+                <i class="pi pi-calendar text-xs"></i>
+                {{ trip.start_date | date : 'dd/MM/yyyy' }}
+              </span>
+              <span>—</span>
+              <span>{{ trip.end_date | date : 'dd/MM/yyyy' }}</span>
             </div>
           </div>
-        </p-card>
-      </ng-template>
 
-      <ng-template #opposite let-trip>
-        <div class="flex flex-col items-end ">
-          <div class="flex items-center gap-2 text-gray-600 mb-3">
-          <i class="pi pi-calendar text-sm"></i>
-          <span class="text-sm">
-            {{ trip.start_date | date: 'dd/MM/yyyy' }} - {{ trip.end_date | date: 'dd/MM/yyyy'
-            }}
-          </span>
-        </div>
-        <div class="flex flex-col items-center md:flex-row gap-1 md:gap-4 text-sm mb-4">
-          <span class="text-gray-500">
-            <i class="pi pi-clock mr-1"></i>
-            {{ trip.durationDays }} días
-          </span>
-          <p-tag
-            [value]="'En ' + trip.leftDays + ' días'"
-            [severity]="trip.leftDays > 30 ? 'success' : 'warn'"
-          />
-        </div>
-        </div>
-      </ng-template>
-    </p-timeline>
-  </div>
-  }
-
-  <!-- Past Trips Timeline -->
-  @if(pastTrips().length > 0) {
-  <div>
-    <div class="flex items-center gap-2 mb-6">
-      <div class="h-px flex-1 bg-linear-to-r from-transparent to-gray-300"></div>
-      <span class="text-sm font-semibold text-gray-500 px-3">VIAJES REALIZADOS</span>
-      <div class="h-px flex-1 bg-linear-to-l from-transparent to-gray-300"></div>
-    </div>
-
-    <p-timeline [value]="pastTrips()" layout="vertical" use="custom-timeline">
-      <ng-template #marker let-trip>
-        <div class="w-5 h-5 rounded-full bg-gray-400 shadow"></div>
-      </ng-template>
-
-      <ng-template #content let-trip>
-        <p-card
-          styleClass="shadow-sm hover:shadow-md transition-all cursor-pointer mb-4 opacity-75 hover:opacity-100 border-none hover-card"
-          [routerLink]="['../trips', trip.id]"
-        >
-          <div class="flex items-start justify-between gap-4">
-            <div class="flex-1">
-              <h4 class="text-xl font-bold text-gray-700 mb-2">{{ trip.name }}</h4>
-              <!-- comentado para evaluar las dos opciones (linea 142 O 156) -->
-              <!-- <p-tag value="Viaje completado" severity="secondary" styleClass="text-xs" /> -->
-            </div>
+          <!-- Información adicional -->
+          <div class="flex items-center gap-4">
+            <span class="text-sm text-gray-500 flex items-center gap-1">
+              <i class="pi pi-clock text-xs"></i>
+              {{ trip.durationDays }} días
+            </span>
+            <span
+              class="px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap"
+              [ngClass]="{
+                'bg-amber-100 text-amber-700': trip.leftDays <= 30 && trip.leftDays > 0,
+                'bg-emerald-100 text-emerald-700': trip.leftDays > 30
+              }"
+            >
+              En {{ trip.leftDays }} días
+            </span>
           </div>
-        </p-card>
-      </ng-template>
-      <ng-template #opposite let-trip>
-        <div class="flex flex-col items-end ">
-          <div class="flex items-center gap-2 text-gray-600 mb-3">
-          <i class="pi pi-calendar text-sm"></i>
-          <span class="text-sm">
-            {{ trip.start_date | date: 'dd/MM/yyyy' }} - {{ trip.end_date | date: 'dd/MM/yyyy'
-            }}
-          </span>
         </div>
-        <p-tag value="Viaje completado" severity="secondary" styleClass="text-xs" />
-        </div>
-      </ng-template>
-    </p-timeline>
-  </div>
-  }
+      </div>
+    </ng-template>
+
+    <ng-template #opposite let-trip>
+      <div class="hidden"></div>
+    </ng-template>
+  </p-timeline>
 </div>
+}
+
+<!-- Timeline Section - Past Trips -->
+@if(pastTrips().length > 0) {
+<div class="mb-8">
+  <h3 class="text-2xl font-bold text-gray-800 mb-6">Timeline de viajes pasados</h3>
+
+  <p-timeline [value]="pastTrips()" layout="vertical" styleClass="custom-timeline">
+    <ng-template #marker let-trip>
+      <div class="w-4 h-4 rounded-full bg-gray-400 shadow-md"></div>
+    </ng-template>
+
+    <ng-template #content let-trip>
+      <div
+        [routerLink]="['../trips', trip.id]"
+        class="bg-white rounded-xl p-5 shadow-sm hover:shadow-md border border-gray-200 transition-all cursor-pointer mb-6 group opacity-75 hover:opacity-100"
+      >
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <!-- Nombre del viaje -->
+          <div class="flex-1">
+            <h4
+              class="text-xl font-semibold text-gray-700 mb-1 group-hover:text-gray-900 transition-colors"
+            >
+              {{ trip.name }}
+            </h4>
+            <div class="flex flex-wrap items-center gap-3 text-sm text-gray-500">
+              <span class="flex items-center gap-1">
+                <i class="pi pi-calendar text-xs"></i>
+                {{ trip.start_date | date : 'dd/MM/yyyy' }}
+              </span>
+              <span>—</span>
+              <span>{{ trip.end_date | date : 'dd/MM/yyyy' }}</span>
+            </div>
+          </div>
+
+          <!-- Tag completado -->
+          <div
+            class="px-3 py-1 rounded-full bg-gray-100 text-gray-600 text-xs font-medium whitespace-nowrap"
+          >
+            Completado
+          </div>
+        </div>
+      </div>
+    </ng-template>
+
+    <ng-template #opposite let-trip>
+      <div class="hidden"></div>
+    </ng-template>
+  </p-timeline>
+</div>
+}
 
 <!-- Add New Trip Button -->
 <div class="flex justify-center mb-4 md:mb-8">
@@ -167,6 +196,6 @@
     label="Planear nuevo viaje"
     icon="pi pi-plus"
     routerLink="../trips/new"
-    styleClass="p-button-lg shadow-lg "
+    styleClass="p-button-lg shadow-lg"
   />
 </div>
