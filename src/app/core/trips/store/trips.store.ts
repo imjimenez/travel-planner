@@ -96,7 +96,7 @@ export const TripStore = signalStore(
 				const user = authService.currentUser;
 				if (!trip || !user) return;
 				try {
-					await participantService.removeParticipant(trip.id, user.id);
+					await participantService.removeParticipantFromTrip(trip.id, user.id);
 					const tripIndex = store.trips().indexOf(trip);
 					const updatedTrips = [...store.trips()];
 					updatedTrips.splice(tripIndex, 1);

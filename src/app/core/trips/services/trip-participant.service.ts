@@ -63,6 +63,7 @@ export class TripParticipantService {
 				fullName: p.full_name || "Usuario",
 				avatarUrl: p.avatar_url || undefined,
 				isOwner: p.is_owner || false,
+				isRemovable: p.is_removable || false,
 			}));
 		} catch (error) {
 			console.error(error);
@@ -201,29 +202,10 @@ export class TripParticipantService {
 	 * const currentUser = await authService.getAuthUser();
 	 * await participantService.removeParticipant('trip-123', currentUser.id);
 	 */
-	async removeParticipant(tripId: string, userId: string): Promise<void> {
-		const currentUser = await this.authService.getAuthUser();
-
-		if (!currentUser) {
-			throw new Error("Usuario no autenticado");
-		}
-
-		// Obtener info del trip
-		const trip = await this.tripService.getTripById(tripId);
-
-		// Verificar que no intenta remover al owner
-		if (userId === trip.owner_user_id) {
-			throw new Error("No se puede remover al propietario del viaje");
-		}
-
-		// Verificar permisos
-		const isOwner = currentUser.id === trip.owner_user_id;
-		const isSelf = currentUser.id === userId;
-
-		if (!isOwner && !isSelf) {
-			throw new Error("No tienes permisos para remover este participante");
-		}
-
+	async removeParticipantFromTrip(
+		tripId: string,
+		userId: string,
+	): Promise<void> {
 		// Remover participante
 		const { error, count } = await this.supabaseService.client
 			.from("trip_user")
@@ -231,39 +213,14 @@ export class TripParticipantService {
 			.eq("user_id", userId)
 			.eq("trip_id", tripId);
 
-		if (error) {
-			throw new Error(`Error al remover participante: ${error.message}`);
+		if (error || count === 0) {
+			if (count === 0) {
+				console.error("No se pudo eliminar. Verifica las políticas RLS.");
+			} else {
+				console.error(error);
+			}
+			throw new Error(`Error al remover participante`);
 		}
-
-		// Detectar si RLS bloqueó la operación
-		if (count === 0) {
-			throw new Error("No se pudo eliminar. Verifica las políticas RLS.");
-		}
-	}
-
-	/**
-	 * Obtiene el número de participantes de un viaje
-	 *
-	 * @param tripId - ID del viaje
-	 * @returns Número de participantes
-	 */
-	async getParticipantCount(tripId: string): Promise<number> {
-		const user = await this.authService.getAuthUser();
-		if (!user) throw new Error("Usuario no autenticado");
-
-		// Verifica membresía
-		await this.verifyMembership(tripId, user.id);
-
-		const { count, error } = await this.supabaseService.client
-			.from("trip_user")
-			.select("*", { count: "exact", head: true })
-			.eq("trip_id", tripId);
-
-		if (error) {
-			throw new Error(`Error al contar participantes: ${error.message}`);
-		}
-
-		return count || 0;
 	}
 
 	/**

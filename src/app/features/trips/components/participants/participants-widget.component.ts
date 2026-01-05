@@ -1,12 +1,12 @@
 // src/app/features/trips/components/participants/components/participant-widget.component.ts
 
-import { CommonModule, SlicePipe } from "@angular/common";
-import { Component, Input, inject, linkedSignal } from "@angular/core";
+import { SlicePipe } from "@angular/common";
+import { Component, inject } from "@angular/core";
 import { ConfirmModalService } from "@core/dialog/confirm-modal.service";
 import { WidgetModalService } from "@core/dialog/widget-modal.service";
 import { NotificationService } from "@core/notifications/notification.service";
-import { TripParticipantService } from "@core/trips/services/trip-participant.service";
-import { TripDetailStore } from "@core/trips/store/trip-detail.store";
+import type { ParticipantWithUser } from "@core/trips";
+import { TripParticipantStore } from "@core/trips/store/trip-participant.store";
 
 /**
  * Widget de participantes para mostrar en el detalle del viaje
@@ -14,7 +14,6 @@ import { TripDetailStore } from "@core/trips/store/trip-detail.store";
  */
 @Component({
 	selector: "app-participant-widget",
-	standalone: true,
 	imports: [SlicePipe],
 	template: `
     <div
@@ -72,7 +71,7 @@ import { TripDetailStore } from "@core/trips/store/trip-detail.store";
           <!-- Info -->
           <div class="flex-1 min-w-0">
             <p class="text-sm font-medium text-gray-900 truncate">
-              {{ getDisplayName(participant) }}
+              {{ participant.fullName !== 'Usuario' ? participant.fullName : participant.email }}
             </p>
             <p class="text-xs text-gray-500">
               {{ participant.isOwner ? 'Propietario' : 'Acompañante' }}
@@ -80,7 +79,7 @@ import { TripDetailStore } from "@core/trips/store/trip-detail.store";
           </div>
 
           <!-- Botón para eliminar (visible en hover, solo para el propietario) -->
-          @if (canRemoveParticipant(participant)) {
+          @if (participant.isRemovable) {
           <button
             type="button"
             (click)="removeParticipant(participant)"
@@ -98,78 +97,39 @@ import { TripDetailStore } from "@core/trips/store/trip-detail.store";
   `,
 })
 export class ParticipantWidgetComponent {
-	@Input() tripId!: string;
-
-	readonly #tripDetailStore = inject(TripDetailStore);
+	readonly #tripDetailStore = inject(TripParticipantStore);
+	readonly #notificationService = inject(NotificationService);
+	readonly #widgetModalService = inject(WidgetModalService);
+	readonly #confirmModalService = inject(ConfirmModalService);
 
 	participants = this.#tripDetailStore.participants;
 
-	participantService = inject(TripParticipantService);
-
-	private notificationService = inject(NotificationService);
-	private widgetModalService = inject(WidgetModalService);
-	private confirmModalService = inject(ConfirmModalService);
-
-	private currentUserId: string | null = null;
-	private tripOwnerId: string | null = null;
-	isLoading = linkedSignal(this.#tripDetailStore.isLoading);
-
-	/**
-	 * Determina si el usuario actual puede eliminar a este participante
-	 *
-	 * Solo el owner puede eliminar participantes, y no puede eliminarse a sí mismo
-	 */
-	canRemoveParticipant(participant: any): boolean {
-		if (!this.currentUserId || !this.tripOwnerId) {
-			return false;
-		}
-
-		// Solo el owner puede eliminar
-		const isOwner = this.currentUserId === this.tripOwnerId;
-		if (!isOwner) {
-			return false;
-		}
-
-		// El owner no puede eliminarse a sí mismo
-		const isSelf = participant.user_id === this.currentUserId;
-		if (isSelf) {
-			return false;
-		}
-
-		return true;
-	}
+	isLoading = this.#tripDetailStore.isLoading;
 
 	/**
 	 * Elimina un participante del viaje
 	 */
-	async removeParticipant(participant: any): Promise<void> {
-		const confirmMessage = `¿Estás seguro de que quieres eliminar a ${this.getDisplayName(
-			participant,
-		)} del viaje?`;
+	async removeParticipant(participant: ParticipantWithUser): Promise<void> {
+		const confirmMessage = `¿Estás seguro de que quieres eliminar a ${participant.fullName !== "Usuario" ? participant.fullName : participant.email} del viaje?`;
 
-		this.confirmModalService.open(
+		this.#confirmModalService.open(
 			"Eliminar participante",
 			confirmMessage,
 			async () => {
 				try {
-					await this.participantService.removeParticipant(
-						this.tripId,
+					await this.#tripDetailStore.removeParticipantFromSelectedTrip(
 						participant.user_id,
 					);
-
-					// Recargar la lista de participantes
-					this.isLoading.set(true);
-					await this.participantService.loadParticipants(this.tripId);
-					this.notificationService.success(
+					this.#notificationService.success(
 						"Participante eliminado correctamente",
 					);
-				} catch (error: any) {
+				} catch (error) {
 					console.error("Error al eliminar participante:", error);
-					this.notificationService.error(
-						error.message || "No se pudo eliminar el participante.",
+					this.#notificationService.error(
+						error instanceof Error
+							? error.message
+							: "No se pudo eliminar el participante.",
 					);
-				} finally {
-					this.isLoading.set(false);
 				}
 			},
 			"Eliminar",
@@ -180,27 +140,9 @@ export class ParticipantWidgetComponent {
 	 * Abre el modal con todos los participantes
 	 */
 	openParticipantsModal(): void {
-		this.widgetModalService.openParticipantsModal(this.tripId);
-	}
-
-	/**
-	 * Maneja el clic en el botón de menú (tres puntos)
-	 *
-	 * TODO: Implementar funcionalidad (ver todos los participantes, configuración, etc)
-	 */
-	onMenuClick(): void {
-		console.log("Menu clicked - TODO: Implementar funcionalidad");
-		// Aquí irá la lógica para mostrar un menú desplegable o modal
-	}
-
-	/**
-	 * Obtiene el nombre a mostrar del participante
-	 * Prioriza fullName, si no tiene muestra el email
-	 */
-	getDisplayName(participant: any): string {
-		if (participant.fullName && participant.fullName !== "Usuario") {
-			return participant.fullName;
+		const tripId = this.#tripDetailStore.selectedTrip()?.id;
+		if (tripId) {
+			this.#widgetModalService.openParticipantsModal(tripId);
 		}
-		return participant.email;
 	}
 }

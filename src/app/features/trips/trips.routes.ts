@@ -2,7 +2,7 @@ import type { Routes } from "@angular/router";
 import { selectTripGuard } from "./guards/trip.guard";
 import NewTrip from "./pages/new-trip/new-trip";
 import { TripDetailComponent } from "./pages/trip-detail/trip-detail.component";
-import { TripDetailStore } from "@core/trips/store/trip-detail.store";
+import { TripParticipantStore } from "@core/trips/store/trip-participant.store";
 
 /**
  * Rutas del módulo Trips
@@ -15,7 +15,7 @@ const tripsRoutes: Routes = [
 	{
 		path: ":id",
 		canActivate: [selectTripGuard],
-		providers: [TripDetailStore],
+		providers: [TripParticipantStore],
 		component: TripDetailComponent,
 	},
 ];

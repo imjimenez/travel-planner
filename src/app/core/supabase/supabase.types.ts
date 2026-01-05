@@ -352,6 +352,7 @@ export type Database = {
           email: string
           full_name: string
           is_owner: boolean
+          is_removable: boolean
           trip_id: string
           trip_user_id: string
           user_id: string
