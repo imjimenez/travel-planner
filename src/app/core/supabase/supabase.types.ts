@@ -335,6 +335,24 @@ export type Database = {
         }
       }
       delete_own_account: { Args: never; Returns: undefined }
+      get_itinerary_items_with_duration: {
+        Args: { trip_id_param: string }
+        Returns: {
+          city: string
+          country: string
+          created_at: string
+          description: string
+          duration_days: number
+          end_date: string
+          id: string
+          latitude: number
+          longitude: number
+          name: string
+          start_date: string
+          trip_id: string
+          web: string
+        }[]
+      }
       get_trip_members: {
         Args: { p_trip_id: string }
         Returns: {
@@ -362,6 +380,10 @@ export type Database = {
       internal_add_trip_member: {
         Args: { p_trip_id: string; p_user_id: string }
         Returns: undefined
+      }
+      is_trip_member: {
+        Args: { p_trip_id: string; p_user_id: string }
+        Returns: boolean
       }
     }
     Enums: {

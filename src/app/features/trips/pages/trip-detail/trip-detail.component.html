@@ -124,7 +124,7 @@
       <!-- Contenido del tab activo -->
       <div class="flex-1 overflow-y-auto">
         @if (activeTab() === 'itinerary') {
-        <app-itinerary-detail [tripId]="trip()!.id" />
+        <app-itinerary-detail />
         } @if (activeTab() === 'expenses') {
         <app-expenses [tripId]="trip()!.id" />
         }

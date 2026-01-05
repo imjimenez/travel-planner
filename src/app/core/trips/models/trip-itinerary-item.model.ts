@@ -19,8 +19,7 @@ export type ItineraryItemUpdate = TablesUpdate<'itinerary_item'>;
  * Parada con información adicional calculada
  */
 export interface ItineraryItemWithDetails extends ItineraryItem {
-  /** Duración en días de esta parada */
-  duration?: number;
+  duration_days: number;
   /** Hora de inicio extraída de start_date */
   startTime?: string;
 }
