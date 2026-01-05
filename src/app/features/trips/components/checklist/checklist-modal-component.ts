@@ -112,7 +112,7 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
                   </div>
                   } @else {
                   <!-- MODO VISTA -->
-                  <div class="flex items-start gap-6">
+                  <div class="flex-col lg:flex-row items-start gap-6">
                     <!-- Título -->
                     <p class="text-sm font-medium text-gray-900">{{ todo.title }}</p>
 
@@ -204,7 +204,7 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
 
                 <!-- Contenido principal -->
                 <div class="flex-1 min-w-0">
-                  <div class="flex items-start gap-6">
+                  <div class="flex-col lg:flex-row items-start gap-6">
                     <!-- Título -->
                     <p class="text-sm font-medium text-gray-500 line-through">{{ todo.title }}</p>
 
@@ -252,7 +252,7 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
 
           <form (submit)="addTodo($event)" class="space-y-3">
             <!-- Input de título -->
-            <div class="flex gap-2">
+            <div class="flex-col gap-6 lg:flex-row">
               <input
                 type="text"
                 [(ngModel)]="newTodoTitle"
@@ -260,13 +260,13 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
                 placeholder="Título de la tarea"
                 required
                 [disabled]="isAdding()"
-                class="flex-1 px-3 py-2 border bg-gray-50 border-gray-100 outline-none focus:ring-2 focus:ring-transparent focus:border-green-600 transition-all text-gray-900 placeholder-gray-400 rounded-lg text-sm disabled:bg-gray-100"
+                class="flex-1 w-full px-3 mb-4 lg:mb-0 py-2 border bg-gray-50 border-gray-100 outline-none focus:ring-2 focus:ring-transparent focus:border-green-600 transition-all text-gray-900 placeholder-gray-400 rounded-lg text-sm disabled:bg-gray-100"
               />
               <!-- Asignar participante -->
               <select
                 [(ngModel)]="newTodoAssignee"
                 name="newTodoAssignee"
-                class="min-w-32 px-3 py-2 border bg-gray-50 border-gray-100 outline-none focus:ring-2 focus:ring-transparent focus:border-green-600 transition-all text-gray-900 rounded-lg text-sm cursor-pointer"
+                class="min-w-full lg:min-w-32 px-3 py-2 border bg-gray-50 border-gray-100 outline-none focus:ring-2 focus:ring-transparent focus:border-green-600 transition-all text-gray-900 rounded-lg text-sm cursor-pointer"
               >
                 <option value="">Sin asignar</option>
                 @for (participant of participants(); track participant.user_id) {
@@ -276,7 +276,7 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
               <button
                 type="submit"
                 [disabled]="isAdding() || !newTodoTitle"
-                class="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors disabled:bg-gray-400 flex items-center gap-2"
+                class="hidden px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors disabled:bg-gray-400 lg:flex items-center gap-2"
               >
                 @if (isAdding()) {
                 <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -297,6 +297,18 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
                 class="w-full px-3 py-2 border bg-gray-50 border-gray-100 outline-none focus:ring-2 focus:ring-transparent focus:border-green-600 transition-all text-gray-900 placeholder-gray-400 rounded-lg text-sm resize-none"
               ></textarea>
             </div>
+            <button
+              type="submit"
+              [disabled]="isAdding() || !newTodoTitle"
+              class="w-full px-4 py-2 justify-center bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors disabled:bg-gray-400 flex items-center gap-2"
+            >
+              @if (isAdding()) {
+              <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              <span>Agregando...</span>
+              } @else {
+              <span>Agregar</span>
+              }
+            </button>
           </form>
         </div>
       </div>

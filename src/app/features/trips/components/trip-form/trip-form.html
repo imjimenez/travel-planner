@@ -128,19 +128,18 @@
   <div
     class="flex min-h-20 p-5 items-center gap-6 bg-gray-50 border border-gray-300 rounded-xl mb-6"
   >
-    <span class="text-md font-normal text-gray-900 uppercase tracking-wide">
+    <span class="text-xs lg:text-md font-normal text-gray-900 uppercase tracking-wide">
       Duración del viaje:
     </span>
-    <p class="text-xl font-medium text-gray-900 m-0">
+    <p class="text-md lg:text-xl font-medium text-gray-900 m-0">
       {{ tripDuration() < 0 ? '-' : tripDuration() }} días
     </p>
   </div>
   <p-button
-    label="{{trip()?.id ? 'Editar' : 'Crear'}} viaje"
+    label="{{ trip()?.id ? 'Editar' : 'Crear' }} viaje"
     type="submit"
     styleClass="mb-8 w-full"
     [raised]="true"
     [disabled]="form.invalid || isLoading()"
-    ></p-button
-  >
+  ></p-button>
 </form>

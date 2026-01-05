@@ -8,18 +8,18 @@ import { WidgetModalService } from '@core/dialog/widget-modal.service';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <!-- Backdrop -->
+    <!-- Backdrop (solo desktop) -->
     <div
-      class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+      class="hidden lg:block fixed inset-0 z-10 bg-black/50"
       (click)="widgetModalService.close()"
     ></div>
 
-    <!-- Modal -->
-    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+    <!-- Modal Container -->
+    <div class="fixed inset-0 z-20 flex items-center justify-center lg:p-4 pointer-events-none">
       <div
-        class="pointer-events-auto bg-white rounded-2xl shadow-2xl border border-gray-200
-               w-[85vw] h-[85vw] sm:w-[60vw] sm:h-[60vw] md:w-[50vw] md:h-[40vw]
-               max-w-5xl max-h-[90vh] min-w-[300] min-h-[300] flex flex-col overflow-hidden"
+        class="pointer-events-auto bg-white lg:rounded-2xl lg:shadow-2xl lg:border border-gray-200
+               w-screen h-screen lg:w-[85vw] lg:h-[85vh] lg:max-w-5xl lg:max-h-[90vh]
+               flex flex-col overflow-hidden"
         (click)="$event.stopPropagation()"
       >
         <!-- Header -->

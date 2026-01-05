@@ -1,11 +1,11 @@
-<app-card>
-  <div class="space-y-6">
+<app-card class="w-screen md:w-auto h-screen md:h-auto">
+  <div class="space-y-6 w-full md:w-md">
     <!-- Header -->
     <div class="text-center space-y-2">
       <div
-        class="w-16 h-16 bg-linear-to-br from-blue-600 to-indigo-600 rounded-xl mx-auto flex items-center justify-center"
+        class="w-16 h-16 bg-linear-to-br rounded-xl mx-auto flex items-center justify-center border-3 border-emerald-600"
       >
-        <i class="pi pi-lock text-white text-4xl"></i>
+        <i class="pi pi-lock text-emerald-600" style="font-size: 1.5rem; font-weight: bolder"></i>
       </div>
       <h2 class="text-2xl font-bold text-gray-900">Bienvenido</h2>
       <p class="text-gray-600 text-sm">Ingresa a tu cuenta para continuar</p>
@@ -24,11 +24,11 @@
     <div class="grid grid-cols-3 gap-3">
       <!-- OAuth Buttons -->
       @for (provider of oAuthProviders; track provider) {
-        <app-oauth-button
-          [provider]="provider"
-          [disabled]="loading"
-          (handleOAuth)="onOAuth(provider)"
-        ></app-oauth-button>
+      <app-oauth-button
+        [provider]="provider"
+        [disabled]="loading"
+        (handleOAuth)="onOAuth(provider)"
+      ></app-oauth-button>
       }
     </div>
 
@@ -38,7 +38,7 @@
         ¿No tienes una cuenta?
         <a
           routerLink="/auth/register"
-          class="text-blue-600 hover:text-blue-700 font-medium transition-colors"
+          class="text-black hover:text-emerald-600 font-medium transition-colors"
         >
           Regístrate aquí
         </a>

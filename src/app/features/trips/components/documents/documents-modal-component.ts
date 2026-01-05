@@ -105,6 +105,16 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
                 {{ doc.name }}
               </p>
               <p class="text-xs text-gray-500">{{ formatDate(doc.uploaded_at) }}</p>
+              <!-- Eliminar -->
+              <button
+                type="button"
+                (click)="deleteDocument(doc, $event)"
+                class="flex lg:hidden w-full h-10 bg-white hover:bg-red-50 rounded-full gap-2 justify-start items-center transition-colors cursor-pointer"
+                title="Eliminar"
+              >
+                <i class="pi pi-trash text-red-600" style="font-size: 0.9rem"></i>
+                <p class="text-xs">Eliminar</p>
+              </button>
             </div>
           </div>
           }

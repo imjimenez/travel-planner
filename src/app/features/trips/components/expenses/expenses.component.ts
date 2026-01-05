@@ -43,7 +43,7 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
       <!-- Content -->
       @if (!isLoading()) {
       <!-- Contenido scrolleable -->
-      <div class="flex-1 overflow-y-auto pt-10 px-4">
+      <div class="flex-1 overflow-y-auto pt-6 lg:pt-10 lg:px-4">
         @if (expenses().length === 0) {
         <!-- Empty state -->
         <div class="flex flex-col items-center justify-center h-full w-full text-center">
@@ -57,27 +57,27 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
         </div>
         } @else {
         <!-- Stats cards -->
-        <div class="flex justify-around mb-10">
+        <div class="flex justify-around mb-4 lg:mb-10">
           <!-- Mis gastos -->
           <div class="flex flex-col justify-center items-center p-4">
-            <p class="text-sm text-gray-600 mb-1">Mis gastos</p>
-            <p class="text-2xl font-semibold text-gray-900">
+            <p class="text-sm text-gray-600 mb-1 text-nowrap">Mis gastos</p>
+            <p class="text-md lg:text-2xl font-semibold text-gray-900">
               {{ formatCurrency(stats()?.userTotalExpenses || 0) }}
             </p>
           </div>
 
           <!-- Me deben / Debo -->
           <div class="flex flex-col justify-center items-center p-4">
-            <p class="text-sm text-gray-600 mb-1">{{ balanceLabel() }}</p>
-            <p class="text-2xl font-semibold" [class]="balanceColor()">
+            <p class="text-sm text-gray-600 mb-1 text-nowrap">{{ balanceLabel() }}</p>
+            <p class="text-md lg:text-2xl font-semibold" [class]="balanceColor()">
               {{ formatCurrency(balanceAmount()) }}
             </p>
           </div>
 
           <!-- Gasto total -->
           <div class="flex flex-col justify-center items-center p-4">
-            <p class="text-sm text-gray-600 mb-1">Gasto total</p>
-            <p class="text-2xl font-semibold text-gray-900">
+            <p class="text-sm text-gray-600 mb-1 text-nowrap">Gasto total</p>
+            <p class="text-md lg:text-2xl font-semibold text-gray-900">
               {{ formatCurrency(stats()?.totalExpenses || 0) }}
             </p>
           </div>
@@ -94,12 +94,12 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
             @if (editingExpense() === expense.id) {
             <!-- MODO EDICIÓN -->
             <div class="space-y-2">
-              <div class="flex items-center gap-3">
+              <div class="flex-col lg:flex-row items-center gap-3">
                 <!-- Input título -->
                 <input
                   type="text"
                   [(ngModel)]="editTitle"
-                  class="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:border-green-600 focus:outline-none placeholder-gray-400"
+                  class="flex-1 w-full lg:w-5xl px-2 py-1 text-sm border mb-2 lg:mb-0 lg:mr-10 border-gray-300 rounded focus:border-green-600 focus:outline-none placeholder-gray-400"
                   placeholder="Nombre del gasto"
                 />
                 <!-- Input importe -->
@@ -108,13 +108,13 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
                   [(ngModel)]="editAmount"
                   step="0.01"
                   min="0.01"
-                  class="w-32 px-2 py-1 text-sm border border-gray-300 rounded focus:border-green-600 focus:outline-none"
+                  class="w-full lg:w-32 px-2 py-1 mb-2 lg:mb-0 lg:mr-10 text-sm border border-gray-300 rounded focus:border-green-600 focus:outline-none"
                   placeholder="Importe"
                 />
                 <!-- Select categoría -->
                 <select
                   [(ngModel)]="editCategory"
-                  class="w-40 px-2 py-1 text-sm border border-gray-300 rounded focus:border-green-600 focus:outline-none cursor-pointer"
+                  class="w-full lg:w-40 px-2 py-1 text-sm border border-gray-300 rounded focus:border-green-600 focus:outline-none cursor-pointer"
                 >
                   @for (category of categories; track category) {
                   <option [value]="category">{{ category }}</option>
@@ -123,22 +123,24 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
               </div>
 
               <!-- Botones de edición -->
-              <div class="flex items-center justify-end gap-1">
+              <div class="flex items-center justify-end gap-1 pt-1 lg:pt-0">
                 <button
                   type="button"
                   (click)="saveEdit(expense)"
-                  class="w-7 h-7 flex items-center justify-center text-green-600 hover:bg-green-100 rounded transition-colors cursor-pointer"
+                  class="w-full lg:w-7 h-7 flex items-center justify-center gap-2 text-green-600 hover:bg-green-100 rounded transition-colors cursor-pointer"
                   title="Guardar cambios"
                 >
                   <i class="pi pi-check" style="font-size: 0.85rem"></i>
+                  <p class="flex lg:hidden">Guardar</p>
                 </button>
                 <button
                   type="button"
                   (click)="cancelEdit()"
-                  class="w-7 h-7 flex items-center justify-center text-gray-600 hover:bg-gray-200 rounded transition-colors cursor-pointer"
+                  class="w-full lg:w-7 h-7 flex items-center justify-center gap-2 text-gray-600 hover:bg-gray-200 rounded transition-colors cursor-pointer"
                   title="Cancelar"
                 >
                   <i class="pi pi-times" style="font-size: 0.85rem"></i>
+                  <p class="flex lg:hidden">Cancelar</p>
                 </button>
               </div>
             </div>
@@ -166,9 +168,31 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
 
               <!-- Importe y botones -->
               <div class="flex items-center gap-3">
-                <p class="text-lg font-semibold text-gray-900">
-                  {{ formatCurrency(expense.amount) }}
-                </p>
+                <div class="flex-col gap-2 pl-4">
+                  <p class="text-lg font-semibold text-gray-900">
+                    {{ formatCurrency(expense.amount) }}
+                  </p>
+                  @if ( canEditExpense(expense)) {
+                  <div class="flex lg:hidden items-center gap-1 p-1">
+                    <button
+                      type="button"
+                      (click)="startEdit(expense)"
+                      class="flex items-center justify-center w-7 h-7 text-blue-600 hover:bg-blue-100 rounded-lg cursor-pointer"
+                      title="Editar gasto"
+                    >
+                      <i class="pi pi-pencil" style="font-size: 0.75rem"></i>
+                    </button>
+                    <button
+                      type="button"
+                      (click)="deleteExpense(expense.id)"
+                      class="flex items-center justify-center w-7 h-7 text-red-600 hover:bg-red-100 rounded-lg mr-1.5 cursor-pointer"
+                      title="Eliminar gasto"
+                    >
+                      <i class="pi pi-trash" style="font-size: 0.875rem"></i>
+                    </button>
+                  </div>
+                  }
+                </div>
 
                 <!-- Botones de acción (solo visible en hover si tiene permisos) -->
                 @if (hoveredExpenseId() === expense.id && canEditExpense(expense)) {
@@ -204,48 +228,52 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
 
       }
       <!-- Formulario fijo en la parte inferior -->
+
       <div class="w-full py-4 border-t border-gray-200">
-        <form (submit)="addExpense($event)" class="w-full flex flex-col md:flex-row gap-3">
-          <!-- Título del gasto -->
-          <input
-            type="text"
-            [(ngModel)]="newExpense.title"
-            name="title"
-            placeholder="Nombre del gasto"
-            class="flex-1 px-4 py-3 outline-none focus:ring-2 focus:ring-transparent focus:border-green-600 transition-all text-gray-900 border border-gray-300 rounded-lg focus:outline-none placeholder-gray-500"
-            required
-          />
+        <form (submit)="addExpense($event)" class="w-full flex flex-col gap-3">
+          <!-- Grupo de inputs (en línea desde tablet) -->
+          <div class="flex flex-col md:flex-row gap-3">
+            <!-- Título del gasto -->
+            <input
+              type="text"
+              [(ngModel)]="newExpense.title"
+              name="title"
+              placeholder="Nombre del gasto"
+              class="flex-1 px-4 py-3 outline-none focus:ring-2 focus:ring-transparent focus:border-green-600 transition-all text-gray-900 border border-gray-300 rounded-lg focus:outline-none placeholder-gray-500"
+              required
+            />
 
-          <!-- Importe -->
-          <input
-            type="number"
-            [(ngModel)]="newExpense.amount"
-            name="amount"
-            placeholder="Importe"
-            step="0.01"
-            min="0.01"
-            class="flex-1 px-4 py-3 outline-none focus:ring-2 focus:ring-transparent focus:border-green-600 transition-all text-gray-900 border border-gray-300 rounded-lg focus:outline-none "
-            required
-          />
+            <!-- Importe -->
+            <input
+              type="number"
+              [(ngModel)]="newExpense.amount"
+              name="amount"
+              placeholder="Importe"
+              step="0.01"
+              min="0.01"
+              class="flex-1 px-4 py-3 outline-none focus:ring-2 focus:ring-transparent focus:border-green-600 transition-all text-gray-900 border border-gray-300 rounded-lg focus:outline-none"
+              required
+            />
 
-          <!-- Categoría -->
-          <select
-            [(ngModel)]="newExpense.category"
-            name="category"
-            class="flex-1 md:max-w-60 px-4 py-3 bg-white outline-none focus:ring-2 focus:ring-transparent focus:border-green-600 transition-all text-gray-900 border border-gray-300 rounded-lg focus:outline-none "
-            required
-          >
-            <option value="" disabled selected>Categoría</option>
-            @for (category of categories; track category) {
-            <option [value]="category">{{ category }}</option>
-            }
-          </select>
+            <!-- Categoría -->
+            <select
+              [(ngModel)]="newExpense.category"
+              name="category"
+              class="flex-1 md:max-w-60 px-4 py-3 bg-white outline-none focus:ring-2 focus:ring-transparent focus:border-green-600 transition-all text-gray-900 border border-gray-300 rounded-lg focus:outline-none"
+              required
+            >
+              <option value="" disabled selected>Categoría</option>
+              @for (category of categories; track category) {
+              <option [value]="category">{{ category }}</option>
+              }
+            </select>
+          </div>
 
-          <!-- Botón añadir -->
+          <!-- Botón añadir (full width en tablet, auto en desktop) -->
           <button
             type="submit"
             [disabled]="isSubmitting()"
-            class="px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+            class="w-full lg:w-auto lg:self-end px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
           >
             Añadir gasto
           </button>
