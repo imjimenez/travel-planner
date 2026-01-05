@@ -162,23 +162,29 @@ export class TripDetailComponent {
       return;
     }
 
-    this.confirmModalService.open(
-      'Salir del viaje',
-      `¿Estás seguro de que deseas salir del viaje "${currentTrip.name}"?`,
-      async () => {
-        try {
-          await this.participantService.removeParticipant(currentTrip.id, user.id);
-          this.notificationService.success('Has salido del viaje correctamente');
-          this.tripService.loadUserTrips();
-          this.router.navigate(['/app/overview']);
-        } catch (error: any) {
-          console.error('Error al salir del viaje:', error);
-          this.notificationService.error(error.message || 'Error al salir del viaje');
-        }
-      },
-      'Salir'
-    );
-  }
+		this.confirmModalService.open(
+			"Salir del viaje",
+			`¿Estás seguro de que deseas salir del viaje "${currentTrip.name}"?`,
+			async () => {
+				try {
+					await this.participantService.removeParticipant(
+						currentTrip.id,
+						user.id,
+					);
+					this.notificationService.success(
+						"Has salido del viaje correctamente",
+					);
+					this.router.navigate(["/app/overview"]);
+				} catch (error: any) {
+					console.error("Error al salir del viaje:", error);
+					this.notificationService.error(
+						error.message || "Error al salir del viaje",
+					);
+				}
+			},
+			"Salir",
+		);
+	}
 
   /**
    * Maneja el evento de añadir parada al itinerario

@@ -24,12 +24,17 @@ import { TripModalService } from '@core/trips/services/trip-modal.service.ts';
   templateUrl: './sidebar.component.html',
 })
 export class SidebarComponent implements OnInit, OnDestroy {
-  trips = input.required<Trip[]>();
-  user = input.required<User | null>();
-  private authService = inject(AuthService);
-  private tripModalService = inject(TripModalService);
-  private inviteService = inject(TripInviteService);
-  public router = inject(Router);
+  readonly #authService = inject(AuthService);
+  readonly #router = inject(Router);
+
+	trips = input.required<Trip[]>();
+  isLoadingTrips = input(false);
+
+	user = input.required<User | null>();
+
+	private tripModalService = inject(TripModalService);
+	private inviteService = inject(TripInviteService);
+
 
   private loadingSignal = signal(false);
   isLoading = this.loadingSignal.asReadonly();
@@ -75,17 +80,17 @@ export class SidebarComponent implements OnInit, OnDestroy {
     window.removeEventListener('inviteAccepted', this.handleInviteAccepted.bind(this));
   }
 
-  /**
-   * Cierra la sesión del usuario actual
-   *
-   * Llama al servicio de autenticación y redirige a la landing page.
-   * El loading state se maneja automáticamente en el servicio.
-   */
-  async onLogout() {
-    await this.authService.signOut();
-    sessionStorage.setItem('onboardingDismissed', 'false');
-    this.router.navigate(['/']);
-  }
+	/**
+	 * Cierra la sesión del usuario actual
+	 *
+	 * Llama al servicio de autenticación y redirige a la landing page.
+	 * El loading state se maneja automáticamente en el servicio.
+	 */
+	async onLogout() {
+		await this.#authService.signOut();
+		sessionStorage.setItem("onboardingDismissed", "false");
+		this.#router.navigate(["/"]);
+	}
 
   /**
    * Obtiene la inicial del usuario para mostrar en el avatar
@@ -109,28 +114,28 @@ export class SidebarComponent implements OnInit, OnDestroy {
     return getFullName(user);
   }
 
-  /**
-   * Verifica si una ruta específica está activa
-   *
-   * Usado para aplicar estilos de "activo" a los links del sidebar.
-   * Compara la URL actual del router con la ruta proporcionada.
-   *
-   * @param route - Ruta a verificar (ej: '/dashboard/settings')
-   * @returns true si la ruta está activa
-   */
-  isActiveRoute(route: string): boolean {
-    return this.router.url === route;
-  }
+	/**
+	 * Verifica si una ruta específica está activa
+	 *
+	 * Usado para aplicar estilos de "activo" a los links del sidebar.
+	 * Compara la URL actual del router con la ruta proporcionada.
+	 *
+	 * @param route - Ruta a verificar (ej: '/dashboard/settings')
+	 * @returns true si la ruta está activa
+	 */
+	isActiveRoute(route: string): boolean {
+		return this.#router.url === route;
+	}
 
-  /**
-   * Verifica si un viaje especifico está activo
-   *
-   * @param tripId - ID del viaje a verificar
-   * @returns true si el viaje está activo
-   */
-  isTripActive(tripId: string): boolean {
-    return this.router.url.includes(`/trips/${tripId}`);
-  }
+	/**
+	 * Verifica si un viaje especifico está activo
+	 *
+	 * @param tripId - ID del viaje a verificar
+	 * @returns true si el viaje está activo
+	 */
+	isTripActive(tripId: string): boolean {
+		return this.#router.url.includes(`/trips/${tripId}`);
+	}
 
   openModal() {
     this.tripModalService.openCreateTripModal();

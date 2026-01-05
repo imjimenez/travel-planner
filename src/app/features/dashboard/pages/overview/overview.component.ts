@@ -2,23 +2,17 @@
 
 import { Component, inject } from "@angular/core";
 import { RouterLink } from "@angular/router";
-import { TripService } from "@core/trips/services/trip.service";
+import { TripStore } from "@core/trips/store/trips.store";
 import { ButtonModule } from "primeng/button";
-import { CardModule } from "primeng/card";
-import { ProgressBarModule } from "primeng/progressbar";
-import { TagModule } from "primeng/tag";
-import { TimelineModule } from "primeng/timeline";
+import { ProgressSpinnerModule } from "primeng/progressspinner";
 import TripsTimeline from "./../../components/trips-timeline/trips-timeline";
 
 @Component({
 	selector: "app-overview",
 	standalone: true,
 	imports: [
-		CardModule,
+		ProgressSpinnerModule,
 		ButtonModule,
-		ProgressBarModule,
-		TagModule,
-		TimelineModule,
 		RouterLink,
 		TripsTimeline,
 	],
@@ -26,7 +20,8 @@ import TripsTimeline from "./../../components/trips-timeline/trips-timeline";
 	styles: [],
 })
 export class OverviewComponent {
-	#tripService = inject(TripService);
+	readonly #tripStore = inject(TripStore);
 
-	trips = this.#tripService.trips;
+	trips = this.#tripStore.trips;
+	isLoadingTrips = this.#tripStore.isLoading;
 }

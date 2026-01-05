@@ -1,4 +1,5 @@
 import type { Routes } from "@angular/router";
+import { tripLoadGuard } from "./guards/trip.guard";
 import { tripResolver } from "./guards/trip.resolver";
 import NewTrip from "./pages/new-trip/new-trip";
 import { TripDetailComponent } from "./pages/trip-detail/trip-detail.component";
@@ -13,6 +14,7 @@ const tripsRoutes: Routes = [
 	},
 	{
 		path: ":id",
+		canActivate: [tripLoadGuard],
 		resolve: {
 			tripInfo: tripResolver,
 		},

@@ -18,7 +18,7 @@ export const onboardingCheckGuard: CanActivateFn = async () => {
 			return true;
 		}
 
-		const trips = await tripService.getUserTrips();
+		const trips = await tripService.loadUserTrips();
 
 		if (!trips || trips.length === 0) {
 			return router.parseUrl("/app/onboarding");
