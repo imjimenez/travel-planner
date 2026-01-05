@@ -1,20 +1,25 @@
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { registerLocaleData } from "@angular/common";
+import { provideHttpClient, withInterceptors } from "@angular/common/http";
+import localeEs from "@angular/common/locales/es";
+import localeExtraEs from "@angular/common/locales/extra/es";
 import {
-  type ApplicationConfig,
-  inject,
-  provideAppInitializer,
-  provideBrowserGlobalErrorListeners,
-  provideZonelessChangeDetection,
-} from '@angular/core';
-// primeNG
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import { provideRouter, withComponentInputBinding } from '@angular/router';
-import Aura from '@primeuix/themes/aura'; // Aura, Material, Lara, Nora
-import { providePrimeNG } from 'primeng/config';
-import { DialogService } from 'primeng/dynamicdialog';
-import { routes } from './app.routes';
-import { AuthService } from './core/authentication';
-import { authInterceptor } from './core/authentication/interceptors/auth.interceptor';
+	type ApplicationConfig,
+	inject,
+	LOCALE_ID,
+	provideAppInitializer,
+	provideBrowserGlobalErrorListeners,
+	provideZonelessChangeDetection,
+} from "@angular/core";
+import { provideAnimationsAsync } from "@angular/platform-browser/animations/async";
+import { provideRouter, withComponentInputBinding } from "@angular/router";
+import Aura from "@primeuix/themes/aura"; // Aura, Material, Lara, Nora
+import { providePrimeNG } from "primeng/config";
+import { DialogService } from "primeng/dynamicdialog";
+import { routes } from "./app.routes";
+import { AuthService } from "./core/authentication";
+import { authInterceptor } from "./core/authentication/interceptors/auth.interceptor";
+
+registerLocaleData(localeEs, "es", localeExtraEs);
 
 /**
  * Configuración principal de la aplicación
@@ -29,76 +34,85 @@ import { authInterceptor } from './core/authentication/interceptors/auth.interce
  * Esta configuración se aplica al arrancar la app en main.ts
  */
 export const appConfig: ApplicationConfig = {
-  providers: [
-    // Listeners de errores del navegador (útil para debugging)
-    provideBrowserGlobalErrorListeners(),
+	providers: [
+		{ provide: LOCALE_ID, useValue: "es" },
+		// Listeners de errores del navegador (útil para debugging)
+		provideBrowserGlobalErrorListeners(),
 
-    // Change detection sin Zone.js (requiere signals y OnPush)
-    // Mejor performance que el change detection tradicional de Angular
-    provideZonelessChangeDetection(),
+		// Change detection sin Zone.js (requiere signals y OnPush)
+		// Mejor performance que el change detection tradicional de Angular
+		provideZonelessChangeDetection(),
 
-    // Sistema de routing de Angular
-    provideRouter(routes, withComponentInputBinding()),
+		// Sistema de routing de Angular
+		provideRouter(routes, withComponentInputBinding()),
 
-    // HttpClient con interceptor que añade token de auth automáticamente
-    // Esto hace que todas las peticiones HTTP incluyan el header Authorization
-    provideHttpClient(withInterceptors([authInterceptor])),
-    // PrimeNG - Animations - Aunque aparezca deprecado, es necesario
-    provideAnimationsAsync(),
-    // PrimeNG - Configuración global de PrimeNG
-    providePrimeNG({
-      theme: {
-        preset: Aura,
-        options: {
-          darkModeSelector: '',
-        },
-      },
-      translation: {
-        accept: 'Aceptar',
-        reject: 'Rechazar',
-        // Calendario
-        dayNames: ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'],
-        dayNamesShort: ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'],
-        dayNamesMin: ['D', 'L', 'M', 'X', 'J', 'V', 'S'],
-        monthNames: [
-          'enero',
-          'febrero',
-          'marzo',
-          'abril',
-          'mayo',
-          'junio',
-          'julio',
-          'agosto',
-          'septiembre',
-          'octubre',
-          'noviembre',
-          'diciembre',
-        ],
-        monthNamesShort: [
-          'ene',
-          'feb',
-          'mar',
-          'abr',
-          'may',
-          'jun',
-          'jul',
-          'ago',
-          'sep',
-          'oct',
-          'nov',
-          'dic',
-        ],
-        today: 'Hoy',
-        clear: 'Limpiar',
-        firstDayOfWeek: 1,
-        weekHeader: undefined,
-      },
-    }),
-    DialogService,
-    // Inicializamos el servicio de autenticación al inicio de la aplicación
-    provideAppInitializer(() => {
-      const authService = inject(AuthService);
-      return authService.initialize();
-    }),
-  ],
+		// HttpClient con interceptor que añade token de auth automáticamente
+		// Esto hace que todas las peticiones HTTP incluyan el header Authorization
+		provideHttpClient(withInterceptors([authInterceptor])),
+		// PrimeNG - Animations - Aunque aparezca deprecado, es necesario
+		provideAnimationsAsync(),
+		// PrimeNG - Configuración global de PrimeNG
+		providePrimeNG({
+			theme: {
+				preset: Aura,
+				options: {
+					darkModeSelector: "",
+				},
+			},
+			translation: {
+				accept: "Aceptar",
+				reject: "Rechazar",
+				// Calendario
+				dayNames: [
+					"domingo",
+					"lunes",
+					"martes",
+					"miércoles",
+					"jueves",
+					"viernes",
+					"sábado",
+				],
+				dayNamesShort: ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"],
+				dayNamesMin: ["D", "L", "M", "X", "J", "V", "S"],
+				monthNames: [
+					"enero",
+					"febrero",
+					"marzo",
+					"abril",
+					"mayo",
+					"junio",
+					"julio",
+					"agosto",
+					"septiembre",
+					"octubre",
+					"noviembre",
+					"diciembre",
+				],
+				monthNamesShort: [
+					"ene",
+					"feb",
+					"mar",
+					"abr",
+					"may",
+					"jun",
+					"jul",
+					"ago",
+					"sep",
+					"oct",
+					"nov",
+					"dic",
+				],
+				today: "Hoy",
+				clear: "Limpiar",
+				firstDayOfWeek: 1,
+				weekHeader: undefined,
+			},
+		}),
+		DialogService,
+		// Inicializamos el servicio de autenticación al inicio de la aplicación
+		provideAppInitializer(() => {
+			const authService = inject(AuthService);
+			return authService.initialize();
+		}),
+	],
 };
