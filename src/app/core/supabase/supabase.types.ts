@@ -309,6 +309,27 @@ export type Database = {
     }
     Functions: {
       accept_trip_invite: { Args: { invite_token: string }; Returns: Json }
+      create_expense_with_details: {
+        Args: {
+          p_amount: number
+          p_category: string
+          p_title: string
+          p_trip_id: string
+        }
+        Returns: {
+          amount: number
+          category: string
+          created_at: string
+          id: string
+          is_editable: boolean
+          title: string
+          trip_id: string
+          user_avatar_url: string
+          user_email: string
+          user_full_name: string
+          user_id: string
+        }[]
+      }
       create_trip_invitation: {
         Args: {
           p_email: string
@@ -335,6 +356,22 @@ export type Database = {
         }
       }
       delete_own_account: { Args: never; Returns: undefined }
+      get_expenses_with_user_and_editability: {
+        Args: { p_trip_id: string }
+        Returns: {
+          amount: number
+          category: string
+          created_at: string
+          id: string
+          is_editable: boolean
+          title: string
+          trip_id: string
+          user_avatar_url: string
+          user_email: string
+          user_full_name: string
+          user_id: string
+        }[]
+      }
       get_itinerary_items_with_duration: {
         Args: { trip_id_param: string }
         Returns: {
