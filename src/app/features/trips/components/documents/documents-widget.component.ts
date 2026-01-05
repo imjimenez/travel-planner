@@ -21,10 +21,10 @@ import type { TripDocumentWithUrl } from '@core/trips/models/trip-document.model
   imports: [CommonModule],
   template: `
     <div
-      class="h-62 flex flex-col bg-white border border-gray-200 rounded-xl p-4 shadow-sm transition-shadow"
+      class="md:h-62 flex flex-col bg-white border border-gray-200 rounded-xl p-4 shadow-sm transition-shadow"
     >
       <!-- Header -->
-      <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center justify-between mb-2 md:mb-4">
         <div>
           <h3 class="text-sm md:text-base font-medium text-gray-900 uppercase tracking-wide">Documentos</h3>
           <p class="text-xs md:text-sm text-gray-500">{{ documents().length }} documento(s)</p>
@@ -54,7 +54,7 @@ import type { TripDocumentWithUrl } from '@core/trips/models/trip-document.model
         <!-- Empty state con drag & drop -->
         @if (documents().length === 0) {
         <div
-          class="h-full flex flex-col items-center justify-center border-2 border-dashed rounded-lg transition-colors cursor-pointer"
+          class="h-full py-2 flex flex-col items-center justify-center border-2 border-dashed rounded-lg transition-colors cursor-pointer"
           [class.border-gray-300]="!isDragging()"
           [class.bg-gray-50]="!isDragging()"
           [class.border-green-500]="isDragging()"
@@ -75,7 +75,6 @@ import type { TripDocumentWithUrl } from '@core/trips/models/trip-document.model
           </p>
         </div>
         }
-
         <!-- Lista de documentos -->
         @if (documents().length > 0) {
         <div class="space-y-3">
@@ -115,7 +114,7 @@ import type { TripDocumentWithUrl } from '@core/trips/models/trip-document.model
         } @else {
         <!-- Botón para agregar más -->
         <div
-          class="flex items-center gap-3 border-2 border-dashed border-gray-300 hover:border-gray-400 rounded-lg transition-colors cursor-pointer"
+          class="flex items-center mt-1 gap-3 border-2 border-dashed border-gray-300 hover:border-gray-400 rounded-lg transition-colors cursor-pointer"
           (click)="fileInput.click()"
           (dragover)="onDragOver($event)"
           (dragleave)="onDragLeave($event)"
