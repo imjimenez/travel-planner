@@ -1,6 +1,6 @@
 // src/core/trips/components/trip-detail/trip-detail.component.ts
 
-import { CommonModule } from "@angular/common";
+import { DatePipe } from "@angular/common";
 import {
 	Component,
 	computed,
@@ -15,7 +15,6 @@ import { ItineraryModalService } from "@core/dialog/itinerary-modal.service";
 import { DialogService } from "@core/dialog/services/dialog.service";
 import { WidgetModalService } from "@core/dialog/widget-modal.service";
 import { NotificationService } from "@core/notifications/notification.service";
-import { TripParticipantService } from "@core/trips/services/trip-participant.service";
 import { TripStore } from "@core/trips/store/trips.store";
 import { ChecklistModalComponent } from "@features/trips/components/checklist/checklist-modal-component";
 import { ChecklistWidgetComponent } from "@features/trips/components/checklist/checklist-widget.component";
@@ -43,7 +42,7 @@ import { ConfirmPopupModule } from "primeng/confirmpopup";
 	selector: "app-trip-detail",
 	standalone: true,
 	imports: [
-		CommonModule,
+		DatePipe,
 		ParticipantWidgetComponent,
 		DocumentWidgetComponent,
 		ChecklistWidgetComponent,
@@ -78,7 +77,6 @@ export class TripDetailComponent {
 	readonly #router = inject(Router);
 	readonly #tripStore = inject(TripStore);
 
-	private participantService = inject(TripParticipantService);
 	private authService = inject(AuthService);
 	private notificationService = inject(NotificationService);
 	confirmModalService = inject(ConfirmModalService);
@@ -87,6 +85,17 @@ export class TripDetailComponent {
 
 	trip = this.#tripStore.selectedTrip;
 
+	tripDuration = computed(() => {
+		const trip = this.trip();
+		if (!trip) return 0;
+		const start = new Date(trip.start_date);
+		const end = new Date(trip.end_date);
+		const diffTime = Math.abs(end.getTime() - start.getTime());
+		const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+		// Sumar 1 para incluir ambos días (inicio y fin)
+		return diffDays + 1;
+	});
+
 	isPending = linkedSignal<string | null>(() =>
 		this.#tripStore.isLoading() ? "Cargando viajes..." : null,
 	);
@@ -94,23 +103,6 @@ export class TripDetailComponent {
 	isOwner = computed(
 		() => this.trip()?.owner_user_id === this.authService.currentUser?.id,
 	);
-
-	calculateDuration(): number {
-		const currentTrip = this.trip();
-		if (!currentTrip?.start_date || !currentTrip?.end_date) {
-			return 0;
-		}
-
-		const start = new Date(currentTrip.start_date);
-		const end = new Date(currentTrip.end_date);
-
-		// Calcular diferencia en días
-		const diffTime = Math.abs(end.getTime() - start.getTime());
-		const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-		// Sumar 1 para incluir ambos días (inicio y fin)
-		return diffDays + 1;
-	}
 
 	editTrip() {
 		this.#dialogService.openCustomDialog(EditTripDialog, {
@@ -150,45 +142,32 @@ export class TripDetailComponent {
 	 * Permite al participante salir del viaje
 	 * Usa el servicio de participantes para remover al usuario actual
 	 */
-	async leaveTrip(): Promise<void> {
-		const currentTrip = this.trip();
-		if (!currentTrip) return;
-
-		const user = await this.authService.getAuthUser();
-		if (!user) {
-			this.notificationService.error("Usuario no autenticado");
-			return;
-		}
-
-		this.confirmModalService.open(
-			"Salir del viaje",
-			`¿Estás seguro de que deseas salir del viaje "${currentTrip.name}"?`,
-			async () => {
+	async leaveTrip(event: Event): Promise<void> {
+		this.#confirmationService.confirm({
+			target: event.currentTarget as EventTarget,
+			header: "Eliminar viaje",
+			message: `¿Estás seguro de que deseas salir del viaje "${this.trip()?.name}"?`,
+			icon: "pi pi-exclamation-triangle",
+			acceptButtonStyleClass: "p-button-danger",
+			rejectButtonStyleClass: "p-button-secondary",
+			acceptLabel: "Eliminar",
+			rejectLabel: "Cancelar",
+			accept: async () => {
 				try {
-					await this.participantService.removeParticipant(
-						currentTrip.id,
-						user.id,
-					);
+					this.isPending.set("Abandonando viaje");
+					await this.#tripStore.leaveSelectedTrip();
 					this.notificationService.success(
 						"Has salido del viaje correctamente",
 					);
 					this.#router.navigate(["/app/overview"]);
-				} catch (error: unknown) {
+				} catch (error) {
 					console.error("Error al salir del viaje:", error);
 					this.notificationService.error(
 						error instanceof Error ? error.message : "Error al salir del viaje",
 					);
+					this.isPending.set(null);
 				}
 			},
-			"Salir",
-		);
-	}
-
-	/**
-	 * Maneja el evento de añadir parada al itinerario
-	 */
-	handleAddStop(): void {
-		this.notificationService.info("Funcionalidad de itinerario próximamente");
-		console.log("Añadir parada al itinerario");
+		});
 	}
 }

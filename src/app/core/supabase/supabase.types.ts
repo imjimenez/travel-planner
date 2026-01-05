@@ -351,6 +351,7 @@ export type Database = {
           avatar_url: string
           email: string
           full_name: string
+          is_owner: boolean
           trip_id: string
           trip_user_id: string
           user_id: string

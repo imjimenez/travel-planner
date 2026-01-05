@@ -1,9 +1,11 @@
-import { Injectable, inject, signal } from '@angular/core';
-import { SupabaseService } from '@core/supabase/supabase.service';
-import { AuthService } from '@core/authentication/services/auth.service';
-import { TripService } from '@core/trips/services/trip.service';
-import type { TripParticipant, ParticipantWithUser } from '../models/trip-participant.model';
-import { firstValueFrom } from 'rxjs';
+import { Injectable, inject, signal } from "@angular/core";
+import { AuthService } from "@core/authentication/services/auth.service";
+import { SupabaseService } from "@core/supabase/supabase.service";
+import { TripService } from "@core/trips/services/trip.service";
+import type {
+	ParticipantWithUser,
+	TripParticipant,
+} from "../models/trip-participant.model";
 
 /**
  * Servicio para gestión de participantes de viajes
@@ -15,265 +17,308 @@ import { firstValueFrom } from 'rxjs';
  *
  */
 @Injectable({
-  providedIn: 'root',
+	providedIn: "root",
 })
 export class TripParticipantService {
-  private supabaseService = inject(SupabaseService);
-  private authService = inject(AuthService);
-  private tripService = inject(TripService);
+	private supabaseService = inject(SupabaseService);
+	private authService = inject(AuthService);
+	private tripService = inject(TripService);
 
-  // Signal que guarda la lista de participantes de un viaje
-  private participantsSignal = signal<ParticipantWithUser[]>([]);
-  participants = this.participantsSignal.asReadonly();
+	// Signal que guarda la lista de participantes de un viaje
+	private participantsSignal = signal<ParticipantWithUser[]>([]);
+	participants = this.participantsSignal.asReadonly();
 
-  private currentTripIdSignal = signal<string | null>(null);
-  currentTripId = this.currentTripIdSignal.asReadonly();
+	private currentTripIdSignal = signal<string | null>(null);
+	currentTripId = this.currentTripIdSignal.asReadonly();
 
-  // Signal de estado de carga
-  private loadingSignal = signal(false);
-  isLoading = this.loadingSignal.asReadonly();
+	// Signal de estado de carga
+	private loadingSignal = signal(false);
+	isLoading = this.loadingSignal.asReadonly();
 
-  /**
-   * Carga todos los participantes de un viaje y actualiza el signal
-   */
-  async loadParticipants(tripId: string): Promise<void> {
-    this.currentTripIdSignal.set(tripId);
-    this.loadingSignal.set(true);
-    this.participantsSignal.set([]);
+	/**
+	 * Carga todos los participantes de un viaje y actualiza el signal
+	 */
+	async loadParticipantsByTripId(
+		tripId: string,
+	): Promise<ParticipantWithUser[]> {
+		try {
+			const user = this.authService.currentUser;
+			if (!user) throw new Error("Usuario no autenticado");
 
-    try {
-      const user = await this.authService.getAuthUser();
-      if (!user) throw new Error('Usuario no autenticado');
+			const { data: participants, error } =
+				await this.supabaseService.client.rpc("get_trip_participants", {
+					p_trip_id: tripId,
+				});
 
-      // Verifica membresía
-      await this.verifyMembership(tripId, user.id);
+			if (error)
+				throw new Error(`Error al obtener participantes: ${error.message}`);
 
-      const trip = await this.tripService.getTripById(tripId);
+			// Mapear a ParticipantWithUser
+			return participants.map((p) => ({
+				id: p.trip_user_id,
+				user_id: p.user_id,
+				trip_id: p.trip_id,
+				added_at: p.added_at,
+				email: p.email || "Email no disponible",
+				fullName: p.full_name || "Usuario",
+				avatarUrl: p.avatar_url || undefined,
+				isOwner: p.is_owner || false,
+			}));
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	}
 
-      const { data: participants, error } = await this.supabaseService.client.rpc(
-        'get_trip_participants',
-        { p_trip_id: tripId }
-      );
+	/**
+	 * Carga todos los participantes de un viaje y actualiza el signal
+	 */
+	async loadParticipants(tripId: string): Promise<void> {
+		this.currentTripIdSignal.set(tripId);
+		this.loadingSignal.set(true);
+		this.participantsSignal.set([]);
 
-      if (error) throw new Error(`Error al obtener participantes: ${error.message}`);
-      if (!participants) {
-        this.participantsSignal.set([]);
-        return;
-      }
+		try {
+			const user = await this.authService.getAuthUser();
+			if (!user) throw new Error("Usuario no autenticado");
 
-      // Mapear a ParticipantWithUser
-      const mapped = participants.map((p): ParticipantWithUser => {
-        return {
-          id: p.trip_user_id,
-          user_id: p.user_id,
-          trip_id: p.trip_id,
-          added_at: p.added_at,
-          email: p.email || 'Email no disponible',
-          fullName: p.full_name || 'Usuario',
-          avatarUrl: p.avatar_url || undefined,
-          isOwner: p.user_id === trip.owner_user_id,
-        };
-      });
+			// Verifica membresía
+			await this.verifyMembership(tripId, user.id);
 
-      this.participantsSignal.set(mapped);
-    } catch (error) {
-      console.error(error);
-      this.participantsSignal.set([]);
-    } finally {
-      this.loadingSignal.set(false);
-    }
-  }
+			const trip = await this.tripService.getTripById(tripId);
 
-  /**
-   * Obtiene todos los participantes de un viaje con información completa
-   *
-   * Incluye email, nombre completo y avatar de cada participante.
-   * Utiliza una función RPC optimizada que hace join con auth.users
-   * para obtener toda la información en una sola consulta.
-   *
-   * @param tripId - ID del viaje
-   * @returns Lista de participantes con información del usuario
-   * @throws Error si el usuario no está autenticado
-   *
-   */
-  async getParticipants(tripId: string): Promise<ParticipantWithUser[]> {
-    const user = await this.authService.getAuthUser();
+			const { data: participants, error } =
+				await this.supabaseService.client.rpc("get_trip_participants", {
+					p_trip_id: tripId,
+				});
 
-    if (!user) {
-      throw new Error('Usuario no autenticado');
-    }
+			if (error)
+				throw new Error(`Error al obtener participantes: ${error.message}`);
+			if (!participants) {
+				this.participantsSignal.set([]);
+				return;
+			}
 
-    // Verifica membresía
-    await this.verifyMembership(tripId, user.id);
+			// Mapear a ParticipantWithUser
+			const mapped = participants.map((p): ParticipantWithUser => {
+				return {
+					id: p.trip_user_id,
+					user_id: p.user_id,
+					trip_id: p.trip_id,
+					added_at: p.added_at,
+					email: p.email || "Email no disponible",
+					fullName: p.full_name || "Usuario",
+					avatarUrl: p.avatar_url || undefined,
+					isOwner: p.user_id === trip.owner_user_id,
+				};
+			});
 
-    // Obtiene el viaje para saber quién es el owner
-    const trip = await this.tripService.getTripById(tripId);
+			this.participantsSignal.set(mapped);
+		} catch (error) {
+			console.error(error);
+			this.participantsSignal.set([]);
+		} finally {
+			this.loadingSignal.set(false);
+		}
+	}
 
-    // Obtener participantes con información de usuario
-    const { data: participants, error } = await this.supabaseService.client.rpc(
-      'get_trip_participants',
-      { p_trip_id: tripId }
-    );
+	/**
+	 * Obtiene todos los participantes de un viaje con información completa
+	 *
+	 * Incluye email, nombre completo y avatar de cada participante.
+	 * Utiliza una función RPC optimizada que hace join con auth.users
+	 * para obtener toda la información en una sola consulta.
+	 *
+	 * @param tripId - ID del viaje
+	 * @returns Lista de participantes con información del usuario
+	 * @throws Error si el usuario no está autenticado
+	 *
+	 */
+	async getParticipants(tripId: string): Promise<ParticipantWithUser[]> {
+		const user = await this.authService.getAuthUser();
 
-    if (error) {
-      throw new Error(`Error al obtener participantes: ${error.message}`);
-    }
+		if (!user) {
+			throw new Error("Usuario no autenticado");
+		}
 
-    if (!participants) {
-      return [];
-    }
+		// Verifica membresía
+		await this.verifyMembership(tripId, user.id);
 
-    // Mapear a ParticipantWithUser
-    return participants.map((p): ParticipantWithUser => {
-      const tripParticipant: TripParticipant = {
-        id: p.trip_user_id,
-        user_id: p.user_id,
-        trip_id: p.trip_id,
-        added_at: p.added_at,
-      };
+		// Obtiene el viaje para saber quién es el owner
+		const trip = await this.tripService.getTripById(tripId);
 
-      // Extender con información adicional del usuario
-      return {
-        ...tripParticipant,
-        email: p.email || 'Email no disponible',
-        fullName: p.full_name || 'Usuario',
-        avatarUrl: p.avatar_url || undefined,
-        isOwner: p.user_id === trip.owner_user_id,
-      };
-    });
-  }
+		// Obtener participantes con información de usuario
+		const { data: participants, error } = await this.supabaseService.client.rpc(
+			"get_trip_participants",
+			{ p_trip_id: tripId },
+		);
 
-  /**
-   * Remueve un participante del viaje
-   *
-   * Permisos:
-   * - El owner puede remover a cualquier participante
-   * - Los participantes pueden removerse a sí mismos (salir del viaje)
-   * - El owner NO puede removerse a sí mismo (debe transferir ownership primero)
-   *
-   * @param tripId - ID del viaje
-   * @param userId - ID del usuario a remover
-   * @throws Error si no tiene permisos o falla la operación
-   *
-   * @example
-   * // Owner remueve a alguien
-   * await participantService.removeParticipant('trip-123', 'user-456');
-   *
-   * // Usuario sale del viaje
-   * const currentUser = await authService.getAuthUser();
-   * await participantService.removeParticipant('trip-123', currentUser.id);
-   */
-  async removeParticipant(tripId: string, userId: string): Promise<void> {
-    const currentUser = await this.authService.getAuthUser();
+		if (error) {
+			throw new Error(`Error al obtener participantes: ${error.message}`);
+		}
 
-    if (!currentUser) {
-      throw new Error('Usuario no autenticado');
-    }
+		if (!participants) {
+			return [];
+		}
 
-    // Obtener info del trip
-    const trip = await this.tripService.getTripById(tripId);
+		// Mapear a ParticipantWithUser
+		return participants.map((p): ParticipantWithUser => {
+			const tripParticipant: TripParticipant = {
+				id: p.trip_user_id,
+				user_id: p.user_id,
+				trip_id: p.trip_id,
+				added_at: p.added_at,
+			};
 
-    // Verificar que no intenta remover al owner
-    if (userId === trip.owner_user_id) {
-      throw new Error('No se puede remover al propietario del viaje');
-    }
+			// Extender con información adicional del usuario
+			return {
+				...tripParticipant,
+				email: p.email || "Email no disponible",
+				fullName: p.full_name || "Usuario",
+				avatarUrl: p.avatar_url || undefined,
+				isOwner: p.user_id === trip.owner_user_id,
+			};
+		});
+	}
 
-    // Verificar permisos
-    const isOwner = currentUser.id === trip.owner_user_id;
-    const isSelf = currentUser.id === userId;
+	/**
+	 * Remueve un participante del viaje
+	 *
+	 * Permisos:
+	 * - El owner puede remover a cualquier participante
+	 * - Los participantes pueden removerse a sí mismos (salir del viaje)
+	 * - El owner NO puede removerse a sí mismo (debe transferir ownership primero)
+	 *
+	 * @param tripId - ID del viaje
+	 * @param userId - ID del usuario a remover
+	 * @throws Error si no tiene permisos o falla la operación
+	 *
+	 * @example
+	 * // Owner remueve a alguien
+	 * await participantService.removeParticipant('trip-123', 'user-456');
+	 *
+	 * // Usuario sale del viaje
+	 * const currentUser = await authService.getAuthUser();
+	 * await participantService.removeParticipant('trip-123', currentUser.id);
+	 */
+	async removeParticipant(tripId: string, userId: string): Promise<void> {
+		const currentUser = await this.authService.getAuthUser();
 
-    if (!isOwner && !isSelf) {
-      throw new Error('No tienes permisos para remover este participante');
-    }
+		if (!currentUser) {
+			throw new Error("Usuario no autenticado");
+		}
 
-    // Remover participante
-    const { error, count } = await this.supabaseService.client
-      .from('trip_user')
-      .delete({ count: 'exact' })
-      .eq('user_id', userId)
-      .eq('trip_id', tripId);
+		// Obtener info del trip
+		const trip = await this.tripService.getTripById(tripId);
 
-    if (error) {
-      throw new Error(`Error al remover participante: ${error.message}`);
-    }
+		// Verificar que no intenta remover al owner
+		if (userId === trip.owner_user_id) {
+			throw new Error("No se puede remover al propietario del viaje");
+		}
 
-    // Detectar si RLS bloqueó la operación
-    if (count === 0) {
-      throw new Error('No se pudo eliminar. Verifica las políticas RLS.');
-    }
-  }
+		// Verificar permisos
+		const isOwner = currentUser.id === trip.owner_user_id;
+		const isSelf = currentUser.id === userId;
 
-  /**
-   * Obtiene el número de participantes de un viaje
-   *
-   * @param tripId - ID del viaje
-   * @returns Número de participantes
-   */
-  async getParticipantCount(tripId: string): Promise<number> {
-    const user = await this.authService.getAuthUser();
-    if (!user) throw new Error('Usuario no autenticado');
+		if (!isOwner && !isSelf) {
+			throw new Error("No tienes permisos para remover este participante");
+		}
 
-    // Verifica membresía
-    await this.verifyMembership(tripId, user.id);
+		// Remover participante
+		const { error, count } = await this.supabaseService.client
+			.from("trip_user")
+			.delete({ count: "exact" })
+			.eq("user_id", userId)
+			.eq("trip_id", tripId);
 
-    const { count, error } = await this.supabaseService.client
-      .from('trip_user')
-      .select('*', { count: 'exact', head: true })
-      .eq('trip_id', tripId);
+		if (error) {
+			throw new Error(`Error al remover participante: ${error.message}`);
+		}
 
-    if (error) {
-      throw new Error(`Error al contar participantes: ${error.message}`);
-    }
+		// Detectar si RLS bloqueó la operación
+		if (count === 0) {
+			throw new Error("No se pudo eliminar. Verifica las políticas RLS.");
+		}
+	}
 
-    return count || 0;
-  }
+	/**
+	 * Obtiene el número de participantes de un viaje
+	 *
+	 * @param tripId - ID del viaje
+	 * @returns Número de participantes
+	 */
+	async getParticipantCount(tripId: string): Promise<number> {
+		const user = await this.authService.getAuthUser();
+		if (!user) throw new Error("Usuario no autenticado");
 
-  /**
-   * Verifica si ya existe un participante con el email indicado.
-   *
-   * Se usa para evitar mandar invitaciones duplicadas.
-   */
-  async hasParticipantWithEmail(tripId: string, email: string): Promise<boolean> {
-    const normalizedEmail = email.trim().toLowerCase();
+		// Verifica membresía
+		await this.verifyMembership(tripId, user.id);
 
-    if (!normalizedEmail) {
-      return false;
-    }
+		const { count, error } = await this.supabaseService.client
+			.from("trip_user")
+			.select("*", { count: "exact", head: true })
+			.eq("trip_id", tripId);
 
-    const { data: participants, error } = await this.supabaseService.client.rpc(
-      'get_trip_participants',
-      { p_trip_id: tripId }
-    );
+		if (error) {
+			throw new Error(`Error al contar participantes: ${error.message}`);
+		}
 
-    if (error) {
-      throw new Error(`Error al verificar participantes: ${error.message}`);
-    }
+		return count || 0;
+	}
 
-    if (!participants) {
-      return false;
-    }
+	/**
+	 * Verifica si ya existe un participante con el email indicado.
+	 *
+	 * Se usa para evitar mandar invitaciones duplicadas.
+	 */
+	async hasParticipantWithEmail(
+		tripId: string,
+		email: string,
+	): Promise<boolean> {
+		const normalizedEmail = email.trim().toLowerCase();
 
-    return participants.some(
-      (participant) => participant.email?.trim().toLowerCase() === normalizedEmail
-    );
-  }
+		if (!normalizedEmail) {
+			return false;
+		}
 
-  /**
-   * Verifica que el usuario es miembro del viaje
-   *
-   * @private
-   * @throws Error si el usuario no es miembro
-   */
-  private async verifyMembership(tripId: string, userId: string): Promise<void> {
-    const { data, error } = await this.supabaseService.client
-      .from('trip_user')
-      .select('trip_id')
-      .eq('trip_id', tripId)
-      .eq('user_id', userId)
-      .maybeSingle();
+		const { data: participants, error } = await this.supabaseService.client.rpc(
+			"get_trip_participants",
+			{ p_trip_id: tripId },
+		);
 
-    if (error || !data) {
-      throw new Error('No tienes acceso a este viaje');
-    }
-  }
+		if (error) {
+			throw new Error(`Error al verificar participantes: ${error.message}`);
+		}
+
+		if (!participants) {
+			return false;
+		}
+
+		return participants.some(
+			(participant) =>
+				participant.email?.trim().toLowerCase() === normalizedEmail,
+		);
+	}
+
+	/**
+	 * Verifica que el usuario es miembro del viaje
+	 *
+	 * @private
+	 * @throws Error si el usuario no es miembro
+	 */
+	private async verifyMembership(
+		tripId: string,
+		userId: string,
+	): Promise<void> {
+		const { data, error } = await this.supabaseService.client
+			.from("trip_user")
+			.select("trip_id")
+			.eq("trip_id", tripId)
+			.eq("user_id", userId)
+			.maybeSingle();
+
+		if (error || !data) {
+			throw new Error("No tienes acceso a este viaje");
+		}
+	}
 }

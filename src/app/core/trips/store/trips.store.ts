@@ -1,14 +1,15 @@
 import { inject } from "@angular/core";
+import { AuthService } from "@core/authentication";
 import {
-  patchState,
-  signalStore,
-  withComputed,
-  withHooks,
-  withMethods,
-  withState,
+	patchState,
+	signalStore,
+	withComputed,
+	withHooks,
+	withMethods,
+	withState,
 } from "@ngrx/signals";
 import type { Trip, TripInsert } from "../models";
-import { TripService } from "../services";
+import { TripParticipantService, TripService } from "../services";
 
 type TripState = {
 	trips: Trip[];
@@ -34,6 +35,8 @@ export const TripStore = signalStore(
 		(
 			store,
 			tripService = inject(TripService),
+			participantService = inject(TripParticipantService),
+			authService = inject(AuthService),
 		) => ({
 			loadTrips: async () => {
 				patchState(store, { isLoading: true });
@@ -86,6 +89,20 @@ export const TripStore = signalStore(
 					patchState(store, { trips: updatedTrips, selectedTripId: null });
 				} catch (error) {
 					console.error("Error deleting trip:", error);
+				}
+			},
+			leaveSelectedTrip: async () => {
+				const trip = store.selectedTrip();
+				const user = authService.currentUser;
+				if (!trip || !user) return;
+				try {
+					await participantService.removeParticipant(trip.id, user.id);
+					const tripIndex = store.trips().indexOf(trip);
+					const updatedTrips = [...store.trips()];
+					updatedTrips.splice(tripIndex, 1);
+					patchState(store, { trips: updatedTrips, selectedTripId: null });
+				} catch (error) {
+					console.error("Error leaving trip:", error);
 				}
 			},
 		}),
