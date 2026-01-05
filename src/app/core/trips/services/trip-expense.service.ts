@@ -110,7 +110,7 @@ export class ExpenseService {
     }
 
     // Obtener información de los participantes del viaje (reutiliza lógica existente)
-    const participants = await this.participantService.getParticipants(tripId);
+    const participants = await this.participantService.loadParticipantsByTripId(tripId);
 
     // Crear mapa de userId -> info de usuario para búsqueda rápida
     const usersMap = new Map(
@@ -351,7 +351,7 @@ export class ExpenseService {
     }
 
     // Obtener participantes y contar desde el resultado (reutiliza la llamada que ya bypasea RLS)
-    const participants = await this.participantService.getParticipants(tripId);
+    const participants = await this.participantService.loadParticipantsByTripId(tripId);
     const participantCount = participants.length;
 
     console.log('🔍 DEBUG - Cálculo de estadísticas:');
@@ -434,7 +434,7 @@ export class ExpenseService {
     }
 
     // Obtener información de los participantes del viaje (reutiliza lógica existente)
-    const participants = await this.participantService.getParticipants(tripId);
+    const participants = await this.participantService.loadParticipantsByTripId(tripId);
 
     // Crear mapa de userId -> info de usuario para búsqueda rápida
     const usersMap = new Map(

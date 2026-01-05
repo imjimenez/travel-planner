@@ -186,53 +186,6 @@ export class TripDocumentService {
 	}
 
 	/**
-	 * Renombra un documento
-	 *
-	 * Permisos:
-	 * - El owner del viaje puede renombrar cualquier documento
-	 * - El usuario puede renombrar solo sus propios documentos
-	 *
-	 * @param documentId - ID del documento
-	 * @param newName - Nuevo nombre para el documento
-	 * @throws Error si el usuario no tiene permisos
-	 *
-	 */
-	async renameDocument(documentId: string, newName: string): Promise<void> {
-		const user = await this.authService.getAuthUser();
-		if (!user) throw new Error("Usuario no autenticado");
-
-		// Obtener documento
-		const { data: document, error: getError } =
-			await this.supabaseService.client
-				.from("document")
-				.select("trip_id, user_id")
-				.eq("id", documentId)
-				.single();
-
-		if (getError || !document || !document.trip_id) {
-			throw new Error("Documento no encontrado");
-		}
-
-		// Verificar permisos
-		const isOwner = await this.tripService.isOwner(document.trip_id);
-		const isUploader = document.user_id === user.id;
-
-		if (!isOwner && !isUploader) {
-			throw new Error("No tienes permisos para renombrar este documento");
-		}
-
-		// Actualizar nombre
-		const { error: updateError } = await this.supabaseService.client
-			.from("document")
-			.update({ name: newName })
-			.eq("id", documentId);
-
-		if (updateError) {
-			throw new Error(`Error al renombrar documento: ${updateError.message}`);
-		}
-	}
-
-	/**
 	 * Elimina un documento del storage y de la BD
 	 *
 	 * Permisos:

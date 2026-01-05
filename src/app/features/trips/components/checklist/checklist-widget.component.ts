@@ -1,10 +1,10 @@
-import { Component, effect, inject, Input, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { WidgetModalService } from '@core/dialog/widget-modal.service';
-import { TripTodoService } from '@core/trips/services/trip-todo.service';
-import { NotificationService } from '@core/notifications/notification.service';
-import type { TripTodo } from '@core/trips/models/trip-todo.model';
+import { SlicePipe } from "@angular/common";
+import { Component, computed, inject, signal } from "@angular/core";
+import { FormsModule } from "@angular/forms";
+import { WidgetModalService } from "@core/dialog/widget-modal.service";
+import { NotificationService } from "@core/notifications/notification.service";
+import type { TripTodo } from "@core/trips/models/trip-todo.model";
+import { TripTodoStore } from "@core/trips/store/trip-todo.store";
 
 /**
  * Widget de checklist para mostrar en el dashboard del viaje
@@ -18,10 +18,9 @@ import type { TripTodo } from '@core/trips/models/trip-todo.model';
  * - Loading solo se muestra en la primera carga
  */
 @Component({
-  selector: 'app-checklist-widget',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+	selector: "app-checklist-widget",
+	imports: [SlicePipe, FormsModule],
+	template: `
     <div
       class="md:h-62 flex flex-col bg-white border border-gray-200 rounded-xl p-4 shadow-sm transition-shadow"
     >
@@ -29,7 +28,7 @@ import type { TripTodo } from '@core/trips/models/trip-todo.model';
       <div class="flex items-center justify-between mb-2 md:mb-4">
         <div>
           <h3 class="text-sm md:text-base font-medium text-gray-900 uppercase tracking-wide">Checklist</h3>
-          <p class="text-xs md:text-sm text-gray-500">{{ completedCount() }}/{{ totalCount() }} completadas</p>
+          <p class="text-xs md:text-sm text-gray-500">{{ todoStats() }} completadas</p>
         </div>
 
         <!-- Menu button -->
@@ -48,23 +47,20 @@ import type { TripTodo } from '@core/trips/models/trip-todo.model';
       <div class="flex justify-center py-8">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
       </div>
-      }
-
+      } @else {
       <!-- Content -->
-      @if (!isLoading()) {
       <div class="flex-1 flex flex-col justify-between">
         <!-- Empty state simple -->
         @if (pendingTodos().length === 0) {
-        <div class="flex items-center gap-2 h-13 justify-center text-gray-500 mb-3">
-          <p class="text-sm">No hay tareas pendientes</p>
-        </div>
-
+          <div class="flex items-center gap-2 h-13 justify-center text-gray-500 mb-3">
+            <p class="text-sm">No hay tareas pendientes</p>
+          </div>
         }
 
         <!-- Lista de tareas y input -->
         <div class="flex flex-col gap-1">
           <!-- Primeras 2 tareas pendientes -->
-          @for (todo of displayedTodos(); track todo.id) {
+          @for (todo of pendingTodos() | slice:0:2; track todo.id) {
           <div
             class="group mb-0 flex items-center gap-2 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
           >
@@ -99,7 +95,7 @@ import type { TripTodo } from '@core/trips/models/trip-todo.model';
           }
 
           <!-- Input para nueva tarea (siempre visible) -->
-          
+
         </div>
         <div
             class="flex items-center mt-2 gap-2 border-2 border-dashed border-gray-300 hover:border-gray-400 rounded-lg transition-colors"
@@ -121,140 +117,85 @@ import type { TripTodo } from '@core/trips/models/trip-todo.model';
     </div>
   `,
 })
-export class ChecklistWidgetComponent implements OnInit {
-  @Input() tripId!: string;
+export class ChecklistWidgetComponent {
+	readonly #tripTodoStore = inject(TripTodoStore);
 
-  private widgetModalService = inject(WidgetModalService);
-  private todoService = inject(TripTodoService);
-  private notificationService = inject(NotificationService);
+	pendingTodos = computed(() =>
+		this.#tripTodoStore.todos().filter((todo) => todo.status === "pending"),
+	);
+	isLoading = this.#tripTodoStore.isLoading;
+	todoStats = computed(() => {
+		if (this.#tripTodoStore.isLoading()) {
+			return "?/?";
+		}
+		const todos = this.#tripTodoStore.todos();
+		const completedCount = todos.filter(
+			(todo) => todo.status === "completed",
+		).length;
+		const totalCount = todos.length;
+		return `${completedCount}/${totalCount}`;
+	});
 
-  todos = signal<TripTodo[]>([]);
-  isLoading = signal(true);
-  newTodoTitle = signal('');
-  private isFirstLoad = signal(true);
+	private widgetModalService = inject(WidgetModalService);
+	private notificationService = inject(NotificationService);
 
-  /**
-   * Computed: Tareas pendientes (no completadas)
-   */
-  pendingTodos = signal<TripTodo[]>([]);
+	newTodoTitle = signal("");
 
-  /**
-   * Computed: Primeras 2 tareas pendientes para mostrar
-   */
-  displayedTodos = signal<TripTodo[]>([]);
+	/**
+	 * Marca/desmarca una tarea como completada
+	 */
+	async toggleTodo(todo: TripTodo): Promise<void> {
+		const newStatus = todo.status === "completed" ? "pending" : "completed";
 
-  /**
-   * Computed: Total de tareas
-   */
-  totalCount = signal(0);
+		try {
+			await this.#tripTodoStore.updateTodo(todo.id, { status: newStatus });
+		} catch (error) {
+			console.error("Error updating todo:", error);
+			this.notificationService.error(
+				error instanceof Error
+					? error.message
+					: "No se pudo actualizar la tarea",
+			);
+		}
+	}
 
-  /**
-   * Computed: Tareas completadas
-   */
-  completedCount = signal(0);
+	/**
+	 * Agrega una nueva tarea
+	 */
+	async addTodo(): Promise<void> {
+		const title = this.newTodoTitle().trim();
+		if (!title) return;
 
-  constructor() {
-    effect(() => {
-      const closed = this.widgetModalService.closedModal();
+		try {
+			await this.#tripTodoStore.createTodoForSelectedTrip({ title });
 
-      if (closed === 'checklist') {
-        // Recargar sin loading cuando se cierra el modal
-        void this.loadTodos(false);
-      }
-    });
-  }
+			this.newTodoTitle.set("");
+			this.notificationService.success("Tarea agregada");
+		} catch (error) {
+			console.error("Error creating todo:", error);
+			this.notificationService.error(
+				error instanceof Error ? error.message : "No se pudo agregar la tarea",
+			);
+		}
+	}
 
-  async ngOnInit() {
-    await this.loadTodos();
-  }
+	/**
+	 * Maneja el blur del input
+	 */
+	onInputBlur(): void {
+		// Si hay texto y el usuario sale del input, agregar la tarea
+		if (this.newTodoTitle().trim()) {
+			this.addTodo();
+		}
+	}
 
-  /**
-   * Carga todas las tareas del viaje
-   * Solo muestra loading en la primera carga
-   */
-  private async loadTodos(showLoading: boolean = true): Promise<void> {
-    try {
-      // Solo mostrar loading si es la primera carga Y showLoading es true
-      if (this.isFirstLoad() && showLoading) {
-        this.isLoading.set(true);
-      }
-
-      const allTodos = await this.todoService.getTripTodos(this.tripId);
-      this.todos.set(allTodos);
-
-      // Calcular estadísticas
-      const pending = allTodos.filter((t) => t.status !== 'completed');
-      const completed = allTodos.filter((t) => t.status === 'completed');
-
-      this.pendingTodos.set(pending);
-      this.displayedTodos.set(pending.slice(0, 2));
-      this.totalCount.set(allTodos.length);
-      this.completedCount.set(completed.length);
-
-      // Marcar que ya no es la primera carga
-      this.isFirstLoad.set(false);
-    } catch (error: any) {
-      console.error('Error loading todos:', error);
-      this.notificationService.error(error.message || 'No se pudieron cargar las tareas');
-    } finally {
-      this.isLoading.set(false);
-    }
-  }
-
-  /**
-   * Marca/desmarca una tarea como completada
-   */
-  async toggleTodo(todo: TripTodo): Promise<void> {
-    const newStatus = todo.status === 'completed' ? 'pending' : 'completed';
-
-    try {
-      await this.todoService.updateTodo(todo.id, { status: newStatus });
-      // Recargar sin loading
-      await this.loadTodos(false);
-    } catch (error: any) {
-      console.error('Error updating todo:', error);
-      this.notificationService.error(error.message || 'No se pudo actualizar la tarea');
-    }
-  }
-
-  /**
-   * Agrega una nueva tarea
-   */
-  async addTodo(): Promise<void> {
-    const title = this.newTodoTitle().trim();
-    if (!title) return;
-
-    try {
-      await this.todoService.createTodo({
-        tripId: this.tripId,
-        title,
-        status: 'pending',
-      });
-
-      this.newTodoTitle.set('');
-      this.notificationService.success('Tarea agregada');
-      // Recargar sin loading
-      await this.loadTodos(false);
-    } catch (error: any) {
-      console.error('Error creating todo:', error);
-      this.notificationService.error(error.message || 'No se pudo agregar la tarea');
-    }
-  }
-
-  /**
-   * Maneja el blur del input
-   */
-  onInputBlur(): void {
-    // Si hay texto y el usuario sale del input, agregar la tarea
-    if (this.newTodoTitle().trim()) {
-      this.addTodo();
-    }
-  }
-
-  /**
-   * Abre el modal con todas las tareas
-   */
-  openChecklistModal(): void {
-    this.widgetModalService.openChecklistModal(this.tripId);
-  }
+	/**
+	 * Abre el modal con todas las tareas
+	 */
+	openChecklistModal(): void {
+		const tripId = this.#tripTodoStore.selectedTrip()?.id;
+		if (tripId) {
+			this.widgetModalService.openChecklistModal();
+		}
+	}
 }
