@@ -14,7 +14,7 @@ export const onboardingCheckGuard: CanActivateFn = async () => {
 
 	try {
 		// Si ya cerró onboarding en esta sesión → permitir
-		if (sessionStorage.getItem("onboardingDismissed") === "1") {
+		if (sessionStorage.getItem("onboardingDone") === "1") {
 			return true;
 		}
 

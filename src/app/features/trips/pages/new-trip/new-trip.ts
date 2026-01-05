@@ -7,7 +7,8 @@ import {
 import { Router } from "@angular/router";
 import { LeafletService } from "@core/leaflet/services/leaflet.service";
 import { NotificationService } from "@core/notifications/notification.service";
-import { type Trip, TripService } from "@core/trips";
+import type { Trip } from "@core/trips";
+import { TripStore } from "@core/trips/store/trips.store";
 import { firstValueFrom } from "rxjs";
 import TripForm from "./../../components/trip-form/trip-form";
 
@@ -18,7 +19,7 @@ import TripForm from "./../../components/trip-form/trip-form";
 })
 export default class NewTrip {
 	readonly #leaflet = inject(LeafletService);
-	readonly #tripService = inject(TripService);
+	readonly #tripStore = inject(TripStore);
 	readonly #notification = inject(NotificationService);
 	readonly #router = inject(Router);
 
@@ -34,7 +35,7 @@ export default class NewTrip {
 				const location = await firstValueFrom(
 					this.#leaflet.reverseGeocode({ lat: latitude, lng: longitude }),
 				);
-				const { id } = await this.#tripService.createTrip({
+				const trip = await this.#tripStore.createTrip({
 					name,
 					latitude,
 					longitude,
@@ -43,7 +44,7 @@ export default class NewTrip {
 					...this.#leaflet.extractCityAndCountry(location),
 				});
 				this.#notification.success("Viaje creado exitosamente");
-				this.#router.navigate(["/app", "trips", id]);
+				this.#router.navigate(["/app", "trips", trip.id]);
 			}
 		} catch {
 			this.#notification.error(

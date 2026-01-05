@@ -125,26 +125,26 @@ export class TripService {
 	 * @throws Error si el usuario no es propietario o falla la actualización
 	 */
 	async updateTrip(tripId: string, updates: TripUpdate): Promise<Trip> {
-		const user = await this.#authService.getAuthUser();
+		const user = this.#authService.currentUser;
 
 		if (!user) {
 			throw new Error("Usuario no autenticado");
 		}
 
 		// Verificar que el usuario es el propietario
-		const { data: trip, error: tripError } = await this.#supabase.client
-			.from("trip")
-			.select("owner_user_id")
-			.eq("id", tripId)
-			.maybeSingle(); // Usar maybeSingle() en lugar de single()
+		// const { data: trip, error: tripError } = await this.#supabase.client
+		// 	.from("trip")
+		// 	.select("owner_user_id")
+		// 	.eq("id", tripId)
+		// 	.maybeSingle(); // Usar maybeSingle() en lugar de single()
 
-		if (tripError || !trip) {
-			throw new Error("Viaje no encontrado");
-		}
+		// if (tripError || !trip) {
+		// 	throw new Error("Viaje no encontrado");
+		// }
 
-		if (trip.owner_user_id !== user.id) {
-			throw new Error("Solo el propietario puede actualizar el viaje");
-		}
+		// if (trip.owner_user_id !== user.id) {
+		// 	throw new Error("Solo el propietario puede actualizar el viaje");
+		// }
 
 		const { data, error } = await this.#supabase.client
 			.from("trip")

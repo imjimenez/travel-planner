@@ -1,12 +1,14 @@
 import { inject } from "@angular/core";
+import { Router } from "@angular/router";
 import { NotificationService } from "@core/notifications/notification.service";
-import { type Trip, TripInviteService, TripService } from "@core/trips";
+import { type Trip, TripInviteService } from "@core/trips";
+import { TripStore } from "@core/trips/store/trips.store";
 import {
-  patchState,
-  signalStore,
-  withComputed,
-  withMethods,
-  withState,
+	patchState,
+	signalStore,
+	withComputed,
+	withMethods,
+	withState,
 } from "@ngrx/signals";
 import { LeafletService } from "@shared/components/map/services/leaflet.service";
 import { firstValueFrom } from "rxjs";
@@ -66,10 +68,11 @@ export const OnboardingStore = signalStore(
 	withMethods(
 		(
 			state,
-			tripService = inject(TripService),
+			tripStore = inject(TripStore),
 			tripInviteService = inject(TripInviteService),
 			leaflet = inject(LeafletService),
 			notifications = inject(NotificationService),
+			router = inject(Router),
 		) => ({
 			setActiveStep(step: number) {
 				patchState(state, { currentStep: step });
@@ -98,7 +101,7 @@ export const OnboardingStore = signalStore(
 						const location = await firstValueFrom(
 							leaflet.reverseGeocode({ lat: latitude, lng: longitude }),
 						);
-						trip = await tripService.createTrip({
+						trip = await tripStore.createTrip({
 							name,
 							latitude,
 							longitude,
@@ -172,6 +175,10 @@ export const OnboardingStore = signalStore(
 					patchState(state, { isLoading: false });
 				}
 			},
+			completeOnboarding: ()=> {
+			  sessionStorage.setItem("onboardingDone", "1");
+				router.navigate(["/app", "trips", state.trip().id]);
+			}
 		}),
 	),
 );

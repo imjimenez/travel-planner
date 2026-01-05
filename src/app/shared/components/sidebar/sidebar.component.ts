@@ -88,7 +88,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
 	 */
 	async onLogout() {
 		await this.#authService.signOut();
-		sessionStorage.setItem("onboardingDismissed", "false");
+		sessionStorage.setItem("onboardingDone", "false");
 		this.#router.navigate(["/"]);
 	}
 
