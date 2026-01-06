@@ -58,7 +58,7 @@ export const TripStore = signalStore(
 				try {
 					const newTrip = await tripService.createTrip(trip);
 					const updatedTrips = [...store.trips(), newTrip];
-					patchState(store, { trips: updatedTrips });
+					patchState(store, { trips: updatedTrips.sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime()) });
 					return newTrip;
 				} catch (error) {
 					console.error("Error creating trip:", error);
@@ -73,7 +73,7 @@ export const TripStore = signalStore(
 					const tripIndex = store.trips().indexOf(trip);
 					const updatedTrips = [...store.trips()];
 					updatedTrips[tripIndex] = updatedTrip;
-					patchState(store, { trips: updatedTrips });
+					patchState(store, { trips: updatedTrips.sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime()) });
 				} catch (error) {
 					console.error("Error updating trip:", error);
 				}

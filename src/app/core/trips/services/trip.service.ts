@@ -34,7 +34,8 @@ export class TripService {
         *,
         trip_user!inner(user_id)
         `)
-			.eq("trip_user.user_id", user.id);
+			.eq("trip_user.user_id", user.id)
+			.order("start_date", { ascending: true });
 
 		if (error) throw error;
 		return data;
