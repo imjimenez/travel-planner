@@ -1,21 +1,19 @@
 // src/app/features/trips/components/itinerary/itinerary-detail.component.ts
-import { Component, Input, inject, OnInit, OnDestroy, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ItineraryService } from '@core/trips';
-import { ItineraryModalService } from '@core/dialog/itinerary-modal.service';
-import { TripService } from '@core/trips/services/trip.service';
-import { NotificationService } from '@core/notifications/notification.service';
-import type { ItineraryItem, Trip } from '@core/trips';
-import { Subscription } from 'rxjs';
-import { MapComponent } from '@shared/components/map/map.component';
-import type { MapMarker } from '@shared/components/map/models';
+
+import { Component, computed, inject } from "@angular/core";
+import { ItineraryModalService } from "@core/dialog/itinerary-modal.service";
+import { NotificationService } from "@core/notifications/notification.service";
+import type { ItineraryItem, ItineraryItemWithDetails } from "@core/trips";
+import { TripItineraryStore } from "@core/trips/store/trip-itinerary.store";
+import { MapComponent } from "@shared/components/map/map.component";
+import type { MapMarker } from "@shared/components/map/models";
 
 /**
  * Grupo de paradas por fecha
  */
 interface DateGroup {
-  date: string; // YYYY-MM-DD
-  items: ItineraryItem[];
+	date: string; // YYYY-MM-DD
+	items: ItineraryItemWithDetails[];
 }
 
 /**
@@ -33,10 +31,9 @@ interface DateGroup {
  * - Línea verde conectando todas las paradas en orden cronológico
  */
 @Component({
-  selector: 'app-itinerary-detail',
-  standalone: true,
-  imports: [CommonModule, MapComponent],
-  template: `
+	selector: "app-itinerary-detail",
+	imports: [MapComponent],
+	template: `
     <div class="h-full flex flex-col overflow-hidden">
       <!-- Loading state -->
       @if (isLoading()) {
@@ -130,11 +127,7 @@ interface DateGroup {
                         <p class="text-lg font-semibold text-gray-900">
                           {{ extractTime(item.start_date) }}
                         </p>
-                        @if (calculateDuration(item.start_date, item.end_date) > 1) {
-                        <p class="text-xs text-gray-500 mt-1">
-                          {{ calculateDuration(item.start_date, item.end_date) }} días
-                        </p>
-                        }
+
                       </div>
                     </div>
                   </div>
@@ -177,7 +170,7 @@ interface DateGroup {
       } }
     </div>
   `,
-  styles: `
+	styles: `
   /* Ocultar scrollbars en todos los navegadores */
 .hide-scrollbar {
   scrollbar-width: none;        /* Firefox */
@@ -189,254 +182,215 @@ interface DateGroup {
 }
 `,
 })
-export class ItineraryDetailComponent implements OnInit, OnDestroy {
-  @Input({ required: true }) tripId!: string;
+export class ItineraryDetailComponent {
+	readonly #itineraryStore = inject(TripItineraryStore);
+	private modalService = inject(ItineraryModalService);
+	private notificationService = inject(NotificationService);
 
-  private itineraryService = inject(ItineraryService);
-  private modalService = inject(ItineraryModalService);
-  private tripService = inject(TripService);
-  private notificationService = inject(NotificationService);
+	// Signals del servicio
+	items = this.#itineraryStore.itinerary;
+	isLoading = this.#itineraryStore.isLoading;
 
-  // Signals del servicio
-  items = this.itineraryService.items;
-  isLoading = this.itineraryService.loading;
+	/**
+	 * Agrupa las paradas por fecha y las ordena por hora
+	 */
+	groupedItems = computed(() => {
+		const allItems = this.items();
+		if (!allItems || allItems.length === 0) return [];
 
-  // Trip actual (necesario para abrir modal en modo create)
-  private currentTrip = signal<Trip | null>(null);
+		// Agrupar por fecha de inicio
+		const groups = new Map<string, ItineraryItemWithDetails[]>();
 
-  // Subscripciones
-  private subscriptions = new Subscription();
+		allItems.forEach((item) => {
+			const dateKey = item.start_date.split("T")[0];
 
-  /**
-   * Agrupa las paradas por fecha y las ordena por hora
-   */
-  groupedItems = computed(() => {
-    const allItems = this.items();
-    if (!allItems || allItems.length === 0) return [];
+			if (!groups.has(dateKey)) {
+				groups.set(dateKey, []);
+			}
+			groups.get(dateKey)!.push(item);
+		});
 
-    // Agrupar por fecha de inicio
-    const groups = new Map<string, ItineraryItem[]>();
+		// Convertir a array y ordenar
+		const dateGroups: DateGroup[] = Array.from(groups.entries())
+			.map(([date, items]) => ({
+				date,
+				items: items.sort((a, b) => {
+					const timeA = new Date(a.start_date).getTime();
+					const timeB = new Date(b.start_date).getTime();
+					return timeA - timeB;
+				}),
+			}))
+			.sort((a, b) => {
+				return new Date(a.date).getTime() - new Date(b.date).getTime();
+			});
 
-    allItems.forEach((item) => {
-      const dateKey = item.start_date.split('T')[0];
+		return dateGroups;
+	});
 
-      if (!groups.has(dateKey)) {
-        groups.set(dateKey, []);
-      }
-      groups.get(dateKey)!.push(item);
-    });
+	/**
+	 * Convierte las paradas en markers para el mapa
+	 */
+	mapMarkers = computed(() => {
+		const allItems = this.items();
+		if (!allItems || allItems.length === 0) return [];
 
-    // Convertir a array y ordenar
-    const dateGroups: DateGroup[] = Array.from(groups.entries())
-      .map(([date, items]) => ({
-        date,
-        items: items.sort((a, b) => {
-          const timeA = new Date(a.start_date).getTime();
-          const timeB = new Date(b.start_date).getTime();
-          return timeA - timeB;
-        }),
-      }))
-      .sort((a, b) => {
-        return new Date(a.date).getTime() - new Date(b.date).getTime();
-      });
-
-    return dateGroups;
-  });
-
-  /**
-   * Convierte las paradas en markers para el mapa
-   */
-  mapMarkers = computed(() => {
-    const allItems = this.items();
-    if (!allItems || allItems.length === 0) return [];
-
-    return allItems
-      .filter((item) => item.latitude && item.longitude)
-      .map((item) => ({
-        id: item.id,
-        coordinates: {
-          lat: item.latitude!,
-          lng: item.longitude!,
-        },
-        title: item.name,
-        description: `
+		return allItems
+			.filter((item) => item.latitude && item.longitude)
+			.map((item) => ({
+				id: item.id,
+				coordinates: {
+					lat: item.latitude!,
+					lng: item.longitude!,
+				},
+				title: item.name,
+				description: `
           <div class="text-sm">
             <p class="font-semibold mb-1">${item.city}, ${item.country}</p>
             <p class="text-gray-600">${this.extractTime(item.start_date)}</p>
-            ${item.description ? `<p class="mt-2 text-gray-700">${item.description}</p>` : ''}
+            ${item.description ? `<p class="mt-2 text-gray-700">${item.description}</p>` : ""}
           </div>
         `,
-      }));
-  });
+			}));
+	});
 
-  async ngOnInit(): Promise<void> {
-    if (!this.tripId) {
-      console.error('No se proporcionó tripId al componente de itinerario');
-      return;
-    }
+	/**
+	 * Abre el modal para crear la primera parada
+	 */
+	createFirstStop(): void {
+		const trip = this.#itineraryStore.selectedTrip();
+		if (!trip) {
+			this.notificationService.error(
+				"No se pudo cargar la información del viaje",
+			);
+			return;
+		}
 
-    // Cargar el trip actual
-    try {
-      const trip = await this.tripService.getTripById(this.tripId);
-      this.currentTrip.set(trip);
-    } catch (error) {
-      console.error('Error al cargar trip:', error);
-      this.notificationService.error('Error al cargar información del viaje');
-    }
+		this.modalService.openCreate(trip);
+	}
 
-    // Lógica CLAVE: Cargar paradas condicionalmente
-    const shouldShowLoading =
-      this.itineraryService.currentTripId() !== this.tripId || this.items().length === 0;
+	/**
+	 * Abre el modal para crear una nueva parada
+	 */
+	createStop(): void {
+		const trip = this.#itineraryStore.selectedTrip();
+		if (!trip) {
+			this.notificationService.error(
+				"No se pudo cargar la información del viaje",
+			);
+			return;
+		}
 
-    await this.loadItems(shouldShowLoading);
+		this.modalService.openCreate(trip);
+	}
 
-    // Suscribirse a eventos del modal
-    this.subscriptions.add(
-      this.modalService.itemCreated.subscribe(() => {
-        this.loadItems(false);
-      })
-    );
+	/**
+	 * Selecciona una parada desde el timeline
+	 */
+	selectItem(item: ItineraryItemWithDetails): void {
+		this.modalService.openView(item);
+	}
 
-    this.subscriptions.add(
-      this.modalService.itemUpdated.subscribe(() => {
-        this.loadItems(false);
-      })
-    );
+	/**
+	 * Maneja el click en un marker del mapa
+	 * Resalta en el timeline y abre el modal
+	 */
+	onMarkerClicked(marker: MapMarker): void {
+		const item = this.items().find((i) => i.id === marker.id);
+		if (item) {
+			//this.selectedItemId.set(item.id);
+			//this.modalService.openView(item);
+		}
+	}
 
-    this.subscriptions.add(
-      this.modalService.itemDeleted.subscribe(() => {
-        this.loadItems(false);
-      })
-    );
-  }
+	/**
+	 * Formatea la fecha del grupo
+	 */
+	formatGroupDate(dateString: string): string {
+		const date = new Date(dateString + "T00:00:00");
+		return date.toLocaleDateString("es-ES", {
+			day: "numeric",
+			month: "short",
+			year: "numeric",
+		});
+	}
 
-  ngOnDestroy(): void {
-    this.subscriptions.unsubscribe();
-  }
+	/**
+	 * Extrae la hora de un datetime
+	 */
+	extractTime(dateString: string): string {
+		const date = new Date(dateString);
+		return date.toLocaleTimeString("es-ES", {
+			hour: "2-digit",
+			minute: "2-digit",
+		});
+	}
 
-  /**
-   * Carga las paradas del viaje
-   */
-  private async loadItems(showLoading: boolean = true): Promise<void> {
-    try {
-      await this.itineraryService.loadItineraryItems(this.tripId, showLoading);
-    } catch (error) {
-      console.error('Error al cargar paradas:', error);
-      this.notificationService.error('Error al cargar las paradas del itinerario');
-    }
-  }
+	/**
+	 * Calcula la duración entre dos fechas en días
+	 */
+	// calculateDuration(startDate: string, endDate: string): number {
+	// 	return this.#itineraryStore.calculateDuration(startDate, endDate);
+	// }
 
-  /**
-   * Abre el modal para crear la primera parada
-   */
-  createFirstStop(): void {
-    const trip = this.currentTrip();
-    if (!trip) {
-      this.notificationService.error('No se pudo cargar la información del viaje');
-      return;
-    }
+	/**
+	 * Devuelve el icono apropiado según el tipo de parada
+	 */
+	getItemIcon(item: ItineraryItem): string {
+		const text = `${item.name ?? ""} ${item.description ?? ""}`.toLowerCase();
 
-    this.modalService.openCreate(trip);
-  }
+		const iconMap: { icon: string; keywords: string[] }[] = [
+			{
+				icon: "pi pi-home",
+				keywords: ["hotel", "hostal", "alojamiento", "airbnb"],
+			},
+			{
+				icon: "pi pi-users",
+				keywords: ["restaurante", "comida", "dinner", "lunch", "food"],
+			},
+			{
+				icon: "pi pi-briefcase",
+				keywords: ["work", "negocio", "empresa", "oficina"],
+			},
+			{
+				icon: "pi pi-shopping-bag",
+				keywords: ["tienda", "shopping", "compras"],
+			},
+			{
+				icon: "pi pi-car",
+				keywords: [
+					"coche",
+					"car",
+					"parking",
+					"aparcamiento",
+					"transporte",
+					"autobus",
+					"autobús",
+				],
+			},
+			{
+				icon: "pi pi-ticket",
+				keywords: ["evento", "concierto", "espectáculo", "entrada"],
+			},
+		];
 
-  /**
-   * Abre el modal para crear una nueva parada
-   */
-  createStop(): void {
-    const trip = this.currentTrip();
-    if (!trip) {
-      this.notificationService.error('No se pudo cargar la información del viaje');
-      return;
-    }
+		for (const entry of iconMap) {
+			if (entry.keywords.some((keyword) => text.includes(keyword))) {
+				return entry.icon;
+			}
+		}
 
-    this.modalService.openCreate(trip);
-  }
+		return "pi pi-map-marker";
+	}
 
-  /**
-   * Selecciona una parada desde el timeline
-   */
-  selectItem(item: ItineraryItem): void {
-    this.modalService.openView(item);
-  }
+	/**
+	 * Calcula la altura de la línea vertical
+	 */
+	getLineHeight(itemCount: number): number {
+		if (itemCount === 0) return 0;
 
-  /**
-   * Maneja el click en un marker del mapa
-   * Resalta en el timeline y abre el modal
-   */
-  onMarkerClicked(marker: MapMarker): void {
-    const item = this.items().find((i) => i.id === marker.id);
-    if (item) {
-      //this.selectedItemId.set(item.id);
-      //this.modalService.openView(item);
-    }
-  }
+		const gapBetweenItems = 44; // 20px círculo + 24px gap
+		const halfCircle = 10; // hasta centro último círculo
 
-  /**
-   * Formatea la fecha del grupo
-   */
-  formatGroupDate(dateString: string): string {
-    const date = new Date(dateString + 'T00:00:00');
-    return date.toLocaleDateString('es-ES', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
-  }
-
-  /**
-   * Extrae la hora de un datetime
-   */
-  extractTime(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('es-ES', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  }
-
-  /**
-   * Calcula la duración entre dos fechas en días
-   */
-  calculateDuration(startDate: string, endDate: string): number {
-    return this.itineraryService.calculateDuration(startDate, endDate);
-  }
-
-  /**
-   * Devuelve el icono apropiado según el tipo de parada
-   */
-  getItemIcon(item: ItineraryItem): string {
-    const text = `${item.name ?? ''} ${item.description ?? ''}`.toLowerCase();
-
-    const iconMap: { icon: string; keywords: string[] }[] = [
-      { icon: 'pi pi-home', keywords: ['hotel', 'hostal', 'alojamiento', 'airbnb'] },
-      { icon: 'pi pi-users', keywords: ['restaurante', 'comida', 'dinner', 'lunch', 'food'] },
-      { icon: 'pi pi-briefcase', keywords: ['work', 'negocio', 'empresa', 'oficina'] },
-      { icon: 'pi pi-shopping-bag', keywords: ['tienda', 'shopping', 'compras'] },
-      {
-        icon: 'pi pi-car',
-        keywords: ['coche', 'car', 'parking', 'aparcamiento', 'transporte', 'autobus', 'autobús'],
-      },
-      { icon: 'pi pi-ticket', keywords: ['evento', 'concierto', 'espectáculo', 'entrada'] },
-    ];
-
-    for (const entry of iconMap) {
-      if (entry.keywords.some((keyword) => text.includes(keyword))) {
-        return entry.icon;
-      }
-    }
-
-    return 'pi pi-map-marker';
-  }
-
-  /**
-   * Calcula la altura de la línea vertical
-   */
-  getLineHeight(itemCount: number): number {
-    if (itemCount === 0) return 0;
-
-    const gapBetweenItems = 44; // 20px círculo + 24px gap
-    const halfCircle = 10; // hasta centro último círculo
-
-    return (itemCount - 1) * gapBetweenItems + halfCircle;
-  }
+		return (itemCount - 1) * gapBetweenItems + halfCircle;
+	}
 }

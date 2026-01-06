@@ -309,6 +309,27 @@ export type Database = {
     }
     Functions: {
       accept_trip_invite: { Args: { invite_token: string }; Returns: Json }
+      create_expense_with_details: {
+        Args: {
+          p_amount: number
+          p_category: string
+          p_title: string
+          p_trip_id: string
+        }
+        Returns: {
+          amount: number
+          category: string
+          created_at: string
+          id: string
+          is_editable: boolean
+          title: string
+          trip_id: string
+          user_avatar_url: string
+          user_email: string
+          user_full_name: string
+          user_id: string
+        }[]
+      }
       create_trip_invitation: {
         Args: {
           p_email: string
@@ -335,6 +356,40 @@ export type Database = {
         }
       }
       delete_own_account: { Args: never; Returns: undefined }
+      get_expenses_with_user_and_editability: {
+        Args: { p_trip_id: string }
+        Returns: {
+          amount: number
+          category: string
+          created_at: string
+          id: string
+          is_editable: boolean
+          title: string
+          trip_id: string
+          user_avatar_url: string
+          user_email: string
+          user_full_name: string
+          user_id: string
+        }[]
+      }
+      get_itinerary_items_with_duration: {
+        Args: { trip_id_param: string }
+        Returns: {
+          city: string
+          country: string
+          created_at: string
+          description: string
+          duration_days: number
+          end_date: string
+          id: string
+          latitude: number
+          longitude: number
+          name: string
+          start_date: string
+          trip_id: string
+          web: string
+        }[]
+      }
       get_trip_members: {
         Args: { p_trip_id: string }
         Returns: {
@@ -351,6 +406,8 @@ export type Database = {
           avatar_url: string
           email: string
           full_name: string
+          is_owner: boolean
+          is_removable: boolean
           trip_id: string
           trip_user_id: string
           user_id: string
@@ -360,6 +417,10 @@ export type Database = {
       internal_add_trip_member: {
         Args: { p_trip_id: string; p_user_id: string }
         Returns: undefined
+      }
+      is_trip_member: {
+        Args: { p_trip_id: string; p_user_id: string }
+        Returns: boolean
       }
     }
     Enums: {

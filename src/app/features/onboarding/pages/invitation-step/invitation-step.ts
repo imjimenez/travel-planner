@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, inject } from "@angular/core";
-import { Router } from "@angular/router";
 import { ButtonModule } from "primeng/button";
 import InvitationForm from "./../../components/invitation-form/invitation-form";
 import StepHeader from "./../../components/step-header/step-header";
@@ -14,8 +13,7 @@ import { OnboardingStore } from "./../../stores/onboarding.store";
 	changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export default class InvitationStep {
-	#onboardingStore = inject(OnboardingStore);
-	#router = inject(Router);
+	readonly #onboardingStore = inject(OnboardingStore);
 
 	emailsToInvite = this.#onboardingStore.emailsToInvite;
 	isLoading = this.#onboardingStore.isLoading;
@@ -29,6 +27,6 @@ export default class InvitationStep {
 
 	async close() {
 		await this.#onboardingStore.sendInvitations();
-		this.#router.navigate(["/app/overview"]);
+		this.#onboardingStore.completeOnboarding();
 	}
 }

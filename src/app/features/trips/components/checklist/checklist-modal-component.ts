@@ -1,13 +1,10 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { WidgetModalService } from '@core/dialog/widget-modal.service';
-import { NotificationService } from '@core/notifications/notification.service';
-import { TripTodoService } from '@core/trips/services/trip-todo.service';
-import { TripParticipantService } from '@core/trips/services/trip-participant.service';
-import type { TripTodo } from '@core/trips/models/trip-todo.model';
-import type { ParticipantWithUser } from '@core/trips/models/trip-participant.model';
-import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
+import { Component, computed, inject, signal } from "@angular/core";
+import { FormsModule } from "@angular/forms";
+import { ConfirmModalService } from "@core/dialog/confirm-modal.service";
+import { NotificationService } from "@core/notifications/notification.service";
+import type { TripTodo } from "@core/trips/models/trip-todo.model";
+import { TripParticipantStore } from "@core/trips/store/trip-participant.store";
+import { TripTodoStore } from "@core/trips/store/trip-todo.store";
 
 /**
  * Modal de gestión de checklist
@@ -21,10 +18,9 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
  * - Loading solo se muestra en la primera carga
  */
 @Component({
-  selector: 'app-checklist-modal',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+	selector: "app-checklist-modal",
+	imports: [FormsModule],
+	template: `
     <div class="h-full flex flex-col">
       <!-- Contenido scrolleable -->
       <div
@@ -315,217 +311,173 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
     </div>
   `,
 })
-export class ChecklistModalComponent implements OnInit {
-  private todoService = inject(TripTodoService);
-  private participantService = inject(TripParticipantService);
-  private notificationService = inject(NotificationService);
-  private widgetModalService = inject(WidgetModalService);
-  private confirmModalService = inject(ConfirmModalService);
+export class ChecklistModalComponent {
+	readonly #tripTodoStore = inject(TripTodoStore);
+	readonly #tripParticipantStore = inject(TripParticipantStore);
+	readonly #notificationService = inject(NotificationService);
+	readonly #confirmModalService = inject(ConfirmModalService);
 
-  todos = signal<TripTodo[]>([]);
-  participants = signal<ParticipantWithUser[]>([]);
-  isLoading = signal(false);
-  isAdding = signal(false);
-  private isFirstLoad = signal(true);
+	todos = this.#tripTodoStore.todos;
+	participants = this.#tripParticipantStore.participants;
+	isLoading = computed(
+		() =>
+			this.#tripTodoStore.isLoading() || this.#tripParticipantStore.isLoading(),
+	);
 
-  // Estado de edición
-  editingTask = signal<string | null>(null);
-  editTitle = '';
-  editDetails = '';
-  editAssignee = '';
+	isAdding = signal(false);
 
-  // Formulario de nueva tarea
-  newTodoTitle = '';
-  newTodoDetails = '';
-  newTodoAssignee = '';
+	// Estado de edición
+	editingTask = signal<string | null>(null);
+	editTitle = "";
+	editDetails = "";
+	editAssignee = "";
 
-  /**
-   * Computed: Tareas pendientes
-   */
-  pendingTodos = computed(() => {
-    return this.todos().filter((t) => t.status !== 'completed');
-  });
+	// Formulario de nueva tarea
+	newTodoTitle = "";
+	newTodoDetails = "";
+	newTodoAssignee = "";
 
-  /**
-   * Computed: Tareas completadas
-   */
-  completedTodos = computed(() => {
-    return this.todos().filter((t) => t.status === 'completed');
-  });
+	/**
+	 * Computed: Tareas pendientes
+	 */
+	pendingTodos = computed(() =>
+		this.todos().filter((t) => t.status !== "completed"),
+	);
 
-  async ngOnInit() {
-    const tripId = this.widgetModalService.tripId();
-    if (tripId) {
-      await this.loadData(tripId);
-    }
-  }
+	/**
+	 * Computed: Tareas completadas
+	 */
+	completedTodos = computed(() =>
+		this.todos().filter((t) => t.status === "completed"),
+	);
 
-  /**
-   * Carga tareas y participantes
-   * Solo muestra loading en la primera carga
-   */
-  private async loadData(tripId: string, showLoading: boolean = true): Promise<void> {
-    try {
-      // Solo mostrar loading si es la primera carga Y showLoading es true
-      if (this.isFirstLoad() && showLoading) {
-        this.isLoading.set(true);
-      }
+	/**
+	 * Inicia el modo de edición de una tarea
+	 */
+	startEdit(todo: TripTodo): void {
+		this.editingTask.set(todo.id);
+		this.editTitle = todo.title;
+		this.editDetails = todo.details || "";
+		this.editAssignee = todo.assigned_to || "";
+	}
 
-      const [todos, participants] = await Promise.all([
-        this.todoService.getTripTodos(tripId),
-        this.participantService.getParticipants(tripId),
-      ]);
+	/**
+	 * Cancela el modo de edición
+	 */
+	cancelEdit(): void {
+		this.editingTask.set(null);
+		this.editTitle = "";
+		this.editDetails = "";
+		this.editAssignee = "";
+	}
 
-      this.todos.set(todos);
-      this.participants.set(participants);
+	/**
+	 * Guarda los cambios de la edición
+	 */
+	async saveEdit(todo: TripTodo): Promise<void> {
+		const title = this.editTitle.trim();
+		if (!title) {
+			this.#notificationService.warning("El título no puede estar vacío");
+			return;
+		}
 
-      // Marcar que ya no es la primera carga
-      this.isFirstLoad.set(false);
-    } catch (error: any) {
-      console.error('Error loading data:', error);
-      this.notificationService.error(error.message || 'No se pudieron cargar los datos');
-    } finally {
-      this.isLoading.set(false);
-    }
-  }
+		try {
+			await this.#tripTodoStore.updateTodo(todo.id, {
+				title,
+				details: this.editDetails.trim() || undefined,
+				assigned_to: this.editAssignee || undefined,
+			});
 
-  /**
-   * Inicia el modo de edición de una tarea
-   */
-  startEdit(todo: TripTodo): void {
-    this.editingTask.set(todo.id);
-    this.editTitle = todo.title;
-    this.editDetails = todo.details || '';
-    this.editAssignee = todo.assigned_to || '';
-  }
+			this.#notificationService.success("Tarea actualizada correctamente");
+			this.cancelEdit();
+		} catch (error) {
+			console.error("Error updating todo:", error);
+			this.#notificationService.error(
+				error instanceof Error
+					? error.message
+					: "No se pudo actualizar la tarea",
+			);
+		}
+	}
 
-  /**
-   * Cancela el modo de edición
-   */
-  cancelEdit(): void {
-    this.editingTask.set(null);
-    this.editTitle = '';
-    this.editDetails = '';
-    this.editAssignee = '';
-  }
+	/**
+	 * Marca/desmarca una tarea como completada
+	 */
+	async toggleTodo(todo: TripTodo): Promise<void> {
+		const newStatus = todo.status === "completed" ? "pending" : "completed";
 
-  /**
-   * Guarda los cambios de la edición
-   */
-  async saveEdit(todo: TripTodo): Promise<void> {
-    const title = this.editTitle.trim();
-    if (!title) {
-      this.notificationService.warning('El título no puede estar vacío');
-      return;
-    }
+		try {
+			await this.#tripTodoStore.updateTodo(todo.id, { status: newStatus });
+		} catch (error) {
+			console.error("Error updating todo:", error);
+			this.#notificationService.error(
+				error instanceof Error
+					? error.message
+					: "No se pudo actualizar la tarea",
+			);
+		}
+	}
 
-    try {
-      await this.todoService.updateTodo(todo.id, {
-        title,
-        details: this.editDetails.trim() || undefined,
-        assigned_to: this.editAssignee || undefined,
-      });
+	/**
+	 * Elimina una tarea
+	 */
+	async deleteTodo(todo: TripTodo): Promise<void> {
+		this.#confirmModalService.open(
+			"Eliminar tarea",
+			`¿Estás seguro de que quieres eliminar "${todo.title}"?`,
+			async () => {
+				try {
+					await this.#tripTodoStore.deleteTodoFromSelectedTrip(todo.id);
+					this.#notificationService.success("Tarea eliminada correctamente");
+				} catch (error) {
+					console.error("Error deleting todo:", error);
+					this.#notificationService.error(
+						error instanceof Error
+							? error.message
+							: "No se pudo eliminar la tarea",
+					);
+				}
+			},
+			"Eliminar",
+		);
+	}
 
-      this.notificationService.success('Tarea actualizada correctamente');
-      this.cancelEdit();
+	/**
+	 * Agrega una nueva tarea
+	 */
+	async addTodo(event: Event): Promise<void> {
+		event.preventDefault();
+		if (!this.newTodoTitle) return;
 
-      const tripId = this.widgetModalService.tripId();
-      if (tripId) {
-        // Recargar sin mostrar loading
-        await this.loadData(tripId, false);
-      }
-    } catch (error: any) {
-      console.error('Error updating todo:', error);
-      this.notificationService.error(error.message || 'No se pudo actualizar la tarea');
-    }
-  }
+		this.isAdding.set(true);
 
-  /**
-   * Marca/desmarca una tarea como completada
-   */
-  async toggleTodo(todo: TripTodo): Promise<void> {
-    const newStatus = todo.status === 'completed' ? 'pending' : 'completed';
+		try {
+			await this.#tripTodoStore.createTodoForSelectedTrip({
+				title: this.newTodoTitle.trim(),
+				details: this.newTodoDetails.trim() || undefined,
+				assigned_to: this.newTodoAssignee || undefined,
+				status: "pending",
+			});
 
-    try {
-      await this.todoService.updateTodo(todo.id, { status: newStatus });
+			this.#notificationService.success("Tarea agregada correctamente");
+			this.newTodoTitle = "";
+			this.newTodoDetails = "";
+			this.newTodoAssignee = "";
+		} catch (error) {
+			console.error("Error creating todo:", error);
+			this.#notificationService.error(
+				error instanceof Error ? error.message : "No se pudo agregar la tarea",
+			);
+		} finally {
+			this.isAdding.set(false);
+		}
+	}
 
-      const tripId = this.widgetModalService.tripId();
-      if (tripId) {
-        // Recargar sin mostrar loading
-        await this.loadData(tripId, false);
-      }
-    } catch (error: any) {
-      console.error('Error updating todo:', error);
-      this.notificationService.error(error.message || 'No se pudo actualizar la tarea');
-    }
-  }
-
-  /**
-   * Elimina una tarea
-   */
-  async deleteTodo(todo: TripTodo): Promise<void> {
-    this.confirmModalService.open(
-      'Eliminar tarea',
-      `¿Estás seguro de que quieres eliminar "${todo.title}"?`,
-      async () => {
-        try {
-          await this.todoService.deleteTodo(todo.id);
-          this.notificationService.success('Tarea eliminada correctamente');
-
-          const tripId = this.widgetModalService.tripId();
-          if (tripId) {
-            // Recargar sin mostrar loading
-            await this.loadData(tripId, false);
-          }
-        } catch (error: any) {
-          console.error('Error deleting todo:', error);
-          this.notificationService.error(error.message || 'No se pudo eliminar la tarea');
-        }
-      },
-      'Eliminar'
-    );
-  }
-
-  /**
-   * Agrega una nueva tarea
-   */
-  async addTodo(event: Event): Promise<void> {
-    event.preventDefault();
-
-    const tripId = this.widgetModalService.tripId();
-    if (!this.newTodoTitle || !tripId) return;
-
-    this.isAdding.set(true);
-
-    try {
-      await this.todoService.createTodo({
-        tripId,
-        title: this.newTodoTitle.trim(),
-        details: this.newTodoDetails.trim() || undefined,
-        assigned_to: this.newTodoAssignee || undefined,
-        status: 'pending',
-      });
-
-      this.notificationService.success('Tarea agregada correctamente');
-      this.newTodoTitle = '';
-      this.newTodoDetails = '';
-      this.newTodoAssignee = '';
-
-      // Recargar sin mostrar loading
-      await this.loadData(tripId, false);
-    } catch (error: any) {
-      console.error('Error creating todo:', error);
-      this.notificationService.error(error.message || 'No se pudo agregar la tarea');
-    } finally {
-      this.isAdding.set(false);
-    }
-  }
-
-  /**
-   * Obtiene el nombre de un participante por su ID
-   */
-  getParticipantName(userId: string): string {
-    const participant = this.participants().find((p) => p.user_id === userId);
-    return participant?.fullName || 'Sin asignar';
-  }
+	/**
+	 * Obtiene el nombre de un participante por su ID
+	 */
+	getParticipantName(userId: string): string {
+		const participant = this.participants().find((p) => p.user_id === userId);
+		return participant?.fullName || "Sin asignar";
+	}
 }

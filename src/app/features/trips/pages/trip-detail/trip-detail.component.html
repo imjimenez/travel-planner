@@ -1,28 +1,30 @@
 <!-- src/app/features/trips/pages/trip-detail/trip-detail.component.html -->
 <div class="h-full overflow-y-auto w-full hide-scrollbar py-4 lg:py-0">
   @if (isPending(); as pendingMessage) {
-  <!-- Loading state -->
-  <div class="flex flex-col gap-4 items-center justify-center h-full">
-    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-    <p class="text-gray-500">{{ pendingMessage }}...</p>
-  </div>
-  } @else if (trip()) {
-  <!-- Trip content -->
-  <div class="h-full flex flex-col gap-4 md:gap-6 w-full">
-    <!-- SECCIÓN 1: Header con nombre, ubicación, fechas y acciones -->
-    <div class="seccion-1 flex flex-col md:flex-row items-start justify-center gap-4">
-      <!-- Nombre del viaje, ciudad, país y fechas -->
-      <div class="flex-1">
-        <div class="flex flex-col sm:flex-row items-baseline sm:gap-3 mb-2">
-          <h3 class="max-w-70 text-2xl sm:text-3xl font-medium text-gray-900">{{ trip().name }}</h3>
-          <span class="text-sm text-gray-500">{{ trip().city }}, {{ trip().country }}</span>
-        </div>
+    <!-- Loading state -->
+    <div class="flex flex-col gap-4 items-center justify-center h-full">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      <p class="text-gray-500">{{ pendingMessage }}...</p>
+    </div>
+  } @else if (trip(); as tripInfo) {
+    <!-- Trip content -->
+    <div class="h-full flex flex-col gap-4 md:gap-6 w-full">
+      <!-- SECCIÓN 1: Header con nombre, ubicación, fechas y acciones -->
+      <div class="seccion-1 flex flex-col md:flex-row items-start justify-center gap-4">
+        <!-- Nombre del viaje, ciudad, país y fechas -->
+        <div class="flex-1">
+          <div class="flex flex-col sm:flex-row items-baseline sm:gap-3 mb-2">
+            <h3 class="max-w-70 text-2xl sm:text-3xl font-medium text-gray-900">
+              {{ tripInfo.name }}
+            </h3>
+            <span class="text-sm text-gray-500">{{ tripInfo.city }}, {{ tripInfo.country }}</span>
+          </div>
 
-        <div class="w-full">
-          <p class="text-sm text-gray-600">
-            {{ trip().start_date | date : 'dd MMM yyyy' }} -
-            {{ trip().end_date | date : 'dd MMM yyyy' }}
-            ({{ calculateDuration() }} días)
+          <div class="w-full">
+            <p class="text-sm text-gray-600">
+            {{ tripInfo.start_date | date: 'dd MMM yyyy' }} -
+            {{ tripInfo.end_date | date: 'dd MMM yyyy' }}
+            ({{ tripDuration() }} días)
           </p>
         </div>
       </div>
@@ -58,7 +60,7 @@
       <div class="w-full md:max-w-60">
         <button
           type="button"
-          (click)="leaveTrip()"
+          (click)="leaveTrip($event)"
           class="w-full flex items-center justify-center font-bold gap-2 px-4 py-2 bg-red-500 border border-gray-300 text-gray-900 rounded-lg hover:bg-red-100 hover:border-red-200 hover:text-red-500 transition-colors cursor-pointer"
           title="Salir del viaje"
         >
@@ -71,9 +73,9 @@
 
     <!-- SECCIÓN 2: Tres widgets (Participantes, Documentos, Checklist) -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-      <app-participant-widget [tripId]="trip()!.id" />
-      <app-document-widget [tripId]="trip()!.id" />
-      <app-checklist-widget [tripId]="trip()!.id" />
+      <app-participant-widget />
+      <app-document-widget />
+      <app-checklist-widget />
     </div>
 
     <!-- SECCIÓN 3: Pestañas (itinerary/gastos) -->
@@ -122,9 +124,9 @@
       <!-- Contenido del tab activo -->
       <div class="flex-1 overflow-y-auto">
         @if (activeTab() === 'itinerary') {
-        <app-itinerary-detail [tripId]="trip()!.id" />
+        <app-itinerary-detail />
         } @if (activeTab() === 'expenses') {
-        <app-expenses [tripId]="trip()!.id" />
+        <app-expenses />
         }
       </div>
     </div>

@@ -23,9 +23,10 @@ export type ExpenseCategory = (typeof EXPENSE_CATEGORIES)[number];
  * Gasto con información del usuario que lo creó
  */
 export interface ExpenseWithUser extends Expense {
-  userFullName?: string;
-  userEmail?: string;
-  userAvatarUrl?: string;
+  user_full_name: string;
+  user_email: string;
+  user_avatar_url: string;
+  is_editable?: boolean;
 }
 
 /**

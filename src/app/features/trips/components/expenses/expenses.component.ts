@@ -1,17 +1,15 @@
 // src/app/features/trips/components/expenses/expenses.component.ts
-import { Component, Input, inject, OnInit, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CurrencyPipe } from '@angular/common';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { TripService } from '@core/trips/services/trip.service';
-import { AuthService } from '@core/authentication/services/auth.service';
+import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
 import { NotificationService } from '@core/notifications/notification.service';
 import {
-  ExpenseService,
-  EXPENSE_CATEGORIES,
-  type ExpenseCategory,
-  type ExpenseWithUser,
+    EXPENSE_CATEGORIES,
+    type ExpenseCategory,
+    type ExpenseWithUser
 } from '@core/trips';
-import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
+import { TripExpenseStore } from '@core/trips/store/trip-expense.store';
 
 /**
  * Componente para gestionar gastos de un viaje
@@ -28,8 +26,7 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
  */
 @Component({
   selector: 'app-expenses',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule, CurrencyPipe],
   template: `
     <div class="h-full flex flex-col ">
       <!-- Loading state -->
@@ -62,7 +59,7 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
           <div class="flex flex-col justify-center items-center p-4">
             <p class="text-sm text-gray-600 mb-1 text-nowrap">Mis gastos</p>
             <p class="text-md lg:text-2xl font-semibold text-gray-900">
-              {{ formatCurrency(stats()?.userTotalExpenses || 0) }}
+              {{ (stats().userTotalExpenses || 0) | currency:'EUR':'symbol':'1.2-2' }}
             </p>
           </div>
 
@@ -70,7 +67,7 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
           <div class="flex flex-col justify-center items-center p-4">
             <p class="text-sm text-gray-600 mb-1 text-nowrap">{{ balanceLabel() }}</p>
             <p class="text-md lg:text-2xl font-semibold" [class]="balanceColor()">
-              {{ formatCurrency(balanceAmount()) }}
+              {{ balanceAmount() | currency:'EUR':'symbol':'1.2-2' }}
             </p>
           </div>
 
@@ -78,7 +75,7 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
           <div class="flex flex-col justify-center items-center p-4">
             <p class="text-sm text-gray-600 mb-1 text-nowrap">Gasto total</p>
             <p class="text-md lg:text-2xl font-semibold text-gray-900">
-              {{ formatCurrency(stats()?.totalExpenses || 0) }}
+              {{ (stats().totalExpenses || 0) | currency:'EUR':'symbol':'1.2-2' }}
             </p>
           </div>
         </div>
@@ -153,9 +150,7 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
                 <div class="flex items-center gap-2 text-xs text-gray-600">
                   <span>
                     Pagado por
-                    <strong class="font-medium">{{
-                      expense.userFullName || expense.userEmail
-                    }}</strong>
+                    <strong class="font-medium">{{ expense.user_full_name || expense.user_email }}</strong>
                   </span>
                   @if (expense.category) {
                   <span class="text-gray-400">•</span>
@@ -170,9 +165,9 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
               <div class="flex items-center gap-3">
                 <div class="flex-col gap-2 pl-4">
                   <p class="text-lg font-semibold text-gray-900">
-                    {{ formatCurrency(expense.amount) }}
+                    {{ expense.amount | currency:'EUR':'symbol':'1.2-2' }}
                   </p>
-                  @if ( canEditExpense(expense)) {
+                  @if (expense.is_editable) {
                   <div class="flex lg:hidden items-center gap-1 p-1">
                     <button
                       type="button"
@@ -195,7 +190,7 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
                 </div>
 
                 <!-- Botones de acción (solo visible en hover si tiene permisos) -->
-                @if (hoveredExpenseId() === expense.id && canEditExpense(expense)) {
+                @if (hoveredExpenseId() === expense.id && expense.is_editable) {
                 <div
                   class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
                 >
@@ -282,19 +277,16 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
     </div>
   `,
 })
-export class ExpensesComponent implements OnInit {
-  @Input({ required: true }) tripId!: string;
+export class ExpensesComponent {
+  readonly #tripExpenseStore = inject(TripExpenseStore);
 
-  private expenseService = inject(ExpenseService);
-  private tripService = inject(TripService);
-  private authService = inject(AuthService);
   private notificationService = inject(NotificationService);
   private confirmModalService = inject(ConfirmModalService);
 
   // Signals del servicio
-  expenses = this.expenseService.expenses;
-  stats = this.expenseService.stats;
-  isLoading = this.expenseService.isLoading;
+  expenses = this.#tripExpenseStore.expenses;
+  stats = this.#tripExpenseStore.stats;
+  isLoading = this.#tripExpenseStore.isLoading;
 
   // Signals locales
   isSubmitting = signal(false);
@@ -361,57 +353,6 @@ export class ExpensesComponent implements OnInit {
     return label === 'Me deben' ? 'text-green-600' : 'text-red-600';
   });
 
-  async ngOnInit(): Promise<void> {
-    if (!this.tripId) {
-      console.error('No se proporcionó tripId al componente de gastos');
-      return;
-    }
-
-    // Obtener usuario actual
-    const user = await this.authService.getAuthUser();
-    if (user) {
-      this.currentUserId.set(user.id);
-
-      // Verificar si es owner
-      try {
-        const trip = await this.tripService.getTripById(this.tripId);
-        this.isOwner.set(trip.owner_user_id === user.id);
-      } catch (error) {
-        console.error('Error al verificar ownership:', error);
-      }
-    }
-
-    // Cargar gastos solo si no hay datos en el servicio o es otro viaje
-    const shouldShowLoading =
-      this.expenseService.currentTripId() !== this.tripId || this.expenses().length === 0;
-
-    await this.loadExpenses(shouldShowLoading);
-  }
-
-  /**
-   * Carga los gastos del viaje
-   */
-  private async loadExpenses(showLoading: boolean = true): Promise<void> {
-    try {
-      await this.expenseService.loadExpenses(this.tripId, showLoading);
-    } catch (error) {
-      console.error('Error al cargar gastos:', error);
-      this.notificationService.error('Error al cargar los gastos');
-    }
-  }
-
-  /**
-   * Formatea un número como moneda española (con coma decimal)
-   */
-  formatCurrency(amount: number): string {
-    return (
-      amount.toLocaleString('es-ES', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }) + '€'
-    );
-  }
-
   /**
    * Inicia el modo de edición de un gasto
    */
@@ -453,7 +394,7 @@ export class ExpensesComponent implements OnInit {
     }
 
     try {
-      await this.expenseService.updateExpense(expense.id, {
+      await this.#tripExpenseStore.updateExpense(expense.id, {
         title,
         amount: this.editAmount,
         category: this.editCategory as ExpenseCategory,
@@ -461,12 +402,9 @@ export class ExpensesComponent implements OnInit {
 
       this.notificationService.success('Gasto actualizado correctamente');
       this.cancelEdit();
-
-      // Recargar gastos SIN mostrar loading (actualización silenciosa)
-      await this.loadExpenses(false);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error updating expense:', error);
-      this.notificationService.error(error.message || 'No se pudo actualizar el gasto');
+      this.notificationService.error(error instanceof Error ? error.message : 'No se pudo actualizar el gasto');
     }
   }
 
@@ -484,7 +422,7 @@ export class ExpensesComponent implements OnInit {
     this.isSubmitting.set(true);
 
     try {
-      await this.expenseService.createExpense(this.tripId, {
+      await this.#tripExpenseStore.createExpenseForSelectedTrip({
         title: this.newExpense.title.trim(),
         amount: this.newExpense.amount,
         category: this.newExpense.category as ExpenseCategory,
@@ -498,12 +436,9 @@ export class ExpensesComponent implements OnInit {
         amount: null,
         category: '',
       };
-
-      // Recargar gastos SIN mostrar loading (actualización silenciosa)
-      await this.loadExpenses(false);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error al añadir gasto:', error);
-      this.notificationService.error(error.message || 'Error al añadir el gasto');
+      this.notificationService.error(error instanceof Error ? error.message : 'Error al añadir el gasto');
     } finally {
       this.isSubmitting.set(false);
     }
@@ -518,31 +453,15 @@ export class ExpensesComponent implements OnInit {
       '¿Estás seguro de que deseas eliminar este gasto?',
       async () => {
         try {
-          await this.expenseService.deleteExpense(this.tripId, expenseId);
+          await this.#tripExpenseStore.deleteExpenseFromSelectedTrip(expenseId);
           this.notificationService.success('Gasto eliminado correctamente');
 
-          // Recargar gastos SIN mostrar loading (actualización silenciosa)
-          await this.loadExpenses(false);
-        } catch (error: any) {
+        } catch (error) {
           console.error('Error al eliminar gasto:', error);
-          this.notificationService.error(error.message || 'Error al eliminar el gasto');
+          this.notificationService.error(error instanceof Error ? error.message : 'Error al eliminar el gasto');
         }
       },
       'Eliminar'
     );
-  }
-
-  /**
-   * Verifica si el usuario actual puede editar/eliminar un gasto
-   *
-   * Puede editar/eliminar si:
-   * - Es el owner del viaje
-   * - Es quien creó el gasto
-   */
-  canEditExpense(expense: ExpenseWithUser): boolean {
-    const userId = this.currentUserId();
-    if (!userId) return false;
-
-    return this.isOwner() || expense.user_id === userId;
   }
 }

@@ -1,10 +1,10 @@
-import { Injectable, inject, signal } from '@angular/core';
-import { SupabaseService } from '@core/supabase/supabase.service';
+import { Injectable, inject } from '@angular/core';
 import { AuthService } from '@core/authentication/services/auth.service';
-import { TripService } from '@core/trips/services/trip.service';
+import { SupabaseService } from '@core/supabase/supabase.service';
+import type { TablesUpdate } from '@core/supabase/supabase.types';
 import { TripParticipantService } from '@core/trips/services/trip-participant.service';
-import type { Expense, ExpenseWithUser, ExpenseStats, ExpenseCategory } from '../models';
-import type { TablesInsert, TablesUpdate } from '@core/supabase/supabase.types';
+import { TripService } from '@core/trips/services/trip.service';
+import type { Expense, ExpenseCategory, ExpenseWithUser } from '../models';
 
 /**
  * Servicio para gestión de gastos de viajes
@@ -30,53 +30,6 @@ export class ExpenseService {
   private tripService = inject(TripService);
   private participantService = inject(TripParticipantService);
 
-  // Signal que guarda la lista de gastos de un viaje
-  private expensesSignal = signal<ExpenseWithUser[]>([]);
-  expenses = this.expensesSignal.asReadonly();
-
-  private currentTripIdSignal = signal<string | null>(null);
-  currentTripId = this.currentTripIdSignal.asReadonly();
-
-  // Signal de estado de carga
-  private loadingSignal = signal(false);
-  isLoading = this.loadingSignal.asReadonly();
-
-  // Signal para estadísticas
-  private statsSignal = signal<ExpenseStats | null>(null);
-  stats = this.statsSignal.asReadonly();
-
-  /**
-   * Carga todos los gastos de un viaje y actualiza el signal
-   *
-   * @param tripId - ID del viaje
-   * @param showLoading - Si se debe mostrar el spinner (por defecto true)
-   */
-  async loadExpenses(tripId: string, showLoading: boolean = true): Promise<void> {
-    this.currentTripIdSignal.set(tripId);
-
-    if (showLoading) {
-      this.loadingSignal.set(true);
-      this.expensesSignal.set([]);
-    }
-
-    try {
-      const expenses = await this.getExpenses(tripId);
-      this.expensesSignal.set(expenses);
-
-      // Calcular y actualizar estadísticas
-      const stats = await this.calculateStats(tripId);
-      this.statsSignal.set(stats);
-    } catch (error) {
-      console.error('Error al cargar gastos:', error);
-      this.expensesSignal.set([]);
-      this.statsSignal.set(null);
-      throw error;
-    } finally {
-      if (showLoading) {
-        this.loadingSignal.set(false);
-      }
-    }
-  }
 
   /**
    * Obtiene todos los gastos de un viaje con información del usuario que los creó
@@ -95,45 +48,13 @@ export class ExpenseService {
     await this.verifyMembership(tripId, user.id);
 
     // Obtener gastos del viaje
-    const { data: expenses, error } = await this.supabaseService.client
-      .from('expense')
-      .select('*')
-      .eq('trip_id', tripId)
-      .order('created_at', { ascending: false });
+    const { data: expenses = [], error } = await this.supabaseService.client.rpc('get_expenses_with_user_and_editability', { p_trip_id: tripId });
 
     if (error) {
       throw new Error(`Error al obtener gastos: ${error.message}`);
     }
 
-    if (!expenses || expenses.length === 0) {
-      return [];
-    }
-
-    // Obtener información de los participantes del viaje (reutiliza lógica existente)
-    const participants = await this.participantService.getParticipants(tripId);
-
-    // Crear mapa de userId -> info de usuario para búsqueda rápida
-    const usersMap = new Map(
-      participants.map((p) => [
-        p.user_id,
-        {
-          full_name: p.fullName || 'Usuario',
-          email: p.email || undefined,
-          avatar_url: p.avatarUrl || undefined,
-        },
-      ])
-    );
-
-    // Mapear gastos con información del usuario
-    return expenses.map((expense): ExpenseWithUser => {
-      const userInfo = usersMap.get(expense.user_id || '');
-      return {
-        ...expense,
-        userFullName: userInfo?.full_name || 'Usuario',
-        userEmail: userInfo?.email || undefined,
-        userAvatarUrl: userInfo?.avatar_url || undefined,
-      };
-    });
+    return expenses ?? [];
   }
 
   /**
@@ -160,14 +81,11 @@ export class ExpenseService {
       amount: number;
       category: ExpenseCategory;
     }
-  ): Promise<Expense> {
+  ): Promise<ExpenseWithUser> {
     const user = await this.authService.getAuthUser();
     if (!user) {
       throw new Error('Usuario no autenticado');
     }
-
-    // Verifica membresía
-    await this.verifyMembership(tripId, user.id);
 
     // Validar datos
     if (!expenseData.title?.trim()) {
@@ -178,19 +96,12 @@ export class ExpenseService {
       throw new Error('El importe debe ser mayor que 0');
     }
 
-    const newExpense: TablesInsert<'expense'> = {
-      trip_id: tripId,
-      user_id: user.id,
-      title: expenseData.title.trim(),
-      amount: expenseData.amount,
-      category: expenseData.category,
-    };
-
-    const { data, error } = await this.supabaseService.client
-      .from('expense')
-      .insert(newExpense)
-      .select()
-      .single();
+    const { data, error } = await this.supabaseService.client.rpc('create_expense_with_details', {
+      p_trip_id: tripId,
+      p_title: expenseData.title.trim(),
+      p_amount: expenseData.amount,
+      p_category: expenseData.category,
+    }).single();
 
     if (error) {
       throw new Error(`Error al crear gasto: ${error.message}`);
@@ -326,80 +237,6 @@ export class ExpenseService {
   }
 
   /**
-   * Calcula las estadísticas de gastos de un viaje
-   *
-   * @param tripId - ID del viaje
-   * @returns Estadísticas completas de gastos
-   */
-  async calculateStats(tripId: string): Promise<ExpenseStats> {
-    const user = await this.authService.getAuthUser();
-    if (!user) {
-      throw new Error('Usuario no autenticado');
-    }
-
-    // Verifica membresía
-    await this.verifyMembership(tripId, user.id);
-
-    // Obtener todos los gastos
-    const { data: expenses, error: expensesError } = await this.supabaseService.client
-      .from('expense')
-      .select('*')
-      .eq('trip_id', tripId);
-
-    if (expensesError) {
-      throw new Error(`Error al obtener gastos: ${expensesError.message}`);
-    }
-
-    // Obtener participantes y contar desde el resultado (reutiliza la llamada que ya bypasea RLS)
-    const participants = await this.participantService.getParticipants(tripId);
-    const participantCount = participants.length;
-
-    console.log('🔍 DEBUG - Cálculo de estadísticas:');
-    console.log('Usuario actual:', user.id);
-    console.log('Gastos encontrados:', expenses?.length || 0);
-    console.log('Participantes en el viaje:', participantCount);
-    console.log(
-      'Lista de participantes:',
-      participants.map((p) => ({ user_id: p.user_id, name: p.fullName }))
-    );
-
-    if (participantCount === 0) {
-      throw new Error('No hay participantes en el viaje');
-    }
-
-    // Calcular totales
-    const totalExpenses = expenses?.reduce((sum, e) => sum + e.amount, 0) || 0;
-    const userTotalExpenses =
-      expenses?.filter((e) => e.user_id === user.id).reduce((sum, e) => sum + e.amount, 0) || 0;
-
-    // Calcular cuánto debería pagar cada participante
-    const averagePerParticipant = totalExpenses / participantCount;
-
-    // Calcular cuánto le deben al usuario actual
-    // Si pagó más de su parte, le deben la diferencia
-    // Si pagó menos, debe dinero (retornamos 0 en ese caso)
-    const amountOwedToUser = Math.max(0, userTotalExpenses - averagePerParticipant);
-
-    console.log('Total gastos:', totalExpenses);
-    console.log('Mis gastos:', userTotalExpenses);
-    console.log('Promedio por participante:', averagePerParticipant);
-    console.log('Me deben:', amountOwedToUser);
-    console.log(
-      'Detalle gastos:',
-      expenses?.map((e) => ({ user_id: e.user_id, amount: e.amount }))
-    );
-
-    return {
-      totalExpenses,
-      userTotalExpenses,
-      amountOwedToUser,
-      totalExpenseCount: expenses?.length || 0,
-      participantCount,
-      averagePerParticipant,
-    };
-  }
-
-  /**
    * Obtiene gastos filtrados por categoría
    *
    * @param tripId - ID del viaje
@@ -434,7 +271,7 @@ export class ExpenseService {
     }
 
     // Obtener información de los participantes del viaje (reutiliza lógica existente)
-    const participants = await this.participantService.getParticipants(tripId);
+    const participants = await this.participantService.loadParticipantsByTripId(tripId);
 
     // Crear mapa de userId -> info de usuario para búsqueda rápida
     const usersMap = new Map(
@@ -452,9 +289,9 @@ export class ExpenseService {
       const userInfo = usersMap.get(expense.user_id || '');
       return {
         ...expense,
-        userFullName: userInfo?.full_name || 'Usuario',
-        userEmail: userInfo?.email || undefined,
-        userAvatarUrl: userInfo?.avatar_url || undefined,
+        user_full_name: userInfo?.full_name || 'Usuario',
+        user_email: userInfo?.email || '',
+        user_avatar_url: userInfo?.avatar_url || 'undefined',
       };
     });
   }

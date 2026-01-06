@@ -1,11 +1,12 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { WidgetModalService } from '@core/dialog/widget-modal.service';
-import { NotificationService } from '@core/notifications/notification.service';
-import { TripDocumentService } from '@core/trips/services/trip-document.service';
-import type { TripDocumentWithUrl } from '@core/trips/models/trip-document.model';
-import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
+import { CommonModule } from "@angular/common";
+import { Component, inject, type OnInit, signal } from "@angular/core";
+import { FormsModule } from "@angular/forms";
+import { ConfirmModalService } from "@core/dialog/confirm-modal.service";
+import { WidgetModalService } from "@core/dialog/widget-modal.service";
+import { NotificationService } from "@core/notifications/notification.service";
+import type { TripDocumentWithUrl } from "@core/trips/models/trip-document.model";
+import { TripDocumentService } from "@core/trips/services/trip-document.service";
+import { TripDocumentStore } from "@core/trips/store/trip-document.store";
 
 /**
  * Modal de gestión de documentos
@@ -19,10 +20,10 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
  * - Soporte para drag & drop en la zona de subida
  */
 @Component({
-  selector: 'app-documents-modal',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+	selector: "app-documents-modal",
+	standalone: true,
+	imports: [CommonModule, FormsModule],
+	template: `
     <div class="h-full flex flex-col">
       <!-- Contenido scrolleable -->
       <div
@@ -60,7 +61,7 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
               (click)="viewDocument(doc)"
             >
               <!-- Vista previa -->
-              @if (documentService.isImage(doc.name)) {
+              @if (doc.isImage) {
               <img [src]="doc.publicUrl" [alt]="doc.name" class="w-full h-full object-cover" />
               } @else {
               <div
@@ -174,201 +175,162 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
     </div>
   `,
 })
-export class DocumentsModalComponent implements OnInit {
-  documentService = inject(TripDocumentService);
-  private notificationService = inject(NotificationService);
-  private isFirstLoad = signal(true);
-  private widgetModalService = inject(WidgetModalService);
-  private confirmModalService = inject(ConfirmModalService);
+export class DocumentsModalComponent {
+	readonly #tripDocumentStore = inject(TripDocumentStore);
+	readonly #notificationService = inject(NotificationService);
+	readonly #confirmModalService = inject(ConfirmModalService);
 
-  documents = signal<TripDocumentWithUrl[]>([]);
-  isLoading = signal(false);
-  isUploading = signal(false);
-  isDragging = signal(false);
+	documents = this.#tripDocumentStore.documents;
+	isLoading = this.#tripDocumentStore.isLoading;
+	isUploading = this.#tripDocumentStore.isUploading;
+	isDragging = signal(false);
 
-  async ngOnInit() {
-    const tripId = this.widgetModalService.tripId();
-    if (tripId) {
-      await this.loadDocuments(tripId);
-    }
-  }
+	/**
+	 * Visualiza un documento (abre en nueva pestaña)
+	 */
+	viewDocument(doc: TripDocumentWithUrl): void {
+		window.open(doc.publicUrl, "_blank");
+	}
 
-  /**
-   * Carga los documentos del viaje
-   */
-  private async loadDocuments(tripId: string, showLoading: boolean = true): Promise<void> {
-    try {
-      // Mostrar loading solo si es la primera carga Y showLoading = true
-      if (this.isFirstLoad() && showLoading) {
-        this.isLoading.set(true);
-      }
+	/**
+	 * Descarga un documento
+	 */
+	downloadDocument(doc: TripDocumentWithUrl, event: Event): void {
+		event.stopPropagation();
 
-      // Cargar documentos
-      const docs = await this.documentService.getTripDocumentsWithUrl(tripId);
-      this.documents.set(docs);
+		// Crear un link temporal para forzar la descarga
+		const link = document.createElement("a");
+		link.href = doc.publicUrl;
+		link.download = doc.name;
+		link.target = "_blank";
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
 
-      // Marcar que ya no es primera carga
-      this.isFirstLoad.set(false);
-    } catch (error: any) {
-      console.error('Error loading documents:', error);
-      this.notificationService.error(error.message || 'No se pudieron cargar los documentos');
-    } finally {
-      // Siempre quitar loading al final
-      this.isLoading.set(false);
-    }
-  }
+		this.#notificationService.success("Descargando documento...");
+	}
 
-  /**
-   * Visualiza un documento (abre en nueva pestaña)
-   */
-  viewDocument(doc: TripDocumentWithUrl): void {
-    window.open(doc.publicUrl, '_blank');
-  }
+	/**
+	 * Elimina un documento
+	 */
+	async deleteDocument(doc: TripDocumentWithUrl, event: Event): Promise<void> {
+		event.stopPropagation();
 
-  /**
-   * Descarga un documento
-   */
-  downloadDocument(doc: TripDocumentWithUrl, event: Event): void {
-    event.stopPropagation();
+		this.#confirmModalService.open(
+			"Eliminar documento",
+			`¿Estás seguro de que quieres eliminar "${doc.name}"?`,
+			async () => {
+				try {
+					await this.#tripDocumentStore.deleteDocumentFromSelectedTrip(doc.id);
+					this.#notificationService.success("Documento eliminado correctamente");
+				} catch (error) {
+					console.error("Error deleting document:", error);
+					this.#notificationService.error(
+						error instanceof Error
+							? error.message
+							: "No se pudo eliminar el documento",
+					);
+				}
+			},
+			"Eliminar",
+		);
+	}
 
-    // Crear un link temporal para forzar la descarga
-    const link = document.createElement('a');
-    link.href = doc.publicUrl;
-    link.download = doc.name;
-    link.target = '_blank';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+	/**
+	 * Maneja la selección de archivos desde el input
+	 */
+	async onFileSelected(event: Event): Promise<void> {
+		const input = event.target as HTMLInputElement;
+		const files = input.files;
 
-    this.notificationService.success('Descargando documento...');
-  }
+		if (files && files.length > 0) {
+			await this.uploadFiles(Array.from(files));
+			input.value = ""; // Reset input
+		}
+	}
 
-  /**
-   * Elimina un documento
-   */
-  async deleteDocument(doc: TripDocumentWithUrl, event: Event): Promise<void> {
-    event.stopPropagation();
+	/**
+	 * Maneja el evento dragover
+	 */
+	onDragOver(event: DragEvent): void {
+		event.preventDefault();
+		event.stopPropagation();
+		this.isDragging.set(true);
+	}
 
-    this.confirmModalService.open(
-      'Eliminar documento',
-      `¿Estás seguro de que quieres eliminar "${doc.name}"?`,
-      async () => {
-        try {
-          await this.documentService.deleteDocument(doc.id);
-          this.notificationService.success('Documento eliminado correctamente');
+	/**
+	 * Maneja el evento dragleave
+	 */
+	onDragLeave(event: DragEvent): void {
+		event.preventDefault();
+		event.stopPropagation();
+		this.isDragging.set(false);
+	}
 
-          const tripId = this.widgetModalService.tripId();
-          if (tripId) {
-            await this.loadDocuments(tripId, false);
-          }
-        } catch (error: any) {
-          console.error('Error deleting document:', error);
-          this.notificationService.error(error.message || 'No se pudo eliminar el documento');
-        }
-      },
-      'Eliminar'
-    );
-  }
+	/**
+	 * Maneja el drop de archivos
+	 */
+	async onDrop(event: DragEvent): Promise<void> {
+		event.preventDefault();
+		event.stopPropagation();
+		this.isDragging.set(false);
 
-  /**
-   * Maneja la selección de archivos desde el input
-   */
-  async onFileSelected(event: Event): Promise<void> {
-    const input = event.target as HTMLInputElement;
-    const files = input.files;
+		const files = event.dataTransfer?.files;
+		if (files && files.length > 0) {
+			await this.uploadFiles(Array.from(files));
+		}
+	}
 
-    if (files && files.length > 0) {
-      await this.uploadFiles(Array.from(files));
-      input.value = ''; // Reset input
-    }
-  }
+	/**
+	 * Sube uno o más archivos
+	 */
+	private async uploadFiles(files: File[]): Promise<void> {
+		try {
+			await this.#tripDocumentStore.uploadDocumentsIntoSelectedTrip(files);
 
-  /**
-   * Maneja el evento dragover
-   */
-  onDragOver(event: DragEvent): void {
-    event.preventDefault();
-    event.stopPropagation();
-    this.isDragging.set(true);
-  }
+			this.#notificationService.success(
+				files.length === 1
+					? "Documento subido correctamente"
+					: `${files.length} documentos subidos correctamente`,
+			);
+		} catch (error) {
+			console.error("Error uploading files:", error);
+			this.#notificationService.error(
+				error instanceof Error
+					? error.message
+					: "Error al subir los documentos",
+			);
+		}
+	}
 
-  /**
-   * Maneja el evento dragleave
-   */
-  onDragLeave(event: DragEvent): void {
-    event.preventDefault();
-    event.stopPropagation();
-    this.isDragging.set(false);
-  }
+	/**
+	 * Formatea la fecha de subida
+	 */
+	formatDate(dateString: string | null): string {
+		if (!dateString) return "fecha desconocida";
 
-  /**
-   * Maneja el drop de archivos
-   */
-  async onDrop(event: DragEvent): Promise<void> {
-    event.preventDefault();
-    event.stopPropagation();
-    this.isDragging.set(false);
+		const date = new Date(dateString);
+		const now = new Date();
+		const diffInDays = Math.floor(
+			(now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24),
+		);
 
-    const files = event.dataTransfer?.files;
-    if (files && files.length > 0) {
-      await this.uploadFiles(Array.from(files));
-    }
-  }
+		if (diffInDays === 0) return "hoy";
+		if (diffInDays === 1) return "ayer";
+		if (diffInDays < 7) return `hace ${diffInDays} días`;
 
-  /**
-   * Sube uno o más archivos
-   */
-  private async uploadFiles(files: File[]): Promise<void> {
-    const tripId = this.widgetModalService.tripId();
-    if (!tripId) return;
+		return date.toLocaleDateString("es-ES", {
+			day: "numeric",
+			month: "short",
+			year: "numeric",
+		});
+	}
 
-    this.isUploading.set(true);
-
-    try {
-      for (const file of files) {
-        await this.documentService.uploadDocument({
-          tripId,
-          file,
-        });
-      }
-
-      this.notificationService.success(
-        files.length === 1
-          ? 'Documento subido correctamente'
-          : `${files.length} documentos subidos correctamente`
-      );
-
-      await this.loadDocuments(tripId, false);
-    } catch (error: any) {
-      console.error('Error uploading files:', error);
-      this.notificationService.error(error.message || 'Error al subir los documentos');
-    } finally {
-      this.isUploading.set(false);
-    }
-  }
-
-  /**
-   * Formatea la fecha de subida
-   */
-  formatDate(dateString: string | null): string {
-    if (!dateString) return 'fecha desconocida';
-
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-
-    if (diffInDays === 0) return 'hoy';
-    if (diffInDays === 1) return 'ayer';
-    if (diffInDays < 7) return `hace ${diffInDays} días`;
-
-    return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
-  }
-
-  /**
-   * Obtiene la extensión del archivo para mostrar
-   */
-  getFileExtension(fileName: string): string {
-    const ext = fileName.split('.').pop()?.toUpperCase();
-    return ext || 'FILE';
-  }
+	/**
+	 * Obtiene la extensión del archivo para mostrar
+	 */
+	getFileExtension(fileName: string): string {
+		const ext = fileName.split(".").pop()?.toUpperCase();
+		return ext || "FILE";
+	}
 }

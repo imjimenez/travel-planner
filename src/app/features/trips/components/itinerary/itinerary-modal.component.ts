@@ -1,43 +1,47 @@
 // src/core/trips/components/itinerary-modal/itinerary-modal.component.ts
+
+import { CommonModule } from "@angular/common";
 import {
-  Component,
-  inject,
-  OnInit,
-  OnDestroy,
-  signal,
-  computed,
-  effect,
-  ViewChild,
-  AfterViewInit,
-} from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { ItineraryModalService } from '@core/dialog/itinerary-modal.service';
-import { ItineraryService } from '@core/trips';
-import { LeafletService } from '@shared/components/map/services/leaflet.service';
-import { MapComponent } from '@shared/components/map/map.component';
-import { NotificationService } from '@core/notifications/notification.service';
-import type { ItineraryItem, ItineraryItemInsert } from '@core/trips';
-import type { MapCoordinates, GeocodingResult } from '@shared/components/map/models';
-import { Subscription } from 'rxjs';
-import { DatePickerModule } from 'primeng/datepicker';
-import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
-import { TripDocumentService } from '@core/trips/services/trip-document.service';
-import type { TripDocumentWithUrl } from '@core/trips/models/trip-document.model';
+    type AfterViewInit,
+    Component,
+    effect,
+    inject,
+    linkedSignal,
+    type OnDestroy,
+    type OnInit,
+    signal,
+    ViewChild,
+} from "@angular/core";
+import { FormsModule } from "@angular/forms";
+import { ConfirmModalService } from "@core/dialog/confirm-modal.service";
+import { ItineraryModalService } from "@core/dialog/itinerary-modal.service";
+import { NotificationService } from "@core/notifications/notification.service";
+import type { ItineraryItem, ItineraryItemInsert } from "@core/trips";
+import type { TripDocumentWithUrl } from "@core/trips/models/trip-document.model";
+import { TripDocumentService } from "@core/trips/services/trip-document.service";
+import { TripItineraryStore } from "@core/trips/store/trip-itinerary.store";
+import { MapComponent } from "@shared/components/map/map.component";
+import type {
+    GeocodingResult,
+    MapCoordinates,
+} from "@shared/components/map/models";
+import { LeafletService } from "@shared/components/map/services/leaflet.service";
+import { DatePickerModule } from "primeng/datepicker";
+import type { Subscription } from "rxjs";
 
 /**
  * Formulario de datos para crear/editar parada
  */
 interface ItineraryFormData {
-  name: string;
-  city: string;
-  country: string;
-  latitude: number | null;
-  longitude: number | null;
-  start_date: string;
-  end_date: string;
-  description: string;
-  web: string;
+	name: string;
+	city: string;
+	country: string;
+	latitude: number | null;
+	longitude: number | null;
+	start_date: string;
+	end_date: string;
+	description: string;
+	web: string;
 }
 
 /**
@@ -56,10 +60,10 @@ interface ItineraryFormData {
  * - Gestión de documentos asociados (en todos los modos)
  */
 @Component({
-  selector: 'app-itinerary-modal',
-  standalone: true,
-  imports: [CommonModule, FormsModule, MapComponent, DatePickerModule],
-  template: `
+	selector: "app-itinerary-modal",
+	standalone: true,
+	imports: [CommonModule, FormsModule, MapComponent, DatePickerModule],
+	template: `
     <div class="flex flex-col h-full overflow-hidden">
       <!-- Header -->
       <div
@@ -140,14 +144,14 @@ interface ItineraryFormData {
           </div>
         </div>
 
-        @if (calculateDuration(currentItem()!.start_date, currentItem()!.end_date) > 1) {
+        @if (currentItem()!.duration_days > 1) {
         <!-- Duración -->
         <div class="mb-8">
           <label class="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
             Duración
           </label>
           <p class="text-base text-gray-900">
-            {{ calculateDuration(currentItem()!.start_date, currentItem()!.end_date) }} días
+            {{ currentItem()!.duration_days }} días
           </p>
         </div>
         }
@@ -565,665 +569,720 @@ interface ItineraryFormData {
       }
     </div>
   `,
-  styles: [
-    `
+	styles: [
+		`
       ::ng-deep .p-component {
         color-scheme: light;
       }
     `,
-  ],
+	],
 })
-export class ItineraryModalComponent implements OnInit, AfterViewInit, OnDestroy {
-  modalService = inject(ItineraryModalService);
-  private itineraryService = inject(ItineraryService);
-  private leafletService = inject(LeafletService);
-  private notificationService = inject(NotificationService);
-  private confirmModalService = inject(ConfirmModalService);
-  documentService = inject(TripDocumentService);
-
-  @ViewChild('mapRef') mapComponent?: MapComponent;
-  @ViewChild('mapViewRef') mapViewComponent?: MapComponent;
-
-  // Estados
-  isSaving = signal(false);
-  isDeleting = signal(false);
-  isUploadingDoc = signal(false);
-  isDraggingDoc = signal(false);
-
-  // Parada actual (en modo view/edit)
-  currentItem = computed(() => this.modalService.item());
-
-  // Datos del formulario
-  formData: ItineraryFormData = {
-    name: '',
-    city: '',
-    country: '',
-    latitude: null,
-    longitude: null,
-    start_date: '',
-    end_date: '',
-    description: '',
-    web: '',
-  };
-
-  // Signals para ubicación (patrón del wizard)
-  tripCity = signal('');
-  tripCountry = signal('');
-  tripLatitude = signal<number | null>(null);
-  tripLongitude = signal<number | null>(null);
-
-  // Datepickers
-  startDate = signal<Date | null>(null);
-  endDate = signal<Date | null>(null);
-
-  // Búsqueda de ubicación
-  locationSearch = '';
-  private searchSubscription?: Subscription;
-
-  // Documentos asociados a la parada
-  itemDocuments = signal<TripDocumentWithUrl[]>([]);
-
-  // IDs de documentos temporales subidos en modo CREATE (sin itinerary_item_id aún)
-  private tempDocumentIds: string[] = [];
-
-  constructor() {
-    // Effect para sincronizar startDate con formData.start_date
-    effect(() => {
-      const date = this.startDate();
-      if (date) {
-        // Convierte la fecha a formato ISO local sin cambiar la hora
-        const offsetMs = date.getTimezoneOffset() * 60000;
-        this.formData.start_date = new Date(date.getTime() - offsetMs).toISOString();
-
-        // Siempre actualizar fecha fin
-        const endDateTime = new Date(date);
-        endDateTime.setHours(endDateTime.getHours() + 1);
-        this.endDate.set(endDateTime);
-      }
-    });
-
-    // Effect para sincronizar endDate con formData.end_date
-    effect(() => {
-      const date = this.endDate();
-      if (date) {
-        this.formData.end_date = date.toISOString();
-      }
-    });
-
-    // Effect para sincronizar ubicación
-    effect(() => {
-      this.formData.city = this.tripCity();
-      this.formData.country = this.tripCountry();
-      this.formData.latitude = this.tripLatitude();
-      this.formData.longitude = this.tripLongitude();
-    });
-  }
-
-  ngOnInit(): void {
-    if (
-      (this.modalService.mode() === 'edit' || this.modalService.mode() === 'view') &&
-      this.currentItem()
-    ) {
-      this.loadItemData(this.currentItem()!);
-      this.loadItemDocuments(this.currentItem()!.id);
-    }
-  }
-
-  ngAfterViewInit(): void {
-    if (this.modalService.mode() === 'create') {
-      const trip = this.modalService.trip();
-      if (trip && trip.latitude && trip.longitude && this.mapComponent) {
-        setTimeout(() => {
-          if (this.mapComponent) {
-            this.mapComponent.centerMap({ lat: trip.latitude!, lng: trip.longitude! }, 10);
-          }
-        }, 150);
-      }
-    } else if (this.modalService.mode() === 'edit' && this.currentItem() && this.mapComponent) {
-      const item = this.currentItem()!;
-      if (item.latitude && item.longitude) {
-        setTimeout(() => {
-          if (this.mapComponent) {
-            this.mapComponent.centerMap({ lat: item.latitude!, lng: item.longitude! }, 12);
-            this.mapComponent.addSimpleMarker({ lat: item.latitude!, lng: item.longitude! });
-          }
-        }, 150);
-      }
-    } else if (this.modalService.mode() === 'view' && this.currentItem() && this.mapViewComponent) {
-      const item = this.currentItem()!;
-      if (item.latitude && item.longitude) {
-        setTimeout(() => {
-          if (this.mapViewComponent) {
-            this.mapViewComponent.centerMap({ lat: item.latitude!, lng: item.longitude! }, 12);
-            this.mapViewComponent.addSimpleMarker({ lat: item.latitude!, lng: item.longitude! });
-          }
-        }, 150);
-      }
-    }
-  }
-
-  ngOnDestroy(): void {
-    if (this.searchSubscription) {
-      this.searchSubscription.unsubscribe();
-    }
-  }
-
-  /**
-   * Carga los documentos asociados a un item del itinerario
-   */
-  private async loadItemDocuments(itemId: string): Promise<void> {
-    try {
-      const tripId = this.modalService.tripId();
-      if (!tripId) return;
-
-      const docs = await this.documentService.getDocumentsByItineraryItem(tripId, itemId);
-
-      const docsWithUrl = docs.map((doc) => ({
-        ...doc,
-        publicUrl: this.documentService.getPublicUrl(doc.file_path),
-      }));
-
-      this.itemDocuments.set(docsWithUrl);
-    } catch (error) {
-      console.error('Error loading item documents:', error);
-    }
-  }
-
-  private loadItemData(item: ItineraryItem): void {
-    this.formData = {
-      name: item.name,
-      city: item.city || '',
-      country: item.country || '',
-      latitude: item.latitude,
-      longitude: item.longitude,
-      start_date: item.start_date,
-      end_date: item.end_date,
-      description: item.description || '',
-      web: item.web || '',
-    };
-
-    this.tripCity.set(item.city || '');
-    this.tripCountry.set(item.country || '');
-    this.tripLatitude.set(item.latitude);
-    this.tripLongitude.set(item.longitude);
-
-    this.startDate.set(new Date(item.start_date));
-    this.endDate.set(new Date(item.end_date));
-  }
-
-  private resetForm(): void {
-    this.formData = {
-      name: '',
-      city: '',
-      country: '',
-      latitude: null,
-      longitude: null,
-      start_date: '',
-      end_date: '',
-      description: '',
-      web: '',
-    };
-
-    this.tripCity.set('');
-    this.tripCountry.set('');
-    this.tripLatitude.set(null);
-    this.tripLongitude.set(null);
-
-    this.startDate.set(null);
-    this.endDate.set(null);
-    this.locationSearch = '';
-    this.itemDocuments.set([]);
-    this.tempDocumentIds = [];
-  }
-
-  searchLocation(): void {
-    const query = this.locationSearch.trim();
-    if (!query) return;
-
-    if (this.searchSubscription) {
-      this.searchSubscription.unsubscribe();
-    }
-
-    this.searchSubscription = this.leafletService.searchLocation(query).subscribe({
-      next: (results) => {
-        if (results.length > 0) {
-          const firstResult = results[0];
-          this.tripLatitude.set(firstResult.coordinates.lat);
-          this.tripLongitude.set(firstResult.coordinates.lng);
-          this.extractCityAndCountry(firstResult);
-
-          if (this.mapComponent) {
-            this.mapComponent.centerMap(firstResult.coordinates, 12);
-            this.mapComponent.addSimpleMarker(firstResult.coordinates);
-          }
-
-          this.locationSearch = '';
-        } else {
-          this.notificationService.error('No se encontraron resultados para esa ubicación');
-        }
-      },
-      error: (error) => {
-        console.error('Error buscando ubicación:', error);
-        this.notificationService.error('Error al buscar la ubicación');
-      },
-    });
-  }
-
-  onMapLocationSelected(coordinates: MapCoordinates): void {
-    this.tripLatitude.set(coordinates.lat);
-    this.tripLongitude.set(coordinates.lng);
-
-    this.leafletService.reverseGeocode(coordinates).subscribe({
-      next: (result) => {
-        if (result) {
-          this.extractCityAndCountry(result);
-        } else {
-          this.tripCity.set(`Lat: ${coordinates.lat.toFixed(4)}`);
-          this.tripCountry.set(`Lng: ${coordinates.lng.toFixed(4)}`);
-        }
-      },
-      error: (error) => {
-        console.error('Error en geocoding inverso:', error);
-        this.tripCity.set(`Lat: ${coordinates.lat.toFixed(4)}`);
-        this.tripCountry.set(`Lng: ${coordinates.lng.toFixed(4)}`);
-      },
-    });
-  }
-
-  private extractCityAndCountry(result: GeocodingResult): void {
-    const raw = result.raw;
-
-    if (raw && raw.address) {
-      const addr = raw.address;
-      const city =
-        addr.city ||
-        addr.town ||
-        addr.village ||
-        addr.municipality ||
-        addr.county ||
-        addr.state ||
-        'Ubicación desconocida';
-      const country = addr.country || 'País desconocido';
-
-      this.tripCity.set(city);
-      this.tripCountry.set(country);
-    } else {
-      const parts = result.displayName.split(',').map((p) => p.trim());
-      if (parts.length >= 2) {
-        this.tripCity.set(parts[0]);
-        this.tripCountry.set(parts[parts.length - 1]);
-      } else {
-        this.tripCity.set(parts[0]);
-        this.tripCountry.set(parts[0]);
-      }
-    }
-  }
-
-  private validateForm(): boolean {
-    if (!this.formData.name.trim()) {
-      this.notificationService.warning('Por favor, introduce un nombre para la parada');
-      return false;
-    }
-
-    if (!this.formData.start_date) {
-      this.notificationService.warning('Por favor, selecciona la fecha y hora de inicio');
-      return false;
-    }
-
-    if (!this.formData.end_date) {
-      this.notificationService.warning('Por favor, selecciona la fecha y hora de fin');
-      return false;
-    }
-
-    if (new Date(this.formData.end_date) < new Date(this.formData.start_date)) {
-      this.notificationService.warning(
-        'La fecha/hora de fin debe ser igual o posterior a la de inicio'
-      );
-      return false;
-    }
-
-    return true;
-  }
-
-  async save(): Promise<void> {
-    if (!this.validateForm()) {
-      return;
-    }
-
-    this.isSaving.set(true);
-
-    try {
-      if (this.modalService.mode() === 'create') {
-        await this.createItem();
-      } else if (this.modalService.mode() === 'edit') {
-        await this.updateItem();
-      }
-    } catch (error) {
-      console.error('Error guardando parada:', error);
-      this.notificationService.error('Error al guardar la parada');
-    } finally {
-      this.isSaving.set(false);
-    }
-  }
-
-  /**
-   * Crea una nueva parada y actualiza los documentos temporales
-   */
-  private async createItem(): Promise<void> {
-    const tripId = this.modalService.tripId();
-    if (!tripId) throw new Error('No hay trip ID');
-
-    const itemData: ItineraryItemInsert = {
-      trip_id: tripId,
-      name: this.formData.name.trim(),
-      city: this.formData.city || null,
-      country: this.formData.country || null,
-      latitude: this.formData.latitude,
-      longitude: this.formData.longitude,
-      start_date: this.formData.start_date,
-      end_date: this.formData.end_date,
-      description: this.formData.description.trim() || null,
-      web: this.formData.web.trim() || null,
-    };
-
-    const createdItem = await this.itineraryService.createItineraryItem(itemData);
-
-    // ✅ Actualizar documentos temporales con el ID del item creado
-    if (this.tempDocumentIds.length > 0) {
-      await this.linkDocumentsToItem(createdItem.id);
-    }
-
-    this.notificationService.success('Parada creada correctamente');
-    this.modalService.notifyItemCreated(createdItem);
-    this.resetForm();
-    this.modalService.close();
-  }
-
-  /**
-   * Vincula los documentos temporales al item recién creado
-   */
-  private async linkDocumentsToItem(itemId: string): Promise<void> {
-    try {
-      // Usar el método del servicio para actualizar cada documento
-      for (const docId of this.tempDocumentIds) {
-        // Llamar directamente a Supabase para actualizar el itinerary_item_id
-        const { error } = await this.documentService['supabaseService'].client
-          .from('document')
-          .update({ itinerary_item_id: itemId })
-          .eq('id', docId);
-
-        if (error) {
-          console.error(`Error vinculando documento ${docId}:`, error);
-        }
-      }
-    } catch (error) {
-      console.error('Error vinculando documentos al item:', error);
-      // No lanzar error para que no falle toda la operación
-    }
-  }
-
-  private async updateItem(): Promise<void> {
-    const item = this.currentItem();
-    if (!item) throw new Error('No hay parada para actualizar');
-
-    const updatedItem = await this.itineraryService.updateItineraryItem(item.id, {
-      name: this.formData.name.trim(),
-      city: this.formData.city || null,
-      country: this.formData.country || null,
-      latitude: this.formData.latitude,
-      longitude: this.formData.longitude,
-      start_date: this.formData.start_date,
-      end_date: this.formData.end_date,
-      description: this.formData.description.trim() || null,
-      web: this.formData.web.trim() || null,
-    });
-
-    this.notificationService.success('Parada actualizada correctamente');
-    this.modalService.notifyItemUpdated(updatedItem);
-    this.modalService.switchToView();
-  }
-
-  switchToEdit(): void {
-    this.modalService.switchToEdit();
-    if (this.currentItem()) {
-      this.loadItemData(this.currentItem()!);
-    }
-  }
-
-  cancelEdit(): void {
-    this.modalService.switchToView();
-  }
-
-  async confirmDelete(): Promise<void> {
-    const item = this.currentItem();
-    if (!item) return;
-
-    this.confirmModalService.open(
-      'Eliminar parada',
-      '¿Estás seguro de que quieres eliminar esta parada?',
-      async () => {
-        this.isDeleting.set(true);
-
-        try {
-          await this.itineraryService.deleteItineraryItem(item.id);
-          this.notificationService.success('Parada eliminada correctamente');
-          this.modalService.notifyItemDeleted(item.id);
-          this.modalService.close();
-        } catch (error) {
-          console.error('Error eliminando parada:', error);
-          this.notificationService.error('Error al eliminar la parada');
-        } finally {
-          this.isDeleting.set(false);
-        }
-      },
-      'Eliminar'
-    );
-  }
-
-  close(): void {
-    this.resetForm();
-    this.modalService.close();
-  }
-
-  formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleString('es-ES', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  }
-
-  calculateDuration(startDate: string, endDate: string): number {
-    return this.itineraryService.calculateDuration(startDate, endDate);
-  }
-
-  // ========== GESTIÓN DE DOCUMENTOS ==========
-
-  async onDocFileSelected(event: Event): Promise<void> {
-    const input = event.target as HTMLInputElement;
-    const files = input.files;
-
-    if (files && files.length > 0) {
-      await this.uploadDocFiles(Array.from(files));
-      input.value = '';
-    }
-  }
-
-  onDocDragOver(event: DragEvent): void {
-    event.preventDefault();
-    event.stopPropagation();
-    this.isDraggingDoc.set(true);
-  }
-
-  onDocDragLeave(event: DragEvent): void {
-    event.preventDefault();
-    event.stopPropagation();
-    this.isDraggingDoc.set(false);
-  }
-
-  async onDocDrop(event: DragEvent): Promise<void> {
-    event.preventDefault();
-    event.stopPropagation();
-    this.isDraggingDoc.set(false);
-
-    const files = event.dataTransfer?.files;
-    if (files && files.length > 0) {
-      await this.uploadDocFiles(Array.from(files));
-    }
-  }
-
-  /**
-   * Sube archivos asociados al item
-   * En modo CREATE: sube sin itinerary_item_id (se vincula después)
-   * En modo EDIT: sube con itinerary_item_id directamente
-   */
-  private async uploadDocFiles(files: File[]): Promise<void> {
-    const tripId = this.modalService.tripId();
-    if (!tripId) {
-      this.notificationService.error('No se puede subir el documento en este momento');
-      return;
-    }
-
-    this.isUploadingDoc.set(true);
-
-    try {
-      for (const file of files) {
-        const uploadData = {
-          tripId,
-          file,
-          // En modo EDIT: incluir itinerary_item_id
-          // En modo CREATE: NO incluir (se vinculará después)
-          ...(this.modalService.mode() === 'edit' && this.currentItem()
-            ? { itineraryItemId: this.currentItem()!.id }
-            : {}),
-        };
-
-        const uploadedDoc = await this.documentService.uploadDocument(uploadData);
-
-        // En modo CREATE: guardar el ID para vincularlo después
-        if (this.modalService.mode() === 'create') {
-          this.tempDocumentIds.push(uploadedDoc.id);
-        }
-      }
-
-      this.notificationService.success(
-        files.length === 1
-          ? 'Documento subido correctamente'
-          : `${files.length} documentos subidos correctamente`
-      );
-
-      // Recargar documentos
-      if (this.modalService.mode() === 'edit' && this.currentItem()) {
-        await this.loadItemDocuments(this.currentItem()!.id);
-      } else {
-        // En modo CREATE: cargar todos los documentos temporales del viaje sin item asociado
-        await this.loadTempDocuments(tripId);
-      }
-    } catch (error: any) {
-      console.error('Error uploading files:', error);
-      this.notificationService.error(error.message || 'Error al subir los documentos');
-    } finally {
-      this.isUploadingDoc.set(false);
-    }
-  }
-
-  /**
-   * Carga documentos temporales (sin itinerary_item_id) del viaje
-   * SOLO muestra los documentos que se han subido en esta sesión (tempDocumentIds)
-   */
-  private async loadTempDocuments(tripId: string): Promise<void> {
-    try {
-      // Si no hay documentos temporales en esta sesión, no mostrar nada
-      if (this.tempDocumentIds.length === 0) {
-        this.itemDocuments.set([]);
-        return;
-      }
-
-      const allDocs = await this.documentService.getTripDocuments(tripId);
-
-      // Filtrar SOLO los documentos que se subieron en esta sesión
-      const tempDocs = allDocs.filter((doc) => this.tempDocumentIds.includes(doc.id));
-
-      const docsWithUrl = tempDocs.map((doc) => ({
-        ...doc,
-        publicUrl: this.documentService.getPublicUrl(doc.file_path),
-      }));
-
-      this.itemDocuments.set(docsWithUrl);
-    } catch (error) {
-      console.error('Error loading temp documents:', error);
-    }
-  }
-
-  viewItemDocument(doc: TripDocumentWithUrl): void {
-    window.open(doc.publicUrl, '_blank');
-  }
-
-  downloadItemDocument(doc: TripDocumentWithUrl, event: Event): void {
-    event.stopPropagation();
-
-    const link = document.createElement('a');
-    link.href = doc.publicUrl;
-    link.download = doc.name;
-    link.target = '_blank';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    this.notificationService.success('Descargando documento...');
-  }
-
-  async deleteItemDocument(doc: TripDocumentWithUrl, event: Event): Promise<void> {
-    event.stopPropagation();
-
-    this.confirmModalService.open(
-      'Eliminar documento',
-      `¿Estás seguro de que quieres eliminar "${doc.name}"?`,
-      async () => {
-        try {
-          await this.documentService.deleteDocument(doc.id);
-          this.notificationService.success('Documento eliminado correctamente');
-
-          // Remover de IDs temporales si existe
-          this.tempDocumentIds = this.tempDocumentIds.filter((id) => id !== doc.id);
-
-          // Recargar documentos
-          if (this.modalService.mode() === 'edit' && this.currentItem()) {
-            await this.loadItemDocuments(this.currentItem()!.id);
-          } else {
-            const tripId = this.modalService.tripId();
-            if (tripId) {
-              await this.loadTempDocuments(tripId);
-            }
-          }
-        } catch (error: any) {
-          console.error('Error deleting document:', error);
-          this.notificationService.error(error.message || 'No se pudo eliminar el documento');
-        }
-      },
-      'Eliminar'
-    );
-  }
-
-  formatDocDate(dateString: string | null): string {
-    if (!dateString) return 'fecha desconocida';
-
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-
-    if (diffInDays === 0) return 'hoy';
-    if (diffInDays === 1) return 'ayer';
-    if (diffInDays < 7) return `hace ${diffInDays} días`;
-
-    return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
-  }
-
-  getFileExtension(fileName: string): string {
-    const ext = fileName.split('.').pop()?.toUpperCase();
-    return ext || 'FILE';
-  }
+export class ItineraryModalComponent
+	implements OnInit, AfterViewInit, OnDestroy
+{
+	modalService = inject(ItineraryModalService);
+	readonly #tripItineraryStore = inject(TripItineraryStore);
+	private leafletService = inject(LeafletService);
+	private notificationService = inject(NotificationService);
+	private confirmModalService = inject(ConfirmModalService);
+	documentService = inject(TripDocumentService);
+
+	@ViewChild("mapRef") mapComponent?: MapComponent;
+	@ViewChild("mapViewRef") mapViewComponent?: MapComponent;
+
+	// Estados
+	isSaving = signal(false);
+	isDeleting = signal(false);
+	isUploadingDoc = signal(false);
+	isDraggingDoc = signal(false);
+
+	// Parada actual (en modo view/edit)
+	currentItem = linkedSignal(this.modalService.item);
+
+	// Datos del formulario
+	formData: ItineraryFormData = {
+		name: "",
+		city: "",
+		country: "",
+		latitude: null,
+		longitude: null,
+		start_date: "",
+		end_date: "",
+		description: "",
+		web: "",
+	};
+
+	// Signals para ubicación (patrón del wizard)
+	tripCity = signal("");
+	tripCountry = signal("");
+	tripLatitude = signal<number | null>(null);
+	tripLongitude = signal<number | null>(null);
+
+	// Datepickers
+	startDate = signal<Date | null>(null);
+	endDate = signal<Date | null>(null);
+
+	// Búsqueda de ubicación
+	locationSearch = "";
+	private searchSubscription?: Subscription;
+
+	// Documentos asociados a la parada
+	itemDocuments = signal<TripDocumentWithUrl[]>([]);
+
+	// IDs de documentos temporales subidos en modo CREATE (sin itinerary_item_id aún)
+	private tempDocumentIds: string[] = [];
+
+	constructor() {
+		// Effect para sincronizar startDate con formData.start_date
+		effect(() => {
+			const date = this.startDate();
+			if (date) {
+				// Convierte la fecha a formato ISO local sin cambiar la hora
+				const offsetMs = date.getTimezoneOffset() * 60000;
+				this.formData.start_date = new Date(
+					date.getTime() - offsetMs,
+				).toISOString();
+
+				// Siempre actualizar fecha fin
+				const endDateTime = new Date(date);
+				endDateTime.setHours(endDateTime.getHours() + 1);
+				this.endDate.set(endDateTime);
+			}
+		});
+
+		// Effect para sincronizar endDate con formData.end_date
+		effect(() => {
+			const date = this.endDate();
+			if (date) {
+				this.formData.end_date = date.toISOString();
+			}
+		});
+
+		// Effect para sincronizar ubicación
+		effect(() => {
+			this.formData.city = this.tripCity();
+			this.formData.country = this.tripCountry();
+			this.formData.latitude = this.tripLatitude();
+			this.formData.longitude = this.tripLongitude();
+		});
+	}
+
+	ngOnInit(): void {
+		if (
+			(this.modalService.mode() === "edit" ||
+				this.modalService.mode() === "view") &&
+			this.currentItem()
+		) {
+			this.loadItemData(this.currentItem()!);
+			this.loadItemDocuments(this.currentItem()!.id);
+		}
+	}
+
+	ngAfterViewInit(): void {
+		if (this.modalService.mode() === "create") {
+			const trip = this.modalService.trip();
+			if (trip && trip.latitude && trip.longitude && this.mapComponent) {
+				setTimeout(() => {
+					if (this.mapComponent) {
+						this.mapComponent.centerMap(
+							{ lat: trip.latitude!, lng: trip.longitude! },
+							10,
+						);
+					}
+				}, 150);
+			}
+		} else if (
+			this.modalService.mode() === "edit" &&
+			this.currentItem() &&
+			this.mapComponent
+		) {
+			const item = this.currentItem()!;
+			if (item.latitude && item.longitude) {
+				setTimeout(() => {
+					if (this.mapComponent) {
+						this.mapComponent.centerMap(
+							{ lat: item.latitude!, lng: item.longitude! },
+							12,
+						);
+						this.mapComponent.addSimpleMarker({
+							lat: item.latitude!,
+							lng: item.longitude!,
+						});
+					}
+				}, 150);
+			}
+		} else if (
+			this.modalService.mode() === "view" &&
+			this.currentItem() &&
+			this.mapViewComponent
+		) {
+			const item = this.currentItem()!;
+			if (item.latitude && item.longitude) {
+				setTimeout(() => {
+					if (this.mapViewComponent) {
+						this.mapViewComponent.centerMap(
+							{ lat: item.latitude!, lng: item.longitude! },
+							12,
+						);
+						this.mapViewComponent.addSimpleMarker({
+							lat: item.latitude!,
+							lng: item.longitude!,
+						});
+					}
+				}, 150);
+			}
+		}
+	}
+
+	ngOnDestroy(): void {
+		if (this.searchSubscription) {
+			this.searchSubscription.unsubscribe();
+		}
+	}
+
+	/**
+	 * Carga los documentos asociados a un item del itinerario
+	 */
+	private async loadItemDocuments(itemId: string): Promise<void> {
+		try {
+			const tripId = this.modalService.tripId();
+			if (!tripId) return;
+
+			const docs = await this.documentService.getDocumentsByItineraryItem(
+				tripId,
+				itemId,
+			);
+
+			const docsWithUrl = docs.map((doc) => ({
+				...doc,
+				publicUrl: this.documentService.getPublicUrl(doc.file_path),
+			}));
+
+			this.itemDocuments.set(docsWithUrl);
+		} catch (error) {
+			console.error("Error loading item documents:", error);
+		}
+	}
+
+	private loadItemData(item: ItineraryItem): void {
+		this.formData = {
+			name: item.name,
+			city: item.city || "",
+			country: item.country || "",
+			latitude: item.latitude,
+			longitude: item.longitude,
+			start_date: item.start_date,
+			end_date: item.end_date,
+			description: item.description || "",
+			web: item.web || "",
+		};
+
+		this.tripCity.set(item.city || "");
+		this.tripCountry.set(item.country || "");
+		this.tripLatitude.set(item.latitude);
+		this.tripLongitude.set(item.longitude);
+
+		this.startDate.set(new Date(item.start_date));
+		this.endDate.set(new Date(item.end_date));
+	}
+
+	private resetForm(): void {
+		this.formData = {
+			name: "",
+			city: "",
+			country: "",
+			latitude: null,
+			longitude: null,
+			start_date: "",
+			end_date: "",
+			description: "",
+			web: "",
+		};
+
+		this.tripCity.set("");
+		this.tripCountry.set("");
+		this.tripLatitude.set(null);
+		this.tripLongitude.set(null);
+
+		this.startDate.set(null);
+		this.endDate.set(null);
+		this.locationSearch = "";
+		this.itemDocuments.set([]);
+		this.tempDocumentIds = [];
+	}
+
+	searchLocation(): void {
+		const query = this.locationSearch.trim();
+		if (!query) return;
+
+		if (this.searchSubscription) {
+			this.searchSubscription.unsubscribe();
+		}
+
+		this.searchSubscription = this.leafletService
+			.searchLocation(query)
+			.subscribe({
+				next: (results) => {
+					if (results.length > 0) {
+						const firstResult = results[0];
+						this.tripLatitude.set(firstResult.coordinates.lat);
+						this.tripLongitude.set(firstResult.coordinates.lng);
+						this.extractCityAndCountry(firstResult);
+
+						if (this.mapComponent) {
+							this.mapComponent.centerMap(firstResult.coordinates, 12);
+							this.mapComponent.addSimpleMarker(firstResult.coordinates);
+						}
+
+						this.locationSearch = "";
+					} else {
+						this.notificationService.error(
+							"No se encontraron resultados para esa ubicación",
+						);
+					}
+				},
+				error: (error) => {
+					console.error("Error buscando ubicación:", error);
+					this.notificationService.error("Error al buscar la ubicación");
+				},
+			});
+	}
+
+	onMapLocationSelected(coordinates: MapCoordinates): void {
+		this.tripLatitude.set(coordinates.lat);
+		this.tripLongitude.set(coordinates.lng);
+
+		this.leafletService.reverseGeocode(coordinates).subscribe({
+			next: (result) => {
+				if (result) {
+					this.extractCityAndCountry(result);
+				} else {
+					this.tripCity.set(`Lat: ${coordinates.lat.toFixed(4)}`);
+					this.tripCountry.set(`Lng: ${coordinates.lng.toFixed(4)}`);
+				}
+			},
+			error: (error) => {
+				console.error("Error en geocoding inverso:", error);
+				this.tripCity.set(`Lat: ${coordinates.lat.toFixed(4)}`);
+				this.tripCountry.set(`Lng: ${coordinates.lng.toFixed(4)}`);
+			},
+		});
+	}
+
+	private extractCityAndCountry(result: GeocodingResult): void {
+		const raw = result.raw;
+
+		if (raw && raw.address) {
+			const addr = raw.address;
+			const city =
+				addr.city ||
+				addr.town ||
+				addr.village ||
+				addr.municipality ||
+				addr.county ||
+				addr.state ||
+				"Ubicación desconocida";
+			const country = addr.country || "País desconocido";
+
+			this.tripCity.set(city);
+			this.tripCountry.set(country);
+		} else {
+			const parts = result.displayName.split(",").map((p) => p.trim());
+			if (parts.length >= 2) {
+				this.tripCity.set(parts[0]);
+				this.tripCountry.set(parts[parts.length - 1]);
+			} else {
+				this.tripCity.set(parts[0]);
+				this.tripCountry.set(parts[0]);
+			}
+		}
+	}
+
+	private validateForm(): boolean {
+		if (!this.formData.name.trim()) {
+			this.notificationService.warning(
+				"Por favor, introduce un nombre para la parada",
+			);
+			return false;
+		}
+
+		if (!this.formData.start_date) {
+			this.notificationService.warning(
+				"Por favor, selecciona la fecha y hora de inicio",
+			);
+			return false;
+		}
+
+		if (!this.formData.end_date) {
+			this.notificationService.warning(
+				"Por favor, selecciona la fecha y hora de fin",
+			);
+			return false;
+		}
+
+		if (new Date(this.formData.end_date) < new Date(this.formData.start_date)) {
+			this.notificationService.warning(
+				"La fecha/hora de fin debe ser igual o posterior a la de inicio",
+			);
+			return false;
+		}
+
+		return true;
+	}
+
+	async save(): Promise<void> {
+		if (!this.validateForm()) {
+			return;
+		}
+
+		this.isSaving.set(true);
+
+		try {
+			if (this.modalService.mode() === "create") {
+				await this.createItem();
+			} else if (this.modalService.mode() === "edit") {
+				await this.updateItem();
+			}
+		} catch (error) {
+			console.error("Error guardando parada:", error);
+			this.notificationService.error("Error al guardar la parada");
+		} finally {
+			this.isSaving.set(false);
+		}
+	}
+
+	/**
+	 * Crea una nueva parada y actualiza los documentos temporales
+	 */
+	private async createItem(): Promise<void> {
+		const itemData: ItineraryItemInsert = {
+			name: this.formData.name.trim(),
+			city: this.formData.city || null,
+			country: this.formData.country || null,
+			latitude: this.formData.latitude,
+			longitude: this.formData.longitude,
+			start_date: this.formData.start_date,
+			end_date: this.formData.end_date,
+			description: this.formData.description.trim() || null,
+			web: this.formData.web.trim() || null,
+		};
+
+		const createdItem =
+			await this.#tripItineraryStore.createItineraryItemForSelectedTrip(
+				itemData,
+			);
+		if (!createdItem) {
+			this.notificationService.error("Error al crear la parada");
+			return;
+		}
+		// ✅ Actualizar documentos temporales con el ID del item creado
+		if (this.tempDocumentIds.length > 0) {
+			await this.linkDocumentsToItem(createdItem.id);
+		}
+
+		this.notificationService.success("Parada creada correctamente");
+		this.resetForm();
+		this.modalService.close();
+	}
+
+	/**
+	 * Vincula los documentos temporales al item recién creado
+	 */
+	private async linkDocumentsToItem(itemId: string): Promise<void> {
+		try {
+			// Usar el método del servicio para actualizar cada documento
+			for (const docId of this.tempDocumentIds) {
+				// Llamar directamente a Supabase para actualizar el itinerary_item_id
+				const { error } = await this.documentService["supabaseService"].client
+					.from("document")
+					.update({ itinerary_item_id: itemId })
+					.eq("id", docId);
+
+				if (error) {
+					console.error(`Error vinculando documento ${docId}:`, error);
+				}
+			}
+		} catch (error) {
+			console.error("Error vinculando documentos al item:", error);
+			// No lanzar error para que no falle toda la operación
+		}
+	}
+
+	private async updateItem(): Promise<void> {
+		const item = this.currentItem();
+		if (!item) throw new Error("No hay parada para actualizar");
+
+		const updatedItem = await this.#tripItineraryStore.updateItineraryItem(
+			item.id,
+			{
+				name: this.formData.name.trim(),
+				city: this.formData.city || null,
+				country: this.formData.country || null,
+				latitude: this.formData.latitude,
+				longitude: this.formData.longitude,
+				start_date: this.formData.start_date,
+				end_date: this.formData.end_date,
+				description: this.formData.description.trim() || null,
+				web: this.formData.web.trim() || null,
+			},
+		);
+
+		this.currentItem.set(updatedItem);
+		this.notificationService.success("Parada actualizada correctamente");
+		this.modalService.switchToView();
+	}
+
+	switchToEdit(): void {
+		this.modalService.switchToEdit();
+		if (this.currentItem()) {
+			this.loadItemData(this.currentItem()!);
+		}
+	}
+
+	cancelEdit(): void {
+		this.modalService.switchToView();
+	}
+
+	async confirmDelete(): Promise<void> {
+		const item = this.currentItem();
+		if (!item) return;
+
+		this.confirmModalService.open(
+			"Eliminar parada",
+			"¿Estás seguro de que quieres eliminar esta parada?",
+			async () => {
+				this.isDeleting.set(true);
+
+				try {
+					await this.#tripItineraryStore.deleteItineraryItem(item.id);
+					this.notificationService.success("Parada eliminada correctamente");
+					this.modalService.close();
+				} catch (error) {
+					console.error("Error eliminando parada:", error);
+					this.notificationService.error("Error al eliminar la parada");
+				} finally {
+					this.isDeleting.set(false);
+				}
+			},
+			"Eliminar",
+		);
+	}
+
+	close(): void {
+		this.resetForm();
+		this.modalService.close();
+	}
+
+	formatDate(dateString: string): string {
+		const date = new Date(dateString);
+		return date.toLocaleString("es-ES", {
+			day: "numeric",
+			month: "long",
+			year: "numeric",
+			hour: "2-digit",
+			minute: "2-digit",
+		});
+	}
+	// ========== GESTIÓN DE DOCUMENTOS ==========
+
+	async onDocFileSelected(event: Event): Promise<void> {
+		const input = event.target as HTMLInputElement;
+		const files = input.files;
+
+		if (files && files.length > 0) {
+			await this.uploadDocFiles(Array.from(files));
+			input.value = "";
+		}
+	}
+
+	onDocDragOver(event: DragEvent): void {
+		event.preventDefault();
+		event.stopPropagation();
+		this.isDraggingDoc.set(true);
+	}
+
+	onDocDragLeave(event: DragEvent): void {
+		event.preventDefault();
+		event.stopPropagation();
+		this.isDraggingDoc.set(false);
+	}
+
+	async onDocDrop(event: DragEvent): Promise<void> {
+		event.preventDefault();
+		event.stopPropagation();
+		this.isDraggingDoc.set(false);
+
+		const files = event.dataTransfer?.files;
+		if (files && files.length > 0) {
+			await this.uploadDocFiles(Array.from(files));
+		}
+	}
+
+	/**
+	 * Sube archivos asociados al item
+	 * En modo CREATE: sube sin itinerary_item_id (se vincula después)
+	 * En modo EDIT: sube con itinerary_item_id directamente
+	 */
+	private async uploadDocFiles(files: File[]): Promise<void> {
+		const tripId = this.modalService.tripId();
+		if (!tripId) {
+			this.notificationService.error(
+				"No se puede subir el documento en este momento",
+			);
+			return;
+		}
+
+		this.isUploadingDoc.set(true);
+
+		try {
+			for (const file of files) {
+				const uploadData = {
+					tripId,
+					file,
+					// En modo EDIT: incluir itinerary_item_id
+					// En modo CREATE: NO incluir (se vinculará después)
+					...(this.modalService.mode() === "edit" && this.currentItem()
+						? { itineraryItemId: this.currentItem()!.id }
+						: {}),
+				};
+
+				const uploadedDoc =
+					await this.documentService.uploadDocument(uploadData);
+
+				// En modo CREATE: guardar el ID para vincularlo después
+				if (this.modalService.mode() === "create") {
+					this.tempDocumentIds.push(uploadedDoc.id);
+				}
+			}
+
+			this.notificationService.success(
+				files.length === 1
+					? "Documento subido correctamente"
+					: `${files.length} documentos subidos correctamente`,
+			);
+
+			// Recargar documentos
+			if (this.modalService.mode() === "edit" && this.currentItem()) {
+				await this.loadItemDocuments(this.currentItem()!.id);
+			} else {
+				// En modo CREATE: cargar todos los documentos temporales del viaje sin item asociado
+				await this.loadTempDocuments(tripId);
+			}
+		} catch (error: any) {
+			console.error("Error uploading files:", error);
+			this.notificationService.error(
+				error.message || "Error al subir los documentos",
+			);
+		} finally {
+			this.isUploadingDoc.set(false);
+		}
+	}
+
+	/**
+	 * Carga documentos temporales (sin itinerary_item_id) del viaje
+	 * SOLO muestra los documentos que se han subido en esta sesión (tempDocumentIds)
+	 */
+	private async loadTempDocuments(tripId: string): Promise<void> {
+		try {
+			// Si no hay documentos temporales en esta sesión, no mostrar nada
+			if (this.tempDocumentIds.length === 0) {
+				this.itemDocuments.set([]);
+				return;
+			}
+
+			const allDocs = await this.documentService.getTripDocuments(tripId);
+
+			// Filtrar SOLO los documentos que se subieron en esta sesión
+			const tempDocs = allDocs.filter((doc) =>
+				this.tempDocumentIds.includes(doc.id),
+			);
+
+			const docsWithUrl = tempDocs.map((doc) => ({
+				...doc,
+				publicUrl: this.documentService.getPublicUrl(doc.file_path),
+			}));
+
+			this.itemDocuments.set(docsWithUrl);
+		} catch (error) {
+			console.error("Error loading temp documents:", error);
+		}
+	}
+
+	viewItemDocument(doc: TripDocumentWithUrl): void {
+		window.open(doc.publicUrl, "_blank");
+	}
+
+	downloadItemDocument(doc: TripDocumentWithUrl, event: Event): void {
+		event.stopPropagation();
+
+		const link = document.createElement("a");
+		link.href = doc.publicUrl;
+		link.download = doc.name;
+		link.target = "_blank";
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+
+		this.notificationService.success("Descargando documento...");
+	}
+
+	async deleteItemDocument(
+		doc: TripDocumentWithUrl,
+		event: Event,
+	): Promise<void> {
+		event.stopPropagation();
+
+		this.confirmModalService.open(
+			"Eliminar documento",
+			`¿Estás seguro de que quieres eliminar "${doc.name}"?`,
+			async () => {
+				try {
+					await this.documentService.deleteDocument(doc.id);
+					this.notificationService.success("Documento eliminado correctamente");
+
+					// Remover de IDs temporales si existe
+					this.tempDocumentIds = this.tempDocumentIds.filter(
+						(id) => id !== doc.id,
+					);
+
+					// Recargar documentos
+					if (this.modalService.mode() === "edit" && this.currentItem()) {
+						await this.loadItemDocuments(this.currentItem()!.id);
+					} else {
+						const tripId = this.modalService.tripId();
+						if (tripId) {
+							await this.loadTempDocuments(tripId);
+						}
+					}
+				} catch (error: any) {
+					console.error("Error deleting document:", error);
+					this.notificationService.error(
+						error.message || "No se pudo eliminar el documento",
+					);
+				}
+			},
+			"Eliminar",
+		);
+	}
+
+	formatDocDate(dateString: string | null): string {
+		if (!dateString) return "fecha desconocida";
+
+		const date = new Date(dateString);
+		const now = new Date();
+		const diffInDays = Math.floor(
+			(now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24),
+		);
+
+		if (diffInDays === 0) return "hoy";
+		if (diffInDays === 1) return "ayer";
+		if (diffInDays < 7) return `hace ${diffInDays} días`;
+
+		return date.toLocaleDateString("es-ES", { day: "numeric", month: "short" });
+	}
+
+	getFileExtension(fileName: string): string {
+		const ext = fileName.split(".").pop()?.toUpperCase();
+		return ext || "FILE";
+	}
 }

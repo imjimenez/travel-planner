@@ -13,4 +13,5 @@ export interface ParticipantWithUser extends TripParticipant {
   fullName?: string;
   avatarUrl?: string;
   isOwner: boolean;
+  isRemovable?: boolean;
 }

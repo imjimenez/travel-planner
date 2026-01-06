@@ -1,5 +1,5 @@
 import { Injectable, signal, computed, EventEmitter } from '@angular/core';
-import type { ItineraryItem, Trip } from '@core/trips';
+import type { ItineraryItem, ItineraryItemWithDetails, Trip } from '@core/trips';
 
 /**
  * Modos del modal de itinerario
@@ -28,7 +28,7 @@ export class ItineraryModalService {
   private modeSignal = signal<ItineraryModalMode>('create');
   private tripIdSignal = signal<string | null>(null);
   private tripSignal = signal<Trip | null>(null); // Trip completo para centrar mapa
-  private itemSignal = signal<ItineraryItem | null>(null);
+  private itemSignal = signal<ItineraryItemWithDetails | null>(null);
 
   // Computed signals
   isOpen = computed(() => this.isOpenSignal());
@@ -60,7 +60,7 @@ export class ItineraryModalService {
    *
    * @param item - Parada a visualizar
    */
-  openView(item: ItineraryItem): void {
+  openView(item: ItineraryItemWithDetails): void {
     this.tripIdSignal.set(item.trip_id);
     this.tripSignal.set(null); // No necesitamos el trip en modo view
     this.itemSignal.set(item);
@@ -101,32 +101,5 @@ export class ItineraryModalService {
     this.tripIdSignal.set(null);
     this.tripSignal.set(null);
     this.itemSignal.set(null);
-  }
-
-  /**
-   * Notifica que se ha creado una parada
-   *
-   * @param item - Parada creada
-   */
-  notifyItemCreated(item: ItineraryItem): void {
-    this.itemCreated.emit(item);
-  }
-
-  /**
-   * Notifica que se ha actualizado una parada
-   *
-   * @param item - Parada actualizada
-   */
-  notifyItemUpdated(item: ItineraryItem): void {
-    this.itemUpdated.emit(item);
-  }
-
-  /**
-   * Notifica que se ha eliminado una parada
-   *
-   * @param itemId - ID de la parada eliminada
-   */
-  notifyItemDeleted(itemId: string): void {
-    this.itemDeleted.emit(itemId);
   }
 }

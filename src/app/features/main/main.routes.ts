@@ -1,7 +1,6 @@
 import type { Routes } from "@angular/router";
 import { onboardingCheckGuard } from "@core/authentication";
 import DashboardLayout from "@shared/layouts/dashboard-layout/dashboard-layout";
-import { loadTripsGuard } from "./guards/user-data.guard";
 
 const mainRoutes: Routes = [
 	{
@@ -11,7 +10,6 @@ const mainRoutes: Routes = [
 	{
 		path: "",
 		component: DashboardLayout,
-		canActivate: [loadTripsGuard],
 		children: [
 			{
 				// Overview - página principal del dashboard

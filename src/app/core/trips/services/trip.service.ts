@@ -1,8 +1,8 @@
 // src/core/trips/services/trip.service.ts
-import { Injectable, inject, signal } from '@angular/core';
-import { SupabaseService } from '@core/supabase/supabase.service';
-import type { Trip, TripInsert, TripUpdate } from '@core/trips/models';
-import { AuthService } from '@core/authentication/services/auth.service';
+import { Injectable, inject } from "@angular/core";
+import { AuthService } from "@core/authentication/services/auth.service";
+import { SupabaseService } from "@core/supabase/supabase.service";
+import type { Trip, TripInsert, TripUpdate } from "@core/trips/models";
 
 /**
  * Servicio para gestión de viajes (trips)
@@ -17,267 +17,219 @@ import { AuthService } from '@core/authentication/services/auth.service';
  * automáticamente mediante trigger de base de datos.
  */
 @Injectable({
-  providedIn: 'root',
+	providedIn: "root",
 })
 export class TripService {
-  private supabase = inject(SupabaseService);
-  private authService = inject(AuthService);
+	readonly #supabase = inject(SupabaseService);
+	readonly #authService = inject(AuthService);
 
-  // Lista de viajes
-  private tripsSignal = signal<Trip[]>([]);
-  trips = this.tripsSignal.asReadonly();
+	async loadUserTrips(): Promise<Trip[]> {
+		const user = this.#authService.currentUser;
+		if (!user) {
+			return [];
+		}
+		const { data, error } = await this.#supabase.client
+			.from("trip")
+			.select(`
+        *,
+        trip_user!inner(user_id)
+        `)
+			.eq("trip_user.user_id", user.id)
+			.order("start_date", { ascending: true });
 
-  // Estado de carga
-  private loadingSignal = signal<boolean>(false);
-  loading = this.loadingSignal.asReadonly();
+		if (error) throw error;
+		return data;
+	}
 
-  /**
-   * Obtiene todos los viajes del usuario como Obsercable
-   */
-  async loadUserTrips(): Promise<void> {
-    const user = await this.authService.getAuthUser();
+	/**
+	 * Obtiene un viaje específico por su ID
+	 *
+	 * @param tripId - ID del viaje a obtener
+	 * @returns El viaje encontrado
+	 * @throws Error si el viaje no existe o el usuario no tiene acceso
+	 */
+	async getTripById(tripId: string): Promise<Trip> {
+		const user = await this.#authService.getAuthUser();
 
-    if (!user) {
-      this.tripsSignal.set([]);
-      return;
-    }
+		if (!user) {
+			throw new Error("Usuario no autenticado");
+		}
 
-    this.loadingSignal.set(true);
+		// Verificar que el usuario tiene acceso al trip
+		const { data: tripUser, error: accessError } = await this.#supabase.client
+			.from("trip_user")
+			.select("trip_id")
+			.eq("trip_id", tripId)
+			.eq("user_id", user.id)
+			.maybeSingle(); // Usar maybeSingle() en lugar de single()
 
-    try {
-      const { data: tripUsers, error: tripUsersError } = await this.supabase.client
-        .from('trip_user')
-        .select('trip_id')
-        .eq('user_id', user.id);
+		if (accessError || !tripUser) {
+			throw new Error("No tienes acceso a este viaje");
+		}
 
-      if (tripUsersError) throw tripUsersError;
+		const { data, error } = await this.#supabase.client
+			.from("trip")
+			.select("*")
+			.eq("id", tripId)
+			.maybeSingle();
 
-      if (!tripUsers || tripUsers.length === 0) {
-        this.tripsSignal.set([]);
-        return;
-      }
+		if (error) {
+			throw new Error(`Error al obtener viaje: ${error.message}`);
+		}
 
-      const tripIds = tripUsers.map((tu) => tu.trip_id).filter((id): id is string => id !== null);
+		if (!data) {
+			throw new Error("Viaje no encontrado");
+		}
 
-      const { data, error } = await this.supabase.client
-        .from('trip')
-        .select('*')
-        .in('id', tripIds)
-        .order('start_date', { ascending: true });
+		return data;
+	}
 
-      if (error) throw error;
+	/**
+	 * Crea un nuevo viaje
+	 *
+	 * @param trip - Datos del viaje a crear
+	 * @returns El viaje creado con su ID generado
+	 * @throws Error si falla la creación
+	 *
+	 */
+	async createTrip(trip: TripInsert): Promise<Trip> {
+		const user = await this.#authService.getAuthUser();
 
-      this.tripsSignal.set(data || []);
-    } catch (error) {
-      console.error('Error cargando viajes:', error);
-      this.tripsSignal.set([]);
-    } finally {
-      this.loadingSignal.set(false);
-    }
-  }
+		if (!user) {
+			throw new Error("Usuario no autenticado");
+		}
 
-  /**
-   * Obtiene un viaje por ID como Observable
-   */
-  async getUserTrips(): Promise<Trip[]> {
-    await this.loadUserTrips();
-    return this.trips();
-  }
+		const { data, error } = await this.#supabase.client
+			.from("trip")
+			.insert({
+				...trip,
+				owner_user_id: user.id,
+			})
+			.select()
+			.single();
 
-  /**
-   * Obtiene un viaje específico por su ID
-   *
-   * @param tripId - ID del viaje a obtener
-   * @returns El viaje encontrado
-   * @throws Error si el viaje no existe o el usuario no tiene acceso
-   */
-  async getTripById(tripId: string): Promise<Trip> {
-    const user = await this.authService.getAuthUser();
+		if (error) {
+			throw new Error(`Error al crear viaje: ${error.message}`);
+		}
 
-    if (!user) {
-      throw new Error('Usuario no autenticado');
-    }
+		return data;
+	}
 
-    // Verificar que el usuario tiene acceso al trip
-    const { data: tripUser, error: accessError } = await this.supabase.client
-      .from('trip_user')
-      .select('trip_id')
-      .eq('trip_id', tripId)
-      .eq('user_id', user.id)
-      .maybeSingle(); // Usar maybeSingle() en lugar de single()
+	/**
+	 * Actualiza un viaje existente
+	 *
+	 * Solo el propietario del viaje puede actualizarlo.
+	 *
+	 * @param tripId - ID del viaje a actualizar
+	 * @param updates - Campos a actualizar
+	 * @returns El viaje actualizado
+	 * @throws Error si el usuario no es propietario o falla la actualización
+	 */
+	async updateTrip(tripId: string, updates: TripUpdate): Promise<Trip> {
+		const user = this.#authService.currentUser;
 
-    if (accessError || !tripUser) {
-      throw new Error('No tienes acceso a este viaje');
-    }
+		if (!user) {
+			throw new Error("Usuario no autenticado");
+		}
 
-    const { data, error } = await this.supabase.client
-      .from('trip')
-      .select('*')
-      .eq('id', tripId)
-      .maybeSingle();
+		// Verificar que el usuario es el propietario
+		// const { data: trip, error: tripError } = await this.#supabase.client
+		// 	.from("trip")
+		// 	.select("owner_user_id")
+		// 	.eq("id", tripId)
+		// 	.maybeSingle(); // Usar maybeSingle() en lugar de single()
 
-    if (error) {
-      throw new Error(`Error al obtener viaje: ${error.message}`);
-    }
+		// if (tripError || !trip) {
+		// 	throw new Error("Viaje no encontrado");
+		// }
 
-    if (!data) {
-      throw new Error('Viaje no encontrado');
-    }
+		// if (trip.owner_user_id !== user.id) {
+		// 	throw new Error("Solo el propietario puede actualizar el viaje");
+		// }
 
-    return data;
-  }
+		const { data, error } = await this.#supabase.client
+			.from("trip")
+			.update(updates)
+			.eq("id", tripId)
+			.select()
+			.single();
 
-  /**
-   * Crea un nuevo viaje
-   *
-   * @param trip - Datos del viaje a crear
-   * @returns El viaje creado con su ID generado
-   * @throws Error si falla la creación
-   *
-   */
-  async createTrip(trip: TripInsert): Promise<Trip> {
-    const user = await this.authService.getAuthUser();
+		if (error) {
+			throw new Error(`Error al actualizar viaje: ${error.message}`);
+		}
 
-    if (!user) {
-      throw new Error('Usuario no autenticado');
-    }
+		return data;
+	}
 
-    const { data, error } = await this.supabase.client
-      .from('trip')
-      .insert({
-        ...trip,
-        owner_user_id: user.id,
-      })
-      .select()
-      .single();
+	/**
+	 * Elimina un viaje
+	 *
+	 * Solo el propietario del viaje puede eliminarlo.
+	 * La eliminación es en cascada (elimina también trip_users, invitaciones, etc.)
+	 *
+	 * @param tripId - ID del viaje a eliminar
+	 * @throws Error si el usuario no es propietario o falla la eliminación
+	 */
+	async deleteTrip(tripId: string): Promise<void> {
+		const user = await this.#authService.getAuthUser();
 
-    if (error) {
-      throw new Error(`Error al crear viaje: ${error.message}`);
-    }
+		if (!user) {
+			throw new Error("Usuario no autenticado");
+		}
 
-    // Recarga la lista después de crear
-    await this.loadUserTrips();
+		// Verificar que el usuario es el propietario
+		const { data: trip, error: tripError } = await this.#supabase.client
+			.from("trip")
+			.select("owner_user_id")
+			.eq("id", tripId)
+			.maybeSingle(); // ⚠️ CAMBIO CLAVE: usar maybeSingle() en lugar de single()
 
-    return data;
-  }
+		if (tripError) {
+			throw new Error(`Error al verificar el viaje: ${tripError.message}`);
+		}
 
-  /**
-   * Actualiza un viaje existente
-   *
-   * Solo el propietario del viaje puede actualizarlo.
-   *
-   * @param tripId - ID del viaje a actualizar
-   * @param updates - Campos a actualizar
-   * @returns El viaje actualizado
-   * @throws Error si el usuario no es propietario o falla la actualización
-   */
-  async updateTrip(tripId: string, updates: TripUpdate): Promise<Trip> {
-    const user = await this.authService.getAuthUser();
+		if (!trip) {
+			throw new Error("Viaje no encontrado");
+		}
 
-    if (!user) {
-      throw new Error('Usuario no autenticado');
-    }
+		if (trip.owner_user_id !== user.id) {
+			throw new Error("Solo el propietario puede eliminar el viaje");
+		}
 
-    // Verificar que el usuario es el propietario
-    const { data: trip, error: tripError } = await this.supabase.client
-      .from('trip')
-      .select('owner_user_id')
-      .eq('id', tripId)
-      .maybeSingle(); // Usar maybeSingle() en lugar de single()
+		const { error } = await this.#supabase.client
+			.from("trip")
+			.delete()
+			.eq("id", tripId);
 
-    if (tripError || !trip) {
-      throw new Error('Viaje no encontrado');
-    }
+		if (error) {
+			throw new Error(`Error al eliminar viaje: ${error.message}`);
+		}
 
-    if (trip.owner_user_id !== user.id) {
-      throw new Error('Solo el propietario puede actualizar el viaje');
-    }
+	}
 
-    const { data, error } = await this.supabase.client
-      .from('trip')
-      .update(updates)
-      .eq('id', tripId)
-      .select()
-      .single();
+	/**
+	 * Verifica si el usuario actual es propietario de un viaje
+	 *
+	 * @param tripId - ID del viaje a verificar
+	 * @returns true si el usuario es propietario, false en caso contrario
+	 */
+	async isOwner(tripId: string): Promise<boolean> {
+		const user = await this.#authService.getAuthUser();
 
-    if (error) {
-      throw new Error(`Error al actualizar viaje: ${error.message}`);
-    }
+		if (!user) {
+			return false;
+		}
 
-    // Recargar la lista después de actualizar
-    await this.loadUserTrips();
+		const { data, error } = await this.#supabase.client
+			.from("trip")
+			.select("owner_user_id")
+			.eq("id", tripId)
+			.maybeSingle(); // Usar maybeSingle() en lugar de single()
 
-    return data;
-  }
+		if (error || !data) {
+			return false;
+		}
 
-  /**
-   * Elimina un viaje
-   *
-   * Solo el propietario del viaje puede eliminarlo.
-   * La eliminación es en cascada (elimina también trip_users, invitaciones, etc.)
-   *
-   * @param tripId - ID del viaje a eliminar
-   * @throws Error si el usuario no es propietario o falla la eliminación
-   */
-  async deleteTrip(tripId: string): Promise<void> {
-    const user = await this.authService.getAuthUser();
-
-    if (!user) {
-      throw new Error('Usuario no autenticado');
-    }
-
-    // Verificar que el usuario es el propietario
-    const { data: trip, error: tripError } = await this.supabase.client
-      .from('trip')
-      .select('owner_user_id')
-      .eq('id', tripId)
-      .maybeSingle(); // ⚠️ CAMBIO CLAVE: usar maybeSingle() en lugar de single()
-
-    if (tripError) {
-      throw new Error(`Error al verificar el viaje: ${tripError.message}`);
-    }
-
-    if (!trip) {
-      throw new Error('Viaje no encontrado');
-    }
-
-    if (trip.owner_user_id !== user.id) {
-      throw new Error('Solo el propietario puede eliminar el viaje');
-    }
-
-    const { error } = await this.supabase.client.from('trip').delete().eq('id', tripId);
-
-    if (error) {
-      throw new Error(`Error al eliminar viaje: ${error.message}`);
-    }
-
-    // Recargar la lista después de eliminar
-    await this.loadUserTrips();
-  }
-
-  /**
-   * Verifica si el usuario actual es propietario de un viaje
-   *
-   * @param tripId - ID del viaje a verificar
-   * @returns true si el usuario es propietario, false en caso contrario
-   */
-  async isOwner(tripId: string): Promise<boolean> {
-    const user = await this.authService.getAuthUser();
-
-    if (!user) {
-      return false;
-    }
-
-    const { data, error } = await this.supabase.client
-      .from('trip')
-      .select('owner_user_id')
-      .eq('id', tripId)
-      .maybeSingle(); // Usar maybeSingle() en lugar de single()
-
-    if (error || !data) {
-      return false;
-    }
-
-    return data.owner_user_id === user.id;
-  }
+		return data.owner_user_id === user.id;
+	}
 }

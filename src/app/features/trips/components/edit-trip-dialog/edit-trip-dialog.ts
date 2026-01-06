@@ -6,8 +6,9 @@ import {
 } from "@angular/core";
 import { LeafletService } from "@core/leaflet/services/leaflet.service";
 import { NotificationService } from "@core/notifications/notification.service";
-import { type Trip, TripService } from "@core/trips";
-import { DialogService, DynamicDialogRef } from "primeng/dynamicdialog";
+import type { Trip } from "@core/trips";
+import { TripStore } from "@core/trips/store/trips.store";
+import { DynamicDialogRef } from "primeng/dynamicdialog";
 import { firstValueFrom } from "rxjs";
 import TripForm from "../trip-form/trip-form";
 
@@ -17,16 +18,13 @@ import TripForm from "../trip-form/trip-form";
 	changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export default class EditTripDialog {
-	readonly #dialogService = inject(DialogService);
-	readonly #tripService = inject(TripService);
+	readonly #tripStore = inject(TripStore);
 	readonly #leaflet = inject(LeafletService);
 	readonly #notification = inject(NotificationService);
 
 	readonly #ref = inject(DynamicDialogRef);
 
-	instance = this.#dialogService.getInstance(this.#ref);
-
-	trip: Trip = this.instance?.data;
+	trip = this.#tripStore.selectedTrip;
 
 	isUpdating = signal(false);
 
@@ -40,7 +38,7 @@ export default class EditTripDialog {
 				const location = await firstValueFrom(
 					this.#leaflet.reverseGeocode({ lat: latitude, lng: longitude }),
 				);
-				const update = await this.#tripService.updateTrip(this.trip.id, {
+				await this.#tripStore.updateSelectedTrip({
 					name,
 					latitude,
 					longitude,
@@ -49,7 +47,7 @@ export default class EditTripDialog {
 					...this.#leaflet.extractCityAndCountry(location),
 				});
 				this.#notification.success("Viaje actualizado exitosamente");
-				this.#ref.close(update);
+				this.#ref.close();
 			}
 		} catch {
 			this.#notification.error(

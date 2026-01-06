@@ -1,31 +1,29 @@
 // src/app/features/trips/components/participants/participants-modal.component.ts
 
-import { Component, inject, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { WidgetModalService } from '@core/dialog/widget-modal.service';
-import { TripInviteService, TripParticipantService } from '@core/trips';
-import { NotificationService } from '@core/notifications/notification.service';
-import { AuthService } from '@core/authentication';
-import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
+import { Component, inject, signal } from "@angular/core";
+import { FormsModule } from "@angular/forms";
+import { ConfirmModalService } from "@core/dialog/confirm-modal.service";
+import { WidgetModalService } from "@core/dialog/widget-modal.service";
+import { NotificationService } from "@core/notifications/notification.service";
+import { type ParticipantWithUser, TripInviteService } from "@core/trips";
+import { TripParticipantStore } from "@core/trips/store/trip-participant.store";
 
 @Component({
-  selector: 'app-participants-modal',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+	selector: "app-participants-modal",
+	imports: [FormsModule],
+	template: `
     <div class="h-full flex flex-col">
       <!-- Contenido scrolleable -->
       <div class="flex-1 overflow-y-auto p-6">
         <!-- Participantes activos -->
         <div class="mb-6">
-          @if (participantService.isLoading()) {
+          @if (isLoading()) {
           <div class="flex justify-center py-8">
             <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
           </div>
           } @else {
           <div class="space-y-2">
-            @for (participant of participantService.participants(); track participant.id) {
+            @for (participant of participants(); track participant.id) {
             <div class="group flex items-center gap-3 p-3 bg-gray-50 rounded-lg transition-colors">
               <!-- Avatar -->
               <div class="shrink-0">
@@ -46,12 +44,12 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
 
               <!-- Info -->
               <div class="flex-1">
-                <p class="text-sm font-medium text-gray-900">{{ getDisplayName(participant) }}</p>
+                <p class="text-sm font-medium text-gray-900">{{ participant.fullName !== "Usuario" ? participant.fullName : participant.email }}</p>
                 <p class="text-xs text-gray-500">{{ participant.email }}</p>
               </div>
 
               <!-- Botón eliminar (solo visible para owner y no puede eliminarse a sí mismo) -->
-              @if (canRemoveParticipant(participant)) {
+              @if (participant.isRemovable) {
               <button
                 type="button"
                 (click)="removeParticipant(participant)"
@@ -72,7 +70,7 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
                 {{ participant.isOwner ? 'Propietario' : 'Acompañante' }}
               </span>
               <!-- Botón eliminar (solo visible para owner y no puede eliminarse a sí mismo) -->
-              @if (canRemoveParticipant(participant)) {
+              @if (participant.isRemovable) {
               <button
                 type="button"
                 (click)="removeParticipant(participant)"
@@ -238,203 +236,187 @@ import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
     </div>
   `,
 })
-export class ParticipantsModalComponent implements OnInit {
-  participantService = inject(TripParticipantService);
-  private inviteService = inject(TripInviteService);
-  private notificationService = inject(NotificationService);
-  private authService = inject(AuthService);
-  private widgetModalService = inject(WidgetModalService);
-  private confirmModalService = inject(ConfirmModalService);
+export class ParticipantsModalComponent {
+	readonly #participantStore = inject(TripParticipantStore);
 
-  pendingInvites = signal<Array<{ id: string; email: string; created_at: string | null }>>([]);
-  inviteEmail = '';
-  isSendingInvite = signal(false);
-  isResending = signal(false);
-  inviteError = signal<string | null>(null);
+	participants = this.#participantStore.participants;
+	isLoading = this.#participantStore.isLoading;
 
-  private currentUserId: string | null = null;
-  private tripOwnerId: string | null = null;
+	private inviteService = inject(TripInviteService);
+	private notificationService = inject(NotificationService);
+	private widgetModalService = inject(WidgetModalService);
+	private confirmModalService = inject(ConfirmModalService);
 
-  async ngOnInit() {
-    const tripId = this.widgetModalService.tripId();
-    if (tripId) {
-      // Obtener usuario actual
-      const user = await this.authService.getAuthUser();
-      this.currentUserId = user?.id || null;
+	pendingInvites = signal<
+		Array<{ id: string; email: string; created_at: string | null }>
+	>([]);
+	inviteEmail = "";
+	isSendingInvite = signal(false);
+	isResending = signal(false);
+	inviteError = signal<string | null>(null);
 
-      // Identificar owner del viaje
-      const owner = this.participantService.participants().find((p) => p.isOwner);
-      this.tripOwnerId = owner?.user_id || null;
+	private async loadPendingInvites(tripId: string) {
+		try {
+			const invites = await this.inviteService.getPendingInvites(tripId);
+			this.pendingInvites.set(invites);
+		} catch (error) {
+			console.error("Error loading pending invites:", error);
+		}
+	}
 
-      await this.loadPendingInvites(tripId);
-    }
-  }
+	/**
+	 * Elimina un participante del viaje
+	 */
+	async removeParticipant(participant: ParticipantWithUser) {
+		this.confirmModalService.open(
+			"Eliminar participante",
+			`¿Estás seguro de que quieres eliminar a ${participant.fullName !== "Usuario" ? participant.fullName : participant.email} del viaje?`,
+			async () => {
+				try {
+					const tripId = this.widgetModalService.tripId();
+					if (!tripId) return;
 
-  private async loadPendingInvites(tripId: string) {
-    try {
-      const invites = await this.inviteService.getPendingInvites(tripId);
-      this.pendingInvites.set(invites);
-    } catch (error) {
-      console.error('Error loading pending invites:', error);
-    }
-  }
+					await this.#participantStore.removeParticipantFromSelectedTrip(
+						participant.user_id,
+					);
+					this.notificationService.success(
+						"Participante eliminado correctamente",
+					);
+				} catch (error) {
+					console.error("Error removing participant:", error);
+					this.notificationService.error(
+						error instanceof Error
+							? error.message
+							: "No se pudo eliminar el participante",
+					);
+				}
+			},
+			"Eliminar",
+		);
+	}
 
-  /**
-   * Determina si el usuario actual puede eliminar a este participante
-   */
-  canRemoveParticipant(participant: any): boolean {
-    if (!this.currentUserId || !this.tripOwnerId) {
-      return false;
-    }
+	/**
+	 * Copia el enlace de invitación al portapapeles
+	 */
+	async copyInviteLink(inviteId: string) {
+		try {
+			const link = await this.inviteService.getInviteLink(inviteId);
+			await navigator.clipboard.writeText(link);
+			this.notificationService.success("Enlace copiado al portapapeles");
+		} catch (error) {
+			console.error("Error copying invite link:", error);
+			this.notificationService.error(
+				error instanceof Error ? error.message : "No se pudo copiar el enlace",
+			);
+		}
+	}
 
-    // Solo el owner puede eliminar
-    const isOwner = this.currentUserId === this.tripOwnerId;
-    if (!isOwner) {
-      return false;
-    }
+	/**
+	 * Reenvía una invitación
+	 */
+	async resendInvite(inviteId: string) {
+		this.confirmModalService.open(
+			"Reenviar email",
+			"¿Estás seguro de que quieres reenviar el email de invitación?",
+			async () => {
+				this.isResending.set(true);
 
-    // El owner no puede eliminarse a sí mismo
-    const isSelf = participant.user_id === this.currentUserId;
-    return !isSelf;
-  }
+				try {
+					await this.inviteService.resendInvite(inviteId);
+					this.notificationService.success(
+						"Invitación reenviada correctamente",
+					);
 
-  /**
-   * Elimina un participante del viaje
-   */
-  async removeParticipant(participant: any) {
-    this.confirmModalService.open(
-      'Eliminar participante',
-      `¿Estás seguro de que quieres eliminar a ${this.getDisplayName(participant)} del viaje?`,
-      async () => {
-        try {
-          const tripId = this.widgetModalService.tripId();
-          if (!tripId) return;
+					const tripId = this.widgetModalService.tripId();
+					if (tripId) {
+						await this.loadPendingInvites(tripId);
+					}
+				} catch (error) {
+					console.error("Error resending invite:", error);
+					this.notificationService.error(
+						error instanceof Error
+							? error.message
+							: "No se pudo reenviar la invitación",
+					);
+				} finally {
+					this.isResending.set(false);
+				}
+			},
+			"Reenviar",
+		);
+	}
 
-          await this.participantService.removeParticipant(tripId, participant.user_id);
-          await this.participantService.loadParticipants(tripId);
-          this.notificationService.success('Participante eliminado correctamente');
-        } catch (error: any) {
-          console.error('Error removing participant:', error);
-          this.notificationService.error(error.message || 'No se pudo eliminar el participante');
-        }
-      },
-      'Eliminar'
-    );
-  }
+	async sendInvite(event: Event) {
+		event.preventDefault();
+		const tripId = this.widgetModalService.tripId();
+		if (!this.inviteEmail || this.isSendingInvite() || !tripId) return;
 
-  /**
-   * Copia el enlace de invitación al portapapeles
-   */
-  async copyInviteLink(inviteId: string) {
-    try {
-      const link = await this.inviteService.getInviteLink(inviteId);
-      await navigator.clipboard.writeText(link);
-      this.notificationService.success('Enlace copiado al portapapeles');
-    } catch (error: any) {
-      console.error('Error copying invite link:', error);
-      this.notificationService.error(error.message || 'No se pudo copiar el enlace');
-    }
-  }
+		this.isSendingInvite.set(true);
+		this.inviteError.set(null);
 
-  /**
-   * Reenvía una invitación
-   */
-  async resendInvite(inviteId: string) {
-    this.confirmModalService.open(
-      'Reenviar email',
-      '¿Estás seguro de que quieres reenviar el email de invitación?',
-      async () => {
-        this.isResending.set(true);
+		try {
+			const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+			if (!emailRegex.test(this.inviteEmail)) {
+				throw new Error("Por favor, introduce un email válido");
+			}
 
-        try {
-          await this.inviteService.resendInvite(inviteId);
-          this.notificationService.success('Invitación reenviada correctamente');
+			await this.inviteService.inviteUser({
+				tripId,
+				email: this.inviteEmail.trim().toLowerCase(),
+			});
 
-          const tripId = this.widgetModalService.tripId();
-          if (tripId) {
-            await this.loadPendingInvites(tripId);
-          }
-        } catch (error: any) {
-          console.error('Error resending invite:', error);
-          this.notificationService.error(error.message || 'No se pudo reenviar la invitación');
-        } finally {
-          this.isResending.set(false);
-        }
-      },
-      'Reenviar'
-    );
-  }
+			this.notificationService.success("Invitación enviada correctamente");
+			this.inviteEmail = "";
+			await this.loadPendingInvites(tripId);
+		} catch (error) {
+			this.notificationService.error(
+				error instanceof Error
+					? error.message
+					: "Error al enviar la invitación",
+			);
+			console.error("Error sending invite:", error);
+			await this.loadPendingInvites(tripId);
+		} finally {
+			this.isSendingInvite.set(false);
+		}
+	}
 
-  async sendInvite(event: Event) {
-    event.preventDefault();
-    const tripId = this.widgetModalService.tripId();
-    if (!this.inviteEmail || this.isSendingInvite() || !tripId) return;
+	async cancelInvite(inviteId: string) {
+		this.confirmModalService.open(
+			"Cancelar invitación",
+			"¿Estás seguro de que quieres cancelar esta invitación?",
+			async () => {
+				try {
+					await this.inviteService.cancelInvite(inviteId);
+					this.notificationService.success("Invitación cancelada");
 
-    this.isSendingInvite.set(true);
-    this.inviteError.set(null);
+					const tripId = this.widgetModalService.tripId();
+					if (tripId) {
+						await this.loadPendingInvites(tripId);
+					}
+				} catch (error: any) {
+					console.error("Error canceling invite:", error);
+					this.notificationService.error(
+						error.message || "Error al cancelar la invitación",
+					);
+				}
+			},
+			"Cancelar invitación",
+		);
+	}
 
-    try {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(this.inviteEmail)) {
-        throw new Error('Por favor, introduce un email válido');
-      }
+	formatDate(dateString: string | null): string {
+		if (!dateString) return "fecha desconocida";
+		const date = new Date(dateString);
+		const now = new Date();
+		const diffInDays = Math.floor(
+			(now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24),
+		);
 
-      await this.inviteService.inviteUser({
-        tripId,
-        email: this.inviteEmail.trim().toLowerCase(),
-      });
+		if (diffInDays === 0) return "hoy";
+		if (diffInDays === 1) return "ayer";
+		if (diffInDays < 7) return `hace ${diffInDays} días`;
 
-      this.notificationService.success('Invitación enviada correctamente');
-      this.inviteEmail = '';
-      await this.loadPendingInvites(tripId);
-    } catch (error: any) {
-      this.notificationService.error(error.message || 'Error al enviar la invitación');
-      console.error('Error sending invite:', error);
-      await this.loadPendingInvites(tripId);
-    } finally {
-      this.isSendingInvite.set(false);
-    }
-  }
-
-  async cancelInvite(inviteId: string) {
-    this.confirmModalService.open(
-      'Cancelar invitación',
-      '¿Estás seguro de que quieres cancelar esta invitación?',
-      async () => {
-        try {
-          await this.inviteService.cancelInvite(inviteId);
-          this.notificationService.success('Invitación cancelada');
-
-          const tripId = this.widgetModalService.tripId();
-          if (tripId) {
-            await this.loadPendingInvites(tripId);
-          }
-        } catch (error: any) {
-          console.error('Error canceling invite:', error);
-          this.notificationService.error(error.message || 'Error al cancelar la invitación');
-        }
-      },
-      'Cancelar invitación'
-    );
-  }
-
-  formatDate(dateString: string | null): string {
-    if (!dateString) return 'fecha desconocida';
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-
-    if (diffInDays === 0) return 'hoy';
-    if (diffInDays === 1) return 'ayer';
-    if (diffInDays < 7) return `hace ${diffInDays} días`;
-
-    return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
-  }
-
-  getDisplayName(participant: any): string {
-    if (participant.fullName && participant.fullName !== 'Usuario') {
-      return participant.fullName;
-    }
-    return participant.email;
-  }
+		return date.toLocaleDateString("es-ES", { day: "numeric", month: "short" });
+	}
 }

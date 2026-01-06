@@ -471,7 +471,6 @@ export class TripWizardComponent implements OnInit, AfterViewInit, OnDestroy {
     this.notificationService.success('Viaje actualizado correctamente');
     this.closed.emit();
     await this.router.navigate(['/trips', this.tripToEdit.id]);
-    await this.tripService.loadUserTrips();
   }
 
   /**

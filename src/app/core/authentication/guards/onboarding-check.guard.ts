@@ -14,11 +14,11 @@ export const onboardingCheckGuard: CanActivateFn = async () => {
 
 	try {
 		// Si ya cerró onboarding en esta sesión → permitir
-		if (sessionStorage.getItem("onboardingDismissed") === "1") {
+		if (sessionStorage.getItem("onboardingDone") === "1") {
 			return true;
 		}
 
-		const trips = await tripService.getUserTrips();
+		const trips = await tripService.loadUserTrips();
 
 		if (!trips || trips.length === 0) {
 			return router.parseUrl("/app/onboarding");

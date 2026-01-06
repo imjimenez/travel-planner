@@ -1,9 +1,10 @@
-import { Component, effect, inject, Input, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { WidgetModalService } from '@core/dialog/widget-modal.service';
-import { TripDocumentService } from '@core/trips/services/trip-document.service';
-import { NotificationService } from '@core/notifications/notification.service';
-import type { TripDocumentWithUrl } from '@core/trips/models/trip-document.model';
+import { SlicePipe } from "@angular/common";
+import { Component, inject, signal } from "@angular/core";
+import { WidgetModalService } from "@core/dialog/widget-modal.service";
+import { NotificationService } from "@core/notifications/notification.service";
+import type { TripDocumentWithUrl } from "@core/trips/models/trip-document.model";
+import { TripDocumentService } from "@core/trips/services/trip-document.service";
+import { TripDocumentStore } from "@core/trips/store/trip-document.store";
 
 /**
  * Widget de documentos para mostrar en el dashboard del viaje
@@ -16,10 +17,9 @@ import type { TripDocumentWithUrl } from '@core/trips/models/trip-document.model
  * - Loading solo se muestra en la primera carga
  */
 @Component({
-  selector: 'app-document-widget',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
+	selector: "app-document-widget",
+	imports: [SlicePipe],
+	template: `
     <div
       class="md:h-62 flex flex-col bg-white border border-gray-200 rounded-xl p-4 shadow-sm transition-shadow"
     >
@@ -27,7 +27,7 @@ import type { TripDocumentWithUrl } from '@core/trips/models/trip-document.model
       <div class="flex items-center justify-between mb-2 md:mb-4">
         <div>
           <h3 class="text-sm md:text-base font-medium text-gray-900 uppercase tracking-wide">Documentos</h3>
-          <p class="text-xs md:text-sm text-gray-500">{{ documents().length }} documento(s)</p>
+          <p class="text-xs md:text-sm text-gray-500">  {{isLoading() ? '?' :  documents().length }} documento(s)</p>
         </div>
 
         <!-- Menu button -->
@@ -46,10 +46,8 @@ import type { TripDocumentWithUrl } from '@core/trips/models/trip-document.model
       <div class="flex justify-center py-8">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
       </div>
-      }
-
+      } @else {
       <!-- Content -->
-      @if (!isLoading()) {
       <div class="flex-1 flex flex-col justify-between">
         <!-- Empty state con drag & drop -->
         @if (documents().length === 0) {
@@ -78,7 +76,7 @@ import type { TripDocumentWithUrl } from '@core/trips/models/trip-document.model
         <!-- Lista de documentos -->
         @if (documents().length > 0) {
         <div class="space-y-3">
-          @for (doc of displayedDocuments(); track doc.id) {
+          @for (doc of documents() | slice:0:2 ; track doc.id) {
           <div
             class="group mb-1 flex items-center gap-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
             (click)="viewDocument(doc)"
@@ -152,167 +150,118 @@ import type { TripDocumentWithUrl } from '@core/trips/models/trip-document.model
     </div>
   `,
 })
-export class DocumentWidgetComponent implements OnInit {
-  @Input() tripId!: string;
+export class DocumentWidgetComponent {
+	readonly #tripDocumentStore = inject(TripDocumentStore);
 
-  private widgetModalService = inject(WidgetModalService);
-  documentService = inject(TripDocumentService);
-  private notificationService = inject(NotificationService);
+	documents = this.#tripDocumentStore.documents;
+	isLoading = this.#tripDocumentStore.isLoading;
+	isUploading = this.#tripDocumentStore.isUploading;
 
-  documents = signal<TripDocumentWithUrl[]>([]);
-  isLoading = signal(true);
-  isUploading = signal(false);
-  isDragging = signal(false);
-  private isFirstLoad = signal(true);
+	private widgetModalService = inject(WidgetModalService);
+	documentService = inject(TripDocumentService);
+	private notificationService = inject(NotificationService);
 
-  /**
-   * Computed: Primeros 2 documentos para mostrar en la lista
-   */
-  displayedDocuments = signal<TripDocumentWithUrl[]>([]);
+	isDragging = signal(false);
 
-  constructor() {
-    effect(() => {
-      const closed = this.widgetModalService.closedModal();
+	/**
+	 * Maneja la selección de archivos desde el input
+	 */
+	async onFileSelected(event: Event): Promise<void> {
+		const input = event.target as HTMLInputElement;
+		const files = input.files;
 
-      if (closed === 'documents') {
-        // Recargar sin loading cuando se cierra el modal
-        void this.loadDocuments(false);
-      }
-    });
-  }
+		if (files && files.length > 0) {
+			await this.uploadFiles(Array.from(files));
+			input.value = ""; // Reset input
+		}
+	}
 
-  async ngOnInit() {
-    await this.loadDocuments();
-  }
+	/**
+	 * Maneja el evento dragover
+	 */
+	onDragOver(event: DragEvent): void {
+		event.preventDefault();
+		event.stopPropagation();
+		this.isDragging.set(true);
+	}
 
-  /**
-   * Carga los documentos del viaje
-   * Solo muestra loading en la primera carga
-   */
-  private async loadDocuments(showLoading: boolean = true): Promise<void> {
-    try {
-      // Solo mostrar loading si es la primera carga Y showLoading es true
-      if (this.isFirstLoad() && showLoading) {
-        this.isLoading.set(true);
-      }
+	/**
+	 * Maneja el evento dragleave
+	 */
+	onDragLeave(event: DragEvent): void {
+		event.preventDefault();
+		event.stopPropagation();
+		this.isDragging.set(false);
+	}
 
-      const docs = await this.documentService.getTripDocumentsWithUrl(this.tripId);
-      this.documents.set(docs);
-      this.displayedDocuments.set(docs.slice(0, 2));
+	/**
+	 * Maneja el drop de archivos
+	 */
+	async onDrop(event: DragEvent): Promise<void> {
+		event.preventDefault();
+		event.stopPropagation();
+		this.isDragging.set(false);
 
-      // Marcar que ya no es la primera carga
-      this.isFirstLoad.set(false);
-    } catch (error: any) {
-      console.error('Error loading documents:', error);
-      this.notificationService.error(error.message || 'No se pudieron cargar los documentos');
-    } finally {
-      this.isLoading.set(false);
-    }
-  }
+		const files = event.dataTransfer?.files;
+		if (files && files.length > 0) {
+			await this.uploadFiles(Array.from(files));
+		}
+	}
 
-  /**
-   * Maneja la selección de archivos desde el input
-   */
-  async onFileSelected(event: Event): Promise<void> {
-    const input = event.target as HTMLInputElement;
-    const files = input.files;
+	/**
+	 * Sube uno o más archivos
+	 */
+	private async uploadFiles(files: File[]): Promise<void> {
+		try {
+			await this.#tripDocumentStore.uploadDocumentsIntoSelectedTrip(files);
+			this.notificationService.success(
+				files.length === 1
+					? "Documento subido correctamente"
+					: `${files.length} documentos subidos correctamente`,
+			);
+		} catch (error) {
+			console.error("Error uploading files:", error);
+			this.notificationService.error(
+				error instanceof Error
+					? error.message
+					: "Error al subir los documentos",
+			);
+		}
+	}
 
-    if (files && files.length > 0) {
-      await this.uploadFiles(Array.from(files));
-      input.value = ''; // Reset input
-    }
-  }
+	/**
+	 * Visualiza un documento (abre en nueva pestaña)
+	 */
+	viewDocument(doc: TripDocumentWithUrl): void {
+		window.open(doc.publicUrl, "_blank");
+	}
 
-  /**
-   * Maneja el evento dragover
-   */
-  onDragOver(event: DragEvent): void {
-    event.preventDefault();
-    event.stopPropagation();
-    this.isDragging.set(true);
-  }
+	/**
+	 * Formatea la fecha de subida
+	 */
+	formatDate(dateString: string | null): string {
+		if (!dateString) return "fecha desconocida";
 
-  /**
-   * Maneja el evento dragleave
-   */
-  onDragLeave(event: DragEvent): void {
-    event.preventDefault();
-    event.stopPropagation();
-    this.isDragging.set(false);
-  }
+		const date = new Date(dateString);
+		const now = new Date();
+		const diffInDays = Math.floor(
+			(now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24),
+		);
 
-  /**
-   * Maneja el drop de archivos
-   */
-  async onDrop(event: DragEvent): Promise<void> {
-    event.preventDefault();
-    event.stopPropagation();
-    this.isDragging.set(false);
+		if (diffInDays === 0) return "hoy";
+		if (diffInDays === 1) return "ayer";
+		if (diffInDays < 7) return `hace ${diffInDays} días`;
 
-    const files = event.dataTransfer?.files;
-    if (files && files.length > 0) {
-      await this.uploadFiles(Array.from(files));
-    }
-  }
+		return date.toLocaleDateString("es-ES", { day: "numeric", month: "short" });
+	}
 
-  /**
-   * Sube uno o más archivos
-   */
-  private async uploadFiles(files: File[]): Promise<void> {
-    this.isUploading.set(true);
-
-    try {
-      for (const file of files) {
-        await this.documentService.uploadDocument({
-          tripId: this.tripId,
-          file,
-        });
-      }
-
-      this.notificationService.success(
-        files.length === 1
-          ? 'Documento subido correctamente'
-          : `${files.length} documentos subidos correctamente`
-      );
-
-      // Recargar sin loading
-      await this.loadDocuments(false);
-    } catch (error: any) {
-      console.error('Error uploading files:', error);
-      this.notificationService.error(error.message || 'Error al subir los documentos');
-    } finally {
-      this.isUploading.set(false);
-    }
-  }
-
-  /**
-   * Visualiza un documento (abre en nueva pestaña)
-   */
-  viewDocument(doc: TripDocumentWithUrl): void {
-    window.open(doc.publicUrl, '_blank');
-  }
-
-  /**
-   * Formatea la fecha de subida
-   */
-  formatDate(dateString: string | null): string {
-    if (!dateString) return 'fecha desconocida';
-
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-
-    if (diffInDays === 0) return 'hoy';
-    if (diffInDays === 1) return 'ayer';
-    if (diffInDays < 7) return `hace ${diffInDays} días`;
-
-    return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
-  }
-
-  /**
-   * Abre el modal con todos los documentos
-   */
-  openDocumentsModal(): void {
-    this.widgetModalService.openDocumentsModal(this.tripId);
-  }
+	/**
+	 * Abre el modal con todos los documentos
+	 */
+	openDocumentsModal(): void {
+		const tripId = this.#tripDocumentStore.selectedTrip()?.id;
+		if (tripId) {
+			this.widgetModalService.openDocumentsModal(tripId);
+		}
+	}
 }

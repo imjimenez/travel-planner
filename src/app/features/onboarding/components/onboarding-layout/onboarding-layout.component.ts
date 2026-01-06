@@ -19,8 +19,8 @@ export default class OnboardingLayout {
   steps = this.#onboardingStore.steps;
   currentStep = this.#onboardingStore.currentStep;
 
-  dismiss() {
-    sessionStorage.setItem('onboardingDismissed', '1');
-    this.#router.navigate(['/app/overview']);
-  }
+	dismiss() {
+		sessionStorage.setItem("onboardingDone", "1");
+		this.#router.navigate(["/app/overview"]);
+	}
 }

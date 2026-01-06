@@ -35,49 +35,44 @@
         <div class="h-px bg-gray-400 my-4 mx-3"></div>
 
         <!-- Loading trips -->
-        @if (isLoading()) {
-        <div class="px-3 py-2 text-center mx-3">
-          <span class="text-xs text-gray-400">Cargando viajes...</span>
-        </div>
-        }
-
-        <!-- Trips list -->
-        @if (!isLoading() && trips().length > 0) {
-        <div class="flex flex-col gap-2">
-          @for (trip of trips(); track trip.id) {
-          <a
-            [routerLink]="['trips', trip.id]"
-            routerLinkActive="active-trip"
-            class="relative flex flex-col gap-1 px-3 py-2 mx-3 rounded-lg transition-all cursor-pointer hover:bg-white hover:shadow-sm group"
-            [class.bg-white]="isTripActive(trip.id)"
-            [class.shadow-sm]="isTripActive(trip.id)"
-          >
-            <div
-              class="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-8 rounded-r-full transition-all"
-              [class.bg-gray-900]="isTripActive(trip.id)"
-              [class.bg-transparent]="!isTripActive(trip.id)"
-            ></div>
-            <div class="flex gap-3 justify-start items-center">
-              <i class="pi pi-map-marker" style="color: black; font-size: 1.2rem"></i>
-              <div class="flex flex-col">
-                <span class="text-base font-medium text-gray-900 truncate">
-                  {{ trip.name }}
-                </span>
-                <span class="text-xs text-gray-500 truncate">
-                  {{ trip.city }}, {{ trip.country }}
-                </span>
-              </div>
-            </div>
-          </a>
-          }
-        </div>
-        }
-
+        @if (isLoadingTrips()) {
+          <div class="px-3 py-2 text-center mx-3">
+            <span class="text-xs text-gray-400">Cargando viajes...</span>
+          </div>
+        } @else if (trips().length > 0) {
+          <div class="flex flex-col gap-2">
+            @for (trip of trips(); track trip.id) {
+              <a
+                [routerLink]="['trips', trip.id]"
+                routerLinkActive="active-trip"
+                class="relative flex flex-col gap-1 px-3 py-2 mx-3 rounded-lg transition-all cursor-pointer hover:bg-white hover:shadow-sm group"
+                [class.bg-white]="isTripActive(trip.id)"
+                [class.shadow-sm]="isTripActive(trip.id)"
+              >
+                <div
+                  class="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-8 rounded-r-full transition-all"
+                  [class.bg-gray-900]="isTripActive(trip.id)"
+                  [class.bg-transparent]="!isTripActive(trip.id)"
+                ></div>
+                <div class="flex gap-3 justify-start items-center">
+                  <i class="pi pi-map-marker" style="color: black; font-size: 1.2rem"></i>
+                  <div class="flex flex-col">
+                    <span class="text-base font-medium text-gray-900 truncate">
+                      {{ trip.name }}
+                    </span>
+                    <span class="text-xs text-gray-500 truncate">
+                      {{ trip.city }}, {{ trip.country }}
+                    </span>
+                  </div>
+                </div>
+              </a>
+            }
+          </div>
+        } @else {
         <!-- Empty state -->
-        @if (!isLoading() && trips().length === 0) {
-        <div class="px-3 py-4 text-center mx-3">
-          <p class="text-sm text-gray-500 mb-2">No tienes viajes aún</p>
-        </div>
+          <div class="px-3 py-4 text-center mx-3">
+            <p class="text-sm text-gray-500 mb-2">No tienes viajes aún</p>
+          </div>
         }
       </nav>
 
