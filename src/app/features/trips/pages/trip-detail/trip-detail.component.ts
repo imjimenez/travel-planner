@@ -12,10 +12,8 @@ import { Router } from "@angular/router";
 import { AuthService } from "@core/authentication/services/auth.service";
 import { ItineraryModalService } from "@core/dialog/itinerary-modal.service";
 import { DialogService } from "@core/dialog/services/dialog.service";
-import { WidgetModalService } from "@core/dialog/widget-modal.service";
 import { NotificationService } from "@core/notifications/notification.service";
 import { TripStore } from "@core/trips/store/trips.store";
-import { ChecklistModalComponent } from "@features/trips/components/checklist/checklist-modal-component";
 import { ChecklistWidgetComponent } from "@features/trips/components/checklist/checklist-widget.component";
 import { DocumentWidgetComponent } from "@features/trips/components/documents/documents-widget.component";
 import EditTripDialog from "@features/trips/components/edit-trip-dialog/edit-trip-dialog";
@@ -24,7 +22,6 @@ import { ItineraryDetailComponent } from "@features/trips/components/itinerary/i
 // Componentes de la vista
 import { ParticipantWidgetComponent } from "@features/trips/components/participants/participants-widget.component";
 import { ItineraryModalWrapperComponent } from "@shared/components/modal-wrapper/itinerary-modal-wrapper.component";
-import { ModalWrapperComponent } from "@shared/components/modal-wrapper/widget-modal-wrapper.component";
 import { ConfirmationService } from "primeng/api";
 import { ConfirmPopupModule } from "primeng/confirmpopup";
 
@@ -44,8 +41,6 @@ import { ConfirmPopupModule } from "primeng/confirmpopup";
 		ChecklistWidgetComponent,
 		ExpensesComponent,
 		ItineraryDetailComponent,
-		ModalWrapperComponent,
-		ChecklistModalComponent,
 		ItineraryModalWrapperComponent,
 		ConfirmPopupModule,
 	],
@@ -71,7 +66,6 @@ export class TripDetailComponent {
 
 	private authService = inject(AuthService);
 	private notificationService = inject(NotificationService);
-	widgetModalService = inject(WidgetModalService);
 	itineraryModalService = inject(ItineraryModalService);
 
 	trip = this.#tripStore.selectedTrip;

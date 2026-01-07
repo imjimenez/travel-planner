@@ -1,10 +1,11 @@
 import { SlicePipe } from "@angular/common";
 import { Component, computed, inject, signal } from "@angular/core";
 import { FormsModule } from "@angular/forms";
-import { WidgetModalService } from "@core/dialog/widget-modal.service";
+import { DialogService } from "@core/dialog/services/dialog.service";
 import { NotificationService } from "@core/notifications/notification.service";
 import type { TripTodo } from "@core/trips/models/trip-todo.model";
 import { TripTodoStore } from "@core/trips/store/trip-todo.store";
+import { ChecklistModalComponent } from "./checklist-modal-component";
 
 /**
  * Widget de checklist para mostrar en el dashboard del viaje
@@ -119,6 +120,8 @@ import { TripTodoStore } from "@core/trips/store/trip-todo.store";
 })
 export class ChecklistWidgetComponent {
 	readonly #tripTodoStore = inject(TripTodoStore);
+	readonly #notificationService = inject(NotificationService);
+	readonly #dialogService = inject(DialogService);
 
 	pendingTodos = computed(() =>
 		this.#tripTodoStore.todos().filter((todo) => todo.status === "pending"),
@@ -136,9 +139,6 @@ export class ChecklistWidgetComponent {
 		return `${completedCount}/${totalCount}`;
 	});
 
-	private widgetModalService = inject(WidgetModalService);
-	private notificationService = inject(NotificationService);
-
 	newTodoTitle = signal("");
 
 	/**
@@ -151,7 +151,7 @@ export class ChecklistWidgetComponent {
 			await this.#tripTodoStore.updateTodo(todo.id, { status: newStatus });
 		} catch (error) {
 			console.error("Error updating todo:", error);
-			this.notificationService.error(
+			this.#notificationService.error(
 				error instanceof Error
 					? error.message
 					: "No se pudo actualizar la tarea",
@@ -170,10 +170,10 @@ export class ChecklistWidgetComponent {
 			await this.#tripTodoStore.createTodoForSelectedTrip({ title });
 
 			this.newTodoTitle.set("");
-			this.notificationService.success("Tarea agregada");
+			this.#notificationService.success("Tarea agregada");
 		} catch (error) {
 			console.error("Error creating todo:", error);
-			this.notificationService.error(
+			this.#notificationService.error(
 				error instanceof Error ? error.message : "No se pudo agregar la tarea",
 			);
 		}
@@ -193,9 +193,16 @@ export class ChecklistWidgetComponent {
 	 * Abre el modal con todas las tareas
 	 */
 	openChecklistModal(): void {
-		const tripId = this.#tripTodoStore.selectedTrip()?.id;
-		if (tripId) {
-			this.widgetModalService.openChecklistModal();
-		}
+		this.#dialogService.openCustomDialog(ChecklistModalComponent, {
+			header: "Checklist",
+			styleClass:
+				"w-screen h-screen lg:w-[85vw] lg:h-[85vh] lg:max-w-5xl lg:max-h-[90vh]",
+			contentStyle: {
+				height: "100%",
+			},
+			closable: true,
+			draggable: false,
+			dismissableMask: true,
+		});
 	}
 }

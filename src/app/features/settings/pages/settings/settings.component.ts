@@ -1,20 +1,19 @@
 // src/app/features/settings/pages/settings/settings.component.ts
 
-import { Component, inject, signal, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
-import { AuthService } from '@core/authentication';
-import { TripInviteService } from '@core/trips';
-import { NotificationService } from '@core/notifications/notification.service';
-import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
-import { ConfirmModalComponent } from '@shared/components/modal-wrapper/confirm-modal-wrapper.component';
+import { Component, inject, type OnInit, signal } from "@angular/core";
+import { FormsModule } from "@angular/forms";
+import { Router } from "@angular/router";
+import { AuthService } from "@core/authentication";
+import { NotificationService } from "@core/notifications/notification.service";
+import { TripInviteService } from "@core/trips";
+import { ConfirmationService } from "primeng/api";
+import { ConfirmPopupModule } from "primeng/confirmpopup";
 
 @Component({
-  selector: 'app-settings',
-  standalone: true,
-  imports: [CommonModule, FormsModule, ConfirmModalComponent],
-  template: `
+	selector: "app-settings",
+	standalone: true,
+	imports: [ConfirmPopupModule, FormsModule],
+	template: `
     <div class="w-full mx-auto max-w-6xl">
       <!-- Header con avatar centrado (sin fondo) -->
       <div class="flex flex-col items-center mb-12 pt-8">
@@ -233,7 +232,7 @@ import { ConfirmModalComponent } from '@shared/components/modal-wrapper/confirm-
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <!-- Cerrar sesión -->
           <button
-            (click)="logout()"
+            (click)="logout($event)"
             class="px-4 py-3 bg-white border-2 border-red-300 text-red-700 rounded-xl text-sm font-medium hover:bg-red-50 hover:border-red-400 transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -249,7 +248,7 @@ import { ConfirmModalComponent } from '@shared/components/modal-wrapper/confirm-
 
           <!-- Eliminar cuenta -->
           <button
-            (click)="deleteAccount()"
+            (click)="deleteAccount($event)"
             class="px-4 py-3 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700 transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -265,169 +264,191 @@ import { ConfirmModalComponent } from '@shared/components/modal-wrapper/confirm-
         </div>
       </div>
     </div>
-
-    @if (confirmModalService.isOpen()) {
-      <app-confirm-modal (closed)="confirmModalService.close()"></app-confirm-modal>
-    }
+    <p-confirmpopup />
   `,
+	providers: [ConfirmationService],
 })
 export default class SettingsComponent implements OnInit {
-  private authService = inject(AuthService);
-  private inviteService = inject(TripInviteService);
-  private notificationService = inject(NotificationService);
-  private router = inject(Router);
-  confirmModalService = inject(ConfirmModalService);
+	readonly #confirmationService = inject(ConfirmationService);
+	private authService = inject(AuthService);
+	private inviteService = inject(TripInviteService);
+	private notificationService = inject(NotificationService);
+	private router = inject(Router);
 
-  user = signal<any>(null);
-  pendingInvites = signal<any[]>([]);
+	user = signal<any>(null);
+	pendingInvites = signal<any[]>([]);
 
-  newPassword = '';
-  confirmPassword = '';
+	newPassword = "";
+	confirmPassword = "";
 
-  isChangingPassword = signal(false);
-  acceptingInviteToken = signal<string | null>(null);
+	isChangingPassword = signal(false);
+	acceptingInviteToken = signal<string | null>(null);
 
-  async ngOnInit() {
-    // Cargar usuario
-    const authUser = await this.authService.getAuthUser();
-    this.user.set(authUser);
+	async ngOnInit() {
+		// Cargar usuario
+		const authUser = await this.authService.getAuthUser();
+		this.user.set(authUser);
 
-    // Cargar invitaciones pendientes
-    try {
-      const invites = await this.inviteService.getMyInvites();
-      this.pendingInvites.set(invites);
-      console.log(invites);
-    } catch (error) {
-      console.error('Error loading invites:', error);
-    }
-  }
+		// Cargar invitaciones pendientes
+		try {
+			const invites = await this.inviteService.getMyInvites();
+			this.pendingInvites.set(invites);
+			console.log(invites);
+		} catch (error) {
+			console.error("Error loading invites:", error);
+		}
+	}
 
-  getDisplayName(): string {
-    const metadata = this.user()?.user_metadata;
-    return metadata?.['full_name'] || metadata?.['name'] || 'Usuario';
-  }
+	getDisplayName(): string {
+		const metadata = this.user()?.user_metadata;
+		return metadata?.["full_name"] || metadata?.["name"] || "Usuario";
+	}
 
-  getInitials(): string {
-    const name = this.getDisplayName();
-    return name.charAt(0).toUpperCase();
-  }
+	getInitials(): string {
+		const name = this.getDisplayName();
+		return name.charAt(0).toUpperCase();
+	}
 
-  getAvatarUrl(): string | null {
-    const metadata = this.user()?.user_metadata;
-    return metadata?.['avatar_url'] || metadata?.['picture'] || null;
-  }
+	getAvatarUrl(): string | null {
+		const metadata = this.user()?.user_metadata;
+		return metadata?.["avatar_url"] || metadata?.["picture"] || null;
+	}
 
-  authProvider(): string | null {
-    const provider = this.user()?.app_metadata?.provider;
-    if (provider === 'email') return null;
-    if (provider === 'google') return 'Google';
-    if (provider === 'github') return 'GitHub';
-    if (provider === 'apple') return 'Apple';
-    return null;
-  }
+	authProvider(): string | null {
+		const provider = this.user()?.app_metadata?.provider;
+		if (provider === "email") return null;
+		if (provider === "google") return "Google";
+		if (provider === "github") return "GitHub";
+		if (provider === "apple") return "Apple";
+		return null;
+	}
 
-  canChangePassword(): boolean {
-    return this.user()?.app_metadata?.provider === 'email';
-  }
+	canChangePassword(): boolean {
+		return this.user()?.app_metadata?.provider === "email";
+	}
 
-  formatDate(dateString: string | null | undefined): string {
-    if (!dateString) return 'Desconocido';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
-  }
+	formatDate(dateString: string | null | undefined): string {
+		if (!dateString) return "Desconocido";
+		const date = new Date(dateString);
+		return date.toLocaleDateString("es-ES", {
+			day: "numeric",
+			month: "long",
+			year: "numeric",
+		});
+	}
 
-  async changePassword(event: Event) {
-    event.preventDefault();
+	async changePassword(event: Event) {
+		event.preventDefault();
 
-    if (this.newPassword !== this.confirmPassword) {
-      this.notificationService.warning('Las contraseñas no coinciden');
-      return;
-    }
+		if (this.newPassword !== this.confirmPassword) {
+			this.notificationService.warning("Las contraseñas no coinciden");
+			return;
+		}
 
-    if (this.newPassword.length < 6) {
-      this.notificationService.warning('La contraseña debe tener al menos 6 caracteres');
-      return;
-    }
+		if (this.newPassword.length < 6) {
+			this.notificationService.warning(
+				"La contraseña debe tener al menos 6 caracteres",
+			);
+			return;
+		}
 
-    this.isChangingPassword.set(true);
+		this.isChangingPassword.set(true);
 
-    try {
-      const response = await this.authService.updatePassword(this.newPassword);
+		try {
+			const response = await this.authService.updatePassword(this.newPassword);
 
-      if (response.error) {
-        this.notificationService.error(response.error);
-      } else {
-        this.notificationService.success('Contraseña actualizada correctamente');
-        this.newPassword = '';
-        this.confirmPassword = '';
-      }
-    } catch (error: any) {
-      this.notificationService.error(error.message || 'Error al cambiar la contraseña');
-    } finally {
-      this.isChangingPassword.set(false);
-    }
-  }
+			if (response.error) {
+				this.notificationService.error(response.error);
+			} else {
+				this.notificationService.success(
+					"Contraseña actualizada correctamente",
+				);
+				this.newPassword = "";
+				this.confirmPassword = "";
+			}
+		} catch (error) {
+			this.notificationService.error(
+				error instanceof Error ? error.message : "Error al cambiar la contraseña",
+			);
+		} finally {
+			this.isChangingPassword.set(false);
+		}
+	}
 
-  async acceptInvite(token: string) {
-    this.acceptingInviteToken.set(token);
+	async acceptInvite(token: string) {
+		this.acceptingInviteToken.set(token);
 
-    try {
-      const result = await this.inviteService.acceptInvite(token);
-      this.notificationService.success('Te has unido al viaje correctamente');
+		try {
+			const result = await this.inviteService.acceptInvite(token);
+			this.notificationService.success("Te has unido al viaje correctamente");
 
-      // Recargar invitaciones
-      const invites = await this.inviteService.getMyInvites();
-      this.pendingInvites.set(invites);
+			// Recargar invitaciones
+			const invites = await this.inviteService.getMyInvites();
+			this.pendingInvites.set(invites);
 
-      // Emitir evento personalizado para que el sidebar se actualice
-      window.dispatchEvent(new CustomEvent('inviteAccepted', { detail: invites.length }));
+			// Emitir evento personalizado para que el sidebar se actualice
+			window.dispatchEvent(
+				new CustomEvent("inviteAccepted", { detail: invites.length }),
+			);
 
-      // Redirigir al viaje
-      setTimeout(() => {
-        this.router.navigate(['/trips', result.tripId]);
-      }, 1000);
-    } catch (error: any) {
-      this.notificationService.error(error.message || 'Error al aceptar la invitación');
-    } finally {
-      this.acceptingInviteToken.set(null);
-    }
-  }
+			// Redirigir al viaje
+			setTimeout(() => {
+				this.router.navigate(["/trips", result.tripId]);
+			}, 1000);
+		} catch (error) {
+			this.notificationService.error(
+				error instanceof Error ? error.message : "Error al aceptar la invitación",
+			);
+		} finally {
+			this.acceptingInviteToken.set(null);
+		}
+	}
 
-  async logout() {
-    this.confirmModalService.open(
-      'Cerrar sesión',
-      '¿Estás seguro de que quieres cerrar sesión?',
-      async () => {
-        await this.authService.signOut();
-        sessionStorage.setItem('onboardingDismissed', 'false');
-        this.router.navigate(['/']);
-      },
-      'Cerrar sesión'
-    );
-  }
+	async logout(event: Event) {
+		this.#confirmationService.confirm({
+			target: event.currentTarget as EventTarget,
+			header: "Cerrar sesión",
+			message: `¿Estás seguro de que quieres cerrar sesión?`,
+			acceptButtonStyleClass: "p-button-danger",
+			rejectButtonStyleClass: "p-button-secondary",
+			acceptLabel: "Cerrar sesión",
+			rejectLabel: "Cancelar",
+			accept: async () => {
+				await this.authService.signOut();
+				sessionStorage.setItem("onboardingDismissed", "false");
+				this.router.navigate(["/"]);
+			},
+		});
+	}
 
-  async deleteAccount() {
-    this.confirmModalService.open(
-      'Eliminar cuenta permanentemente',
-      '¿Estás seguro de que quieres eliminar tu cuenta?\n\nEsta acción es irreversible, no se puede deshacer.',
-      async () => {
-        try {
-          const response = await this.authService.deleteAccount();
-          if (response.error) {
-            this.notificationService.error(response.error);
-          } else {
-            this.notificationService.success('Cuenta eliminada correctamente');
-            this.router.navigate(['/']);
-          }
-        } catch (error: any) {
-          this.notificationService.error(error.message || 'Error al eliminar la cuenta');
-        }
-      },
-      'Eliminar'
-    );
-  }
+	async deleteAccount(event: Event) {
+		this.#confirmationService.confirm({
+			target: event.currentTarget as EventTarget,
+			header: "Eliminar cuenta",
+			message: `¿Estás seguro de que quieres eliminar tu cuenta?\n\nEsta acción es irreversible, no se puede deshacer.`,
+			icon: "pi pi-exclamation-circle",
+			acceptIcon: "pi pi-trash",
+			acceptButtonStyleClass: "p-button-danger",
+			rejectButtonStyleClass: "p-button-secondary",
+			acceptLabel: "Eliminar",
+			rejectLabel: "Cancelar",
+			accept: async () => {
+				try {
+					const response = await this.authService.deleteAccount();
+					if (response.error) {
+						this.notificationService.error(response.error);
+					} else {
+						this.notificationService.success("Cuenta eliminada correctamente");
+						this.router.navigate(["/"]);
+					}
+				} catch (error) {
+					this.notificationService.error(
+						error instanceof Error
+							? error.message
+							: "Error al eliminar la cuenta",
+					);
+				}
+			},
+		});
+	}
 }

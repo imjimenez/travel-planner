@@ -139,11 +139,8 @@
       Por favor, inténtalo de nuevo más tarde.
     </p>
   </div>
-  } @if (widgetModalService.type() === 'checklist') {
-  <app-widget-modal-wrapper title="Checklist">
-    <app-checklist-modal />
-  </app-widget-modal-wrapper>
-  } @if (itineraryModalService.isOpen()) {
+  }
+  @if (itineraryModalService.isOpen()) {
   <app-itinerary-modal-wrapper />
   }
 </div>

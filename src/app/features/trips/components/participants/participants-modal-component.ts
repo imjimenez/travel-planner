@@ -241,15 +241,14 @@ import { ConfirmPopupModule } from "primeng/confirmpopup";
 })
 export class ParticipantsModalComponent {
 	readonly #participantStore = inject(TripParticipantStore);
+	readonly #inviteService = inject(TripInviteService);
+	readonly #notificationService = inject(NotificationService);
+	readonly #confirmationService = inject(ConfirmationService);
 
 	participants = this.#participantStore.participants;
 	isLoading = this.#participantStore.isLoading;
-
-	private inviteService = inject(TripInviteService);
-	private notificationService = inject(NotificationService);
-	readonly #confirmationService = inject(ConfirmationService);
-
 	pendingInvites = this.#participantStore.pendingInvitations;
+
 	inviteEmail = "";
 	isSendingInvite = signal(false);
 	isResending = signal(false);
@@ -276,12 +275,12 @@ export class ParticipantsModalComponent {
 					await this.#participantStore.removeParticipantFromSelectedTrip(
 						participant.user_id,
 					);
-					this.notificationService.success(
+					this.#notificationService.success(
 						"Participante eliminado correctamente",
 					);
 				} catch (error) {
 					console.error("Error removing participant:", error);
-					this.notificationService.error(
+					this.#notificationService.error(
 						error instanceof Error
 							? error.message
 							: "No se pudo eliminar el participante",
@@ -296,12 +295,12 @@ export class ParticipantsModalComponent {
 	 */
 	async copyInviteLink(inviteId: string) {
 		try {
-			const link = await this.inviteService.getInviteLink(inviteId);
+			const link = await this.#inviteService.getInviteLink(inviteId);
 			await navigator.clipboard.writeText(link);
-			this.notificationService.success("Enlace copiado al portapapeles");
+			this.#notificationService.success("Enlace copiado al portapapeles");
 		} catch (error) {
 			console.error("Error copying invite link:", error);
-			this.notificationService.error(
+			this.#notificationService.error(
 				error instanceof Error ? error.message : "No se pudo copiar el enlace",
 			);
 		}
@@ -323,15 +322,15 @@ export class ParticipantsModalComponent {
 			accept: async () => {
 				this.isResending.set(true);
 				try {
-					await this.inviteService.resendInvite(inviteId);
-					this.notificationService.success(
+					await this.#inviteService.resendInvite(inviteId);
+					this.#notificationService.success(
 						"Invitación reenviada correctamente",
 					);
 
 					this.#participantStore.loadPendingInvitations();
 				} catch (error) {
 					console.error("Error resending invite:", error);
-					this.notificationService.error(
+					this.#notificationService.error(
 						error instanceof Error
 							? error.message
 							: "No se pudo reenviar la invitación",
@@ -357,16 +356,16 @@ export class ParticipantsModalComponent {
 				throw new Error("Por favor, introduce un email válido");
 			}
 
-			await this.inviteService.inviteUser({
+			await this.#inviteService.inviteUser({
 				tripId,
 				email: this.inviteEmail.trim().toLowerCase(),
 			});
 
-			this.notificationService.success("Invitación enviada correctamente");
+			this.#notificationService.success("Invitación enviada correctamente");
 			this.inviteEmail = "";
 			await this.#participantStore.loadPendingInvitations();
 		} catch (error) {
-			this.notificationService.error(
+			this.#notificationService.error(
 				error instanceof Error
 					? error.message
 					: "Error al enviar la invitación",
@@ -390,13 +389,13 @@ export class ParticipantsModalComponent {
 			rejectLabel: "Cancelar",
 			accept: async () => {
 				try {
-					await this.inviteService.cancelInvite(inviteId);
-					this.notificationService.success("Invitación cancelada");
+					await this.#inviteService.cancelInvite(inviteId);
+					this.#notificationService.success("Invitación cancelada");
 
 					await this.#participantStore.loadPendingInvitations();
 				} catch (error) {
 					console.error("Error canceling invite:", error);
-					this.notificationService.error(
+					this.#notificationService.error(
 						error instanceof Error
 							? error.message
 							: "Error al cancelar la invitación",
