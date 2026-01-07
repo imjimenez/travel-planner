@@ -6,6 +6,7 @@ import { Router } from "@angular/router";
 import { AuthService } from "@core/authentication";
 import { NotificationService } from "@core/notifications/notification.service";
 import { TripInviteService } from "@core/trips";
+import { TripStore } from "@core/trips/store/trips.store";
 import { ConfirmationService } from "primeng/api";
 import { ConfirmPopupModule } from "primeng/confirmpopup";
 
@@ -272,6 +273,7 @@ export default class SettingsComponent implements OnInit {
 	readonly #confirmationService = inject(ConfirmationService);
 	private authService = inject(AuthService);
 	private inviteService = inject(TripInviteService);
+	readonly #tripStore = inject(TripStore);
 	private notificationService = inject(NotificationService);
 	private router = inject(Router);
 
@@ -368,7 +370,9 @@ export default class SettingsComponent implements OnInit {
 			}
 		} catch (error) {
 			this.notificationService.error(
-				error instanceof Error ? error.message : "Error al cambiar la contraseña",
+				error instanceof Error
+					? error.message
+					: "Error al cambiar la contraseña",
 			);
 		} finally {
 			this.isChangingPassword.set(false);
@@ -390,14 +394,14 @@ export default class SettingsComponent implements OnInit {
 			window.dispatchEvent(
 				new CustomEvent("inviteAccepted", { detail: invites.length }),
 			);
-
+			await this.#tripStore.loadTrips();
 			// Redirigir al viaje
-			setTimeout(() => {
-				this.router.navigate(["/trips", result.tripId]);
-			}, 1000);
+			this.router.navigate(["/app/trips", result.tripId]);
 		} catch (error) {
 			this.notificationService.error(
-				error instanceof Error ? error.message : "Error al aceptar la invitación",
+				error instanceof Error
+					? error.message
+					: "Error al aceptar la invitación",
 			);
 		} finally {
 			this.acceptingInviteToken.set(null);
