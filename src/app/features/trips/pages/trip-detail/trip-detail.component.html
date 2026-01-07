@@ -42,7 +42,7 @@
           title="Editar viaje"
         >
           <i class="pi pi-pen-to-square" style="font-size: 1rem"></i>
-          <span class="sm:hidden">Editar</span>
+          <span class="md:hidden">Editar</span>
         </button>
         <button
           type="button"
@@ -51,20 +51,20 @@
           title="Eliminar viaje"
         >
           <i class="pi pi-trash" style="font-size: 1rem"></i>
-          <span class="sm:hidden">Eliminar</span>
+          <span class="md:hidden">Eliminar</span>
         </button>
       </div>
       } @else {
       <!-- Botón para participantes no-owner -->
-      <div class="w-full md:max-w-60">
+      <div class="flex w-full md:w-auto justify-center md:justify-end gap-3 static lg:absolute right-3 top-3">
         <button
           type="button"
           (click)="leaveTrip($event)"
-          class="w-full flex items-center justify-center font-bold gap-2 px-4 py-2 bg-red-500 border border-gray-300 text-gray-900 rounded-lg hover:bg-red-100 hover:border-red-200 hover:text-red-500 transition-colors cursor-pointer"
-          title="Salir del viaje"
+          class="flex w-full md:w-auto justify-center gap-4 items-center p-2 bg-white border border-red-300 text-red-600 rounded-lg hover:bg-red-100 transition-colors font-medium cursor-pointer"
+          title="Abandonar viaje"
         >
-          <i class="pi pi-sign-out" style="font-size: 1.5rem"></i>
-          <span class="text-sm md:text-lg">Abandonar viaje</span>
+          <i class="pi pi-sign-out" style="font-size: 1rem"></i>
+          <span class="font-medium">Abandonar viaje</span>
         </button>
       </div>
       }

@@ -200,7 +200,7 @@ import { ConfirmPopupModule } from 'primeng/confirmpopup';
 
     <!-- Formulario fijo abajo -->
     <div class="shrink-0 border-t border-gray-200 pt-6 lg:pt-0 lg:p-6 bg-white">
-      <h3 class="text-sm font-semibold text-gray-900 mb-3">Invitar nuevo participante</h3>
+      <h3 class="text-sm font-semibold lg:pt-4 text-gray-900 mb-3">Invitar nuevo participante</h3>
 
       <form (submit)="sendInvite($event)" class="space-y-3">
         <div class="flex gap-2">
