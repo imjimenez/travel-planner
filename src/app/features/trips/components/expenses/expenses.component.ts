@@ -1,15 +1,16 @@
 // src/app/features/trips/components/expenses/expenses.component.ts
-import { CurrencyPipe } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { ConfirmModalService } from '@core/dialog/confirm-modal.service';
-import { NotificationService } from '@core/notifications/notification.service';
+import { CurrencyPipe } from "@angular/common";
+import { Component, computed, inject, signal } from "@angular/core";
+import { FormsModule } from "@angular/forms";
+import { NotificationService } from "@core/notifications/notification.service";
 import {
-    EXPENSE_CATEGORIES,
-    type ExpenseCategory,
-    type ExpenseWithUser
-} from '@core/trips';
-import { TripExpenseStore } from '@core/trips/store/trip-expense.store';
+	EXPENSE_CATEGORIES,
+	type ExpenseCategory,
+	type ExpenseWithUser,
+} from "@core/trips";
+import { TripExpenseStore } from "@core/trips/store/trip-expense.store";
+import { ConfirmationService } from "primeng/api";
+import { ConfirmPopupModule } from "primeng/confirmpopup";
 
 /**
  * Componente para gestionar gastos de un viaje
@@ -25,9 +26,9 @@ import { TripExpenseStore } from '@core/trips/store/trip-expense.store';
  * - Los usuarios solo pueden eliminar y editar sus propios gastos
  */
 @Component({
-  selector: 'app-expenses',
-  imports: [FormsModule, CurrencyPipe],
-  template: `
+	selector: "app-expenses",
+	imports: [FormsModule, CurrencyPipe, ConfirmPopupModule],
+	template: `
     <div class="h-full flex flex-col ">
       <!-- Loading state -->
       @if (isLoading()) {
@@ -179,7 +180,7 @@ import { TripExpenseStore } from '@core/trips/store/trip-expense.store';
                     </button>
                     <button
                       type="button"
-                      (click)="deleteExpense(expense.id)"
+                      (click)="deleteExpense($event, expense.id)"
                       class="flex items-center justify-center w-7 h-7 text-red-600 hover:bg-red-100 rounded-lg mr-1.5 cursor-pointer"
                       title="Eliminar gasto"
                     >
@@ -204,7 +205,7 @@ import { TripExpenseStore } from '@core/trips/store/trip-expense.store';
                   </button>
                   <button
                     type="button"
-                    (click)="deleteExpense(expense.id)"
+                    (click)="deleteExpense($event, expense.id)"
                     class="flex items-center justify-center w-7 h-7 text-red-600 hover:bg-red-100 rounded-lg mr-1.5 cursor-pointer"
                     title="Eliminar gasto"
                   >
@@ -275,193 +276,209 @@ import { TripExpenseStore } from '@core/trips/store/trip-expense.store';
         </form>
       </div>
     </div>
+    <p-confirmpopup />
   `,
+	providers: [ConfirmationService],
 })
 export class ExpensesComponent {
-  readonly #tripExpenseStore = inject(TripExpenseStore);
+	readonly #tripExpenseStore = inject(TripExpenseStore);
 
-  private notificationService = inject(NotificationService);
-  private confirmModalService = inject(ConfirmModalService);
+	private notificationService = inject(NotificationService);
+	readonly #confirmationService = inject(ConfirmationService);
 
-  // Signals del servicio
-  expenses = this.#tripExpenseStore.expenses;
-  stats = this.#tripExpenseStore.stats;
-  isLoading = this.#tripExpenseStore.isLoading;
+	// Signals del servicio
+	expenses = this.#tripExpenseStore.expenses;
+	stats = this.#tripExpenseStore.stats;
+	isLoading = this.#tripExpenseStore.isLoading;
 
-  // Signals locales
-  isSubmitting = signal(false);
-  hoveredExpenseId = signal<string | null>(null);
+	// Signals locales
+	isSubmitting = signal(false);
+	hoveredExpenseId = signal<string | null>(null);
 
-  // Estado de edición
-  editingExpense = signal<string | null>(null);
-  editTitle = '';
-  editAmount: number | null = null;
-  editCategory: ExpenseCategory | '' = '';
+	// Estado de edición
+	editingExpense = signal<string | null>(null);
+	editTitle = "";
+	editAmount: number | null = null;
+	editCategory: ExpenseCategory | "" = "";
 
-  // Categorías disponibles
-  categories = EXPENSE_CATEGORIES;
+	// Categorías disponibles
+	categories = EXPENSE_CATEGORIES;
 
-  // Datos del nuevo gasto
-  newExpense = {
-    title: '',
-    amount: null as number | null,
-    category: '' as ExpenseCategory | '',
-  };
+	// Datos del nuevo gasto
+	newExpense = {
+		title: "",
+		amount: null as number | null,
+		category: "" as ExpenseCategory | "",
+	};
 
-  // Computed para saber si el usuario actual es owner
-  private currentUserId = signal<string | null>(null);
-  private isOwner = signal(false);
+	/**
+	 * Computed para determinar si debemos o nos deben dinero
+	 */
+	balanceLabel = computed(() => {
+		const currentStats = this.stats();
+		if (!currentStats) return "Me deben";
 
-  /**
-   * Computed para determinar si debemos o nos deben dinero
-   */
-  balanceLabel = computed(() => {
-    const currentStats = this.stats();
-    if (!currentStats) return 'Me deben';
+		const userPaid = currentStats.userTotalExpenses;
+		const shouldPay = currentStats.averagePerParticipant;
 
-    const userPaid = currentStats.userTotalExpenses;
-    const shouldPay = currentStats.averagePerParticipant;
+		return userPaid >= shouldPay ? "Me deben" : "Debo";
+	});
 
-    return userPaid >= shouldPay ? 'Me deben' : 'Debo';
-  });
+	/**
+	 * Computed para obtener la cantidad de balance (positiva siempre)
+	 */
+	balanceAmount = computed(() => {
+		const currentStats = this.stats();
+		if (!currentStats) return 0;
 
-  /**
-   * Computed para obtener la cantidad de balance (positiva siempre)
-   */
-  balanceAmount = computed(() => {
-    const currentStats = this.stats();
-    if (!currentStats) return 0;
+		const userPaid = currentStats.userTotalExpenses;
+		const shouldPay = currentStats.averagePerParticipant;
 
-    const userPaid = currentStats.userTotalExpenses;
-    const shouldPay = currentStats.averagePerParticipant;
+		return Math.abs(userPaid - shouldPay);
+	});
 
-    return Math.abs(userPaid - shouldPay);
-  });
+	/**
+	 * Computed para el color del balance
+	 */
 
-  /**
-   * Computed para el color del balance
-   */
+	balanceColor = computed(() => {
+		const amount = this.balanceAmount();
+		const label = this.balanceLabel();
 
-  balanceColor = computed(() => {
-    const amount = this.balanceAmount();
-    const label = this.balanceLabel();
+		if (amount === 0) {
+			return "text-gray-900";
+		}
 
-    if (amount === 0) {
-      return 'text-gray-900';
-    }
+		return label === "Me deben" ? "text-green-600" : "text-red-600";
+	});
 
-    return label === 'Me deben' ? 'text-green-600' : 'text-red-600';
-  });
+	/**
+	 * Inicia el modo de edición de un gasto
+	 */
+	startEdit(expense: ExpenseWithUser): void {
+		this.editingExpense.set(expense.id);
+		this.editTitle = expense.title;
+		this.editAmount = expense.amount;
+		this.editCategory = (expense.category || "Transporte") as ExpenseCategory;
+	}
 
-  /**
-   * Inicia el modo de edición de un gasto
-   */
-  startEdit(expense: ExpenseWithUser): void {
-    this.editingExpense.set(expense.id);
-    this.editTitle = expense.title;
-    this.editAmount = expense.amount;
-    this.editCategory = (expense.category || 'Transporte') as ExpenseCategory;
-  }
+	/**
+	 * Cancela el modo de edición
+	 */
+	cancelEdit(): void {
+		this.editingExpense.set(null);
+		this.editTitle = "";
+		this.editAmount = null;
+		this.editCategory = "";
+	}
 
-  /**
-   * Cancela el modo de edición
-   */
-  cancelEdit(): void {
-    this.editingExpense.set(null);
-    this.editTitle = '';
-    this.editAmount = null;
-    this.editCategory = '';
-  }
+	/**
+	 * Guarda los cambios de la edición
+	 */
+	async saveEdit(expense: ExpenseWithUser): Promise<void> {
+		const title = this.editTitle.trim();
+		if (!title) {
+			this.notificationService.warning("El título no puede estar vacío");
+			return;
+		}
 
-  /**
-   * Guarda los cambios de la edición
-   */
-  async saveEdit(expense: ExpenseWithUser): Promise<void> {
-    const title = this.editTitle.trim();
-    if (!title) {
-      this.notificationService.warning('El título no puede estar vacío');
-      return;
-    }
+		if (!this.editAmount || this.editAmount <= 0) {
+			this.notificationService.warning("El importe debe ser mayor que 0");
+			return;
+		}
 
-    if (!this.editAmount || this.editAmount <= 0) {
-      this.notificationService.warning('El importe debe ser mayor que 0');
-      return;
-    }
+		if (!this.editCategory) {
+			this.notificationService.warning("Selecciona una categoría");
+			return;
+		}
 
-    if (!this.editCategory) {
-      this.notificationService.warning('Selecciona una categoría');
-      return;
-    }
+		try {
+			await this.#tripExpenseStore.updateExpense(expense.id, {
+				title,
+				amount: this.editAmount,
+				category: this.editCategory as ExpenseCategory,
+			});
 
-    try {
-      await this.#tripExpenseStore.updateExpense(expense.id, {
-        title,
-        amount: this.editAmount,
-        category: this.editCategory as ExpenseCategory,
-      });
+			this.notificationService.success("Gasto actualizado correctamente");
+			this.cancelEdit();
+		} catch (error) {
+			console.error("Error updating expense:", error);
+			this.notificationService.error(
+				error instanceof Error
+					? error.message
+					: "No se pudo actualizar el gasto",
+			);
+		}
+	}
 
-      this.notificationService.success('Gasto actualizado correctamente');
-      this.cancelEdit();
-    } catch (error) {
-      console.error('Error updating expense:', error);
-      this.notificationService.error(error instanceof Error ? error.message : 'No se pudo actualizar el gasto');
-    }
-  }
+	/**
+	 * Añade un nuevo gasto
+	 */
+	async addExpense(event: Event): Promise<void> {
+		event.preventDefault();
 
-  /**
-   * Añade un nuevo gasto
-   */
-  async addExpense(event: Event): Promise<void> {
-    event.preventDefault();
+		if (
+			!this.newExpense.title?.trim() ||
+			!this.newExpense.amount ||
+			!this.newExpense.category
+		) {
+			this.notificationService.warning("Completa todos los campos");
+			return;
+		}
 
-    if (!this.newExpense.title?.trim() || !this.newExpense.amount || !this.newExpense.category) {
-      this.notificationService.warning('Completa todos los campos');
-      return;
-    }
+		this.isSubmitting.set(true);
 
-    this.isSubmitting.set(true);
+		try {
+			await this.#tripExpenseStore.createExpenseForSelectedTrip({
+				title: this.newExpense.title.trim(),
+				amount: this.newExpense.amount,
+				category: this.newExpense.category as ExpenseCategory,
+			});
 
-    try {
-      await this.#tripExpenseStore.createExpenseForSelectedTrip({
-        title: this.newExpense.title.trim(),
-        amount: this.newExpense.amount,
-        category: this.newExpense.category as ExpenseCategory,
-      });
+			this.notificationService.success("Gasto añadido correctamente");
 
-      this.notificationService.success('Gasto añadido correctamente');
+			// Limpiar formulario
+			this.newExpense = {
+				title: "",
+				amount: null,
+				category: "",
+			};
+		} catch (error) {
+			console.error("Error al añadir gasto:", error);
+			this.notificationService.error(
+				error instanceof Error ? error.message : "Error al añadir el gasto",
+			);
+		} finally {
+			this.isSubmitting.set(false);
+		}
+	}
 
-      // Limpiar formulario
-      this.newExpense = {
-        title: '',
-        amount: null,
-        category: '',
-      };
-    } catch (error) {
-      console.error('Error al añadir gasto:', error);
-      this.notificationService.error(error instanceof Error ? error.message : 'Error al añadir el gasto');
-    } finally {
-      this.isSubmitting.set(false);
-    }
-  }
-
-  /**
-   * Elimina un gasto
-   */
-  async deleteExpense(expenseId: string): Promise<void> {
-    this.confirmModalService.open(
-      'Eliminar gasto',
-      '¿Estás seguro de que deseas eliminar este gasto?',
-      async () => {
-        try {
-          await this.#tripExpenseStore.deleteExpenseFromSelectedTrip(expenseId);
-          this.notificationService.success('Gasto eliminado correctamente');
-
-        } catch (error) {
-          console.error('Error al eliminar gasto:', error);
-          this.notificationService.error(error instanceof Error ? error.message : 'Error al eliminar el gasto');
-        }
-      },
-      'Eliminar'
-    );
-  }
+	/**
+	 * Elimina un gasto
+	 */
+	async deleteExpense(event: Event, expenseId: string): Promise<void> {
+		this.#confirmationService.confirm({
+			target: event.currentTarget as EventTarget,
+			header: "Eliminar gasto",
+			message: `¿Estás seguro de que quieres eliminar este gasto?`,
+			icon: "pi pi-exclamation-triangle",
+			acceptButtonStyleClass: "p-button-danger",
+			rejectButtonStyleClass: "p-button-secondary",
+			acceptLabel: "Eliminar",
+			rejectLabel: "Cancelar",
+			accept: async () => {
+				try {
+					await this.#tripExpenseStore.deleteExpenseFromSelectedTrip(expenseId);
+					this.notificationService.success("Gasto eliminado correctamente");
+				} catch (error) {
+					console.error("Error al eliminar gasto:", error);
+					this.notificationService.error(
+						error instanceof Error
+							? error.message
+							: "Error al eliminar el gasto",
+					);
+				}
+			},
+		});
+	}
 }

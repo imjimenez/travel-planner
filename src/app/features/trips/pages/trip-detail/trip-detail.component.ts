@@ -130,7 +130,7 @@ export class TripDetailComponent {
 	async leaveTrip(event: Event): Promise<void> {
 		this.#confirmationService.confirm({
 			target: event.currentTarget as EventTarget,
-			header: "Eliminar viaje",
+			header: "Abandonar viaje",
 			message: `¿Estás seguro de que deseas salir del viaje "${this.trip()?.name}"?`,
 			icon: "pi pi-exclamation-triangle",
 			acceptButtonStyleClass: "p-button-danger",
