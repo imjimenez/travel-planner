@@ -1,12 +1,10 @@
-import { CommonModule } from "@angular/common";
-import { Component, inject, type OnInit, signal } from "@angular/core";
+import { Component, inject, signal } from "@angular/core";
 import { FormsModule } from "@angular/forms";
-import { ConfirmModalService } from "@core/dialog/confirm-modal.service";
-import { WidgetModalService } from "@core/dialog/widget-modal.service";
 import { NotificationService } from "@core/notifications/notification.service";
 import type { TripDocumentWithUrl } from "@core/trips/models/trip-document.model";
-import { TripDocumentService } from "@core/trips/services/trip-document.service";
 import { TripDocumentStore } from "@core/trips/store/trip-document.store";
+import { ConfirmationService } from "primeng/api";
+import { ConfirmPopupModule } from "primeng/confirmpopup";
 
 /**
  * Modal de gestión de documentos
@@ -22,9 +20,8 @@ import { TripDocumentStore } from "@core/trips/store/trip-document.store";
 @Component({
 	selector: "app-documents-modal",
 	standalone: true,
-	imports: [CommonModule, FormsModule],
+	imports: [FormsModule, ConfirmPopupModule],
 	template: `
-    <div class="h-full flex flex-col">
       <!-- Contenido scrolleable -->
       <div
         class="flex-1 overflow-y-auto p-6"
@@ -172,13 +169,18 @@ import { TripDocumentStore } from "@core/trips/store/trip-document.store";
           accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.txt"
         />
       </div>
-    </div>
+    <p-confirmpopup />
   `,
+	providers: [ConfirmationService],
+
+	host: {
+		class: "h-full flex flex-col",
+	},
 })
 export class DocumentsModalComponent {
 	readonly #tripDocumentStore = inject(TripDocumentStore);
 	readonly #notificationService = inject(NotificationService);
-	readonly #confirmModalService = inject(ConfirmModalService);
+	readonly #confirmationService = inject(ConfirmationService);
 
 	documents = this.#tripDocumentStore.documents;
 	isLoading = this.#tripDocumentStore.isLoading;
@@ -215,14 +217,21 @@ export class DocumentsModalComponent {
 	 */
 	async deleteDocument(doc: TripDocumentWithUrl, event: Event): Promise<void> {
 		event.stopPropagation();
-
-		this.#confirmModalService.open(
-			"Eliminar documento",
-			`¿Estás seguro de que quieres eliminar "${doc.name}"?`,
-			async () => {
+		this.#confirmationService.confirm({
+			target: event.currentTarget as EventTarget,
+			header: "Eliminar documento",
+			message: `¿Estás seguro de que quieres eliminar "${doc.name}"?`,
+			icon: "pi pi-exclamation-triangle",
+			acceptButtonStyleClass: "p-button-danger",
+			rejectButtonStyleClass: "p-button-secondary",
+			acceptLabel: "Eliminar",
+			rejectLabel: "Cancelar",
+			accept: async () => {
 				try {
 					await this.#tripDocumentStore.deleteDocumentFromSelectedTrip(doc.id);
-					this.#notificationService.success("Documento eliminado correctamente");
+					this.#notificationService.success(
+						"Documento eliminado correctamente",
+					);
 				} catch (error) {
 					console.error("Error deleting document:", error);
 					this.#notificationService.error(
@@ -232,8 +241,7 @@ export class DocumentsModalComponent {
 					);
 				}
 			},
-			"Eliminar",
-		);
+		});
 	}
 
 	/**

@@ -1,10 +1,11 @@
 import { SlicePipe } from "@angular/common";
 import { Component, inject, signal } from "@angular/core";
-import { WidgetModalService } from "@core/dialog/widget-modal.service";
+import { DialogService } from "@core/dialog/services/dialog.service";
 import { NotificationService } from "@core/notifications/notification.service";
 import type { TripDocumentWithUrl } from "@core/trips/models/trip-document.model";
 import { TripDocumentService } from "@core/trips/services/trip-document.service";
 import { TripDocumentStore } from "@core/trips/store/trip-document.store";
+import { DocumentsModalComponent } from "./documents-modal-component";
 
 /**
  * Widget de documentos para mostrar en el dashboard del viaje
@@ -152,12 +153,12 @@ import { TripDocumentStore } from "@core/trips/store/trip-document.store";
 })
 export class DocumentWidgetComponent {
 	readonly #tripDocumentStore = inject(TripDocumentStore);
+	readonly #dialogService = inject(DialogService);
 
 	documents = this.#tripDocumentStore.documents;
 	isLoading = this.#tripDocumentStore.isLoading;
 	isUploading = this.#tripDocumentStore.isUploading;
 
-	private widgetModalService = inject(WidgetModalService);
 	documentService = inject(TripDocumentService);
 	private notificationService = inject(NotificationService);
 
@@ -259,9 +260,16 @@ export class DocumentWidgetComponent {
 	 * Abre el modal con todos los documentos
 	 */
 	openDocumentsModal(): void {
-		const tripId = this.#tripDocumentStore.selectedTrip()?.id;
-		if (tripId) {
-			this.widgetModalService.openDocumentsModal(tripId);
-		}
+		this.#dialogService.openCustomDialog(DocumentsModalComponent, {
+			header: "Documentos",
+			styleClass:
+				"w-screen h-screen lg:w-[85vw] lg:h-[85vh] lg:max-w-5xl lg:max-h-[90vh]",
+			contentStyle: {
+				height: "100%",
+			},
+			closable: true,
+			draggable: false,
+			dismissableMask: true,
+		});
 	}
 }

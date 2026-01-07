@@ -17,7 +17,6 @@ import { NotificationService } from "@core/notifications/notification.service";
 import { TripStore } from "@core/trips/store/trips.store";
 import { ChecklistModalComponent } from "@features/trips/components/checklist/checklist-modal-component";
 import { ChecklistWidgetComponent } from "@features/trips/components/checklist/checklist-widget.component";
-import { DocumentsModalComponent } from "@features/trips/components/documents/documents-modal-component";
 import { DocumentWidgetComponent } from "@features/trips/components/documents/documents-widget.component";
 import EditTripDialog from "@features/trips/components/edit-trip-dialog/edit-trip-dialog";
 import { ExpensesComponent } from "@features/trips/components/expenses/expenses.component";
@@ -45,11 +44,10 @@ import { ConfirmPopupModule } from "primeng/confirmpopup";
 		ChecklistWidgetComponent,
 		ExpensesComponent,
 		ItineraryDetailComponent,
-		ConfirmPopupModule,
 		ModalWrapperComponent,
-		DocumentsModalComponent,
 		ChecklistModalComponent,
 		ItineraryModalWrapperComponent,
+		ConfirmPopupModule,
 	],
 	templateUrl: "./trip-detail.component.html",
 	providers: [ConfirmationService],
