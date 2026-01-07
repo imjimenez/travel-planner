@@ -10,7 +10,6 @@ import {
 } from "@angular/core";
 import { Router } from "@angular/router";
 import { AuthService } from "@core/authentication/services/auth.service";
-import { ConfirmModalService } from "@core/dialog/confirm-modal.service";
 import { ItineraryModalService } from "@core/dialog/itinerary-modal.service";
 import { DialogService } from "@core/dialog/services/dialog.service";
 import { WidgetModalService } from "@core/dialog/widget-modal.service";
@@ -23,10 +22,8 @@ import { DocumentWidgetComponent } from "@features/trips/components/documents/do
 import EditTripDialog from "@features/trips/components/edit-trip-dialog/edit-trip-dialog";
 import { ExpensesComponent } from "@features/trips/components/expenses/expenses.component";
 import { ItineraryDetailComponent } from "@features/trips/components/itinerary/itinerary-detail.component";
-import { ParticipantsModalComponent } from "@features/trips/components/participants/participants-modal-component";
 // Componentes de la vista
 import { ParticipantWidgetComponent } from "@features/trips/components/participants/participants-widget.component";
-import { ConfirmModalComponent } from "@shared/components/modal-wrapper/confirm-modal-wrapper.component";
 import { ItineraryModalWrapperComponent } from "@shared/components/modal-wrapper/itinerary-modal-wrapper.component";
 import { ModalWrapperComponent } from "@shared/components/modal-wrapper/widget-modal-wrapper.component";
 import { ConfirmationService } from "primeng/api";
@@ -46,16 +43,13 @@ import { ConfirmPopupModule } from "primeng/confirmpopup";
 		ParticipantWidgetComponent,
 		DocumentWidgetComponent,
 		ChecklistWidgetComponent,
-		ParticipantWidgetComponent,
 		ExpensesComponent,
 		ItineraryDetailComponent,
 		ConfirmPopupModule,
 		ModalWrapperComponent,
-		ParticipantsModalComponent,
 		DocumentsModalComponent,
 		ChecklistModalComponent,
 		ItineraryModalWrapperComponent,
-		ConfirmModalComponent,
 	],
 	templateUrl: "./trip-detail.component.html",
 	providers: [ConfirmationService],
@@ -79,7 +73,6 @@ export class TripDetailComponent {
 
 	private authService = inject(AuthService);
 	private notificationService = inject(NotificationService);
-	confirmModalService = inject(ConfirmModalService);
 	widgetModalService = inject(WidgetModalService);
 	itineraryModalService = inject(ItineraryModalService);
 

@@ -2,11 +2,13 @@
 
 import { SlicePipe } from "@angular/common";
 import { Component, inject } from "@angular/core";
-import { ConfirmModalService } from "@core/dialog/confirm-modal.service";
-import { WidgetModalService } from "@core/dialog/widget-modal.service";
+import { DialogService } from "@core/dialog/services/dialog.service";
 import { NotificationService } from "@core/notifications/notification.service";
 import type { ParticipantWithUser } from "@core/trips";
 import { TripParticipantStore } from "@core/trips/store/trip-participant.store";
+import { ConfirmationService } from "primeng/api";
+import { ConfirmPopupModule } from "primeng/confirmpopup";
+import { ParticipantsModalComponent } from "./participants-modal-component";
 
 /**
  * Widget de participantes para mostrar en el detalle del viaje
@@ -14,7 +16,7 @@ import { TripParticipantStore } from "@core/trips/store/trip-participant.store";
  */
 @Component({
 	selector: "app-participant-widget",
-	imports: [SlicePipe],
+	imports: [SlicePipe, ConfirmPopupModule],
 	template: `
     <div
       class="md:h-62 flex flex-col bg-white border border-gray-200 rounded-xl p-4 shadow-sm transition-shadow"
@@ -82,12 +84,13 @@ import { TripParticipantStore } from "@core/trips/store/trip-participant.store";
           @if (participant.isRemovable) {
           <button
             type="button"
-            (click)="removeParticipant(participant)"
+            (click)="removeParticipant($event, participant)"
             class="opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center w-7 h-7 text-red-600 hover:bg-red-100 rounded-lg mr-1.5 cursor-pointer"
             [title]="'Eliminar participante'"
           >
             <i class="pi pi-trash" style="font-size: 0.875rem"></i>
           </button>
+          <p-confirmpopup />
           }
         </div>
         }
@@ -95,29 +98,37 @@ import { TripParticipantStore } from "@core/trips/store/trip-participant.store";
       }
     </div>
   `,
+	providers: [ConfirmationService],
 })
 export class ParticipantWidgetComponent {
-	readonly #tripDetailStore = inject(TripParticipantStore);
+	readonly #tripParticipantStore = inject(TripParticipantStore);
 	readonly #notificationService = inject(NotificationService);
-	readonly #widgetModalService = inject(WidgetModalService);
-	readonly #confirmModalService = inject(ConfirmModalService);
+	readonly #confirmationService = inject(ConfirmationService);
+	readonly #dialogService = inject(DialogService);
 
-	participants = this.#tripDetailStore.participants;
+	participants = this.#tripParticipantStore.participants;
 
-	isLoading = this.#tripDetailStore.isLoading;
+	isLoading = this.#tripParticipantStore.isLoading;
 
 	/**
 	 * Elimina un participante del viaje
 	 */
-	async removeParticipant(participant: ParticipantWithUser): Promise<void> {
-		const confirmMessage = `¿Estás seguro de que quieres eliminar a ${participant.fullName !== "Usuario" ? participant.fullName : participant.email} del viaje?`;
-
-		this.#confirmModalService.open(
-			"Eliminar participante",
-			confirmMessage,
-			async () => {
+	async removeParticipant(
+		event: Event,
+		participant: ParticipantWithUser,
+	): Promise<void> {
+		this.#confirmationService.confirm({
+			target: event.currentTarget as EventTarget,
+			header: "Eliminar participante",
+			message: `¿Estás seguro de que quieres eliminar a ${participant.fullName !== "Usuario" ? participant.fullName : participant.email} del viaje?`,
+			icon: "pi pi-exclamation-triangle",
+			acceptButtonStyleClass: "p-button-danger",
+			rejectButtonStyleClass: "p-button-secondary",
+			acceptLabel: "Eliminar",
+			rejectLabel: "Cancelar",
+			accept: async () => {
 				try {
-					await this.#tripDetailStore.removeParticipantFromSelectedTrip(
+					await this.#tripParticipantStore.removeParticipantFromSelectedTrip(
 						participant.user_id,
 					);
 					this.#notificationService.success(
@@ -132,17 +143,22 @@ export class ParticipantWidgetComponent {
 					);
 				}
 			},
-			"Eliminar",
-		);
+		});
 	}
 
 	/**
 	 * Abre el modal con todos los participantes
 	 */
 	openParticipantsModal(): void {
-		const tripId = this.#tripDetailStore.selectedTrip()?.id;
-		if (tripId) {
-			this.#widgetModalService.openParticipantsModal(tripId);
-		}
+		this.#dialogService.openCustomDialog(ParticipantsModalComponent, {
+			header: "Participantes",
+			styleClass: "w-screen h-screen lg:w-[85vw] lg:h-[85vh] lg:max-w-5xl lg:max-h-[90vh]",
+			contentStyle: {
+				height: "100%",
+			},
+			closable: true,
+			draggable: false,
+			dismissableMask: true,
+		});
 	}
 }
