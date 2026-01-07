@@ -1,12 +1,15 @@
 // src/app/features/trips/components/itinerary/itinerary-detail.component.ts
 
 import { Component, computed, inject } from "@angular/core";
-import { ItineraryModalService } from "@core/dialog/itinerary-modal.service";
-import { NotificationService } from "@core/notifications/notification.service";
+import { DialogService } from "@core/dialog/services/dialog.service";
 import type { ItineraryItem, ItineraryItemWithDetails } from "@core/trips";
 import { TripItineraryStore } from "@core/trips/store/trip-itinerary.store";
 import { MapComponent } from "@shared/components/map/map.component";
 import type { MapMarker } from "@shared/components/map/models";
+import {
+	ItineraryModalComponent,
+	ItineraryModalHeader,
+} from "./itinerary-modal.component";
 
 /**
  * Grupo de paradas por fecha
@@ -184,8 +187,7 @@ interface DateGroup {
 })
 export class ItineraryDetailComponent {
 	readonly #itineraryStore = inject(TripItineraryStore);
-	private modalService = inject(ItineraryModalService);
-	private notificationService = inject(NotificationService);
+	readonly #dialogService = inject(DialogService);
 
 	// Signals del servicio
 	items = this.#itineraryStore.itinerary;
@@ -257,37 +259,69 @@ export class ItineraryDetailComponent {
 	 * Abre el modal para crear la primera parada
 	 */
 	createFirstStop(): void {
-		const trip = this.#itineraryStore.selectedTrip();
-		if (!trip) {
-			this.notificationService.error(
-				"No se pudo cargar la información del viaje",
-			);
-			return;
-		}
-
-		this.modalService.openCreate(trip);
+		this.#itineraryStore.setMode("create");
+		this.#dialogService.openCustomDialog(ItineraryModalComponent, {
+			styleClass:
+				"w-screen h-screen lg:w-[85vw] lg:h-[85vh] lg:max-w-5xl lg:max-h-[90vh]",
+			contentStyle: {
+				height: "100%",
+			},
+			data: {
+				mode: "create",
+			},
+			closable: true,
+			draggable: false,
+			dismissableMask: true,
+			templates: {
+				header: ItineraryModalHeader,
+			},
+		});
 	}
 
 	/**
 	 * Abre el modal para crear una nueva parada
 	 */
 	createStop(): void {
-		const trip = this.#itineraryStore.selectedTrip();
-		if (!trip) {
-			this.notificationService.error(
-				"No se pudo cargar la información del viaje",
-			);
-			return;
-		}
-
-		this.modalService.openCreate(trip);
+		this.#itineraryStore.setMode("create");
+		this.#dialogService.openCustomDialog(ItineraryModalComponent, {
+			styleClass:
+				"w-screen h-screen lg:w-[85vw] lg:h-[85vh] lg:max-w-5xl lg:max-h-[90vh]",
+			contentStyle: {
+				height: "100%",
+			},
+			data: {
+				mode: "create",
+			},
+			closable: true,
+			draggable: false,
+			dismissableMask: true,
+			templates: {
+				header: ItineraryModalHeader,
+			},
+		});
 	}
 
 	/**
 	 * Selecciona una parada desde el timeline
 	 */
 	selectItem(item: ItineraryItemWithDetails): void {
-		this.modalService.openView(item);
+		this.#itineraryStore.setMode("view");
+		this.#dialogService.openCustomDialog(ItineraryModalComponent, {
+			styleClass:
+				"w-screen h-screen lg:w-[85vw] lg:h-[85vh] lg:max-w-5xl lg:max-h-[90vh]",
+			contentStyle: {
+				height: "100%",
+			},
+			data: {
+				item,
+			},
+			closable: true,
+			draggable: false,
+			dismissableMask: true,
+			templates: {
+				header: ItineraryModalHeader,
+			},
+		});
 	}
 
 	/**

@@ -1,18 +1,16 @@
 // src/core/trips/components/itinerary-modal/itinerary-modal.component.ts
 
 import {
-	type AfterViewInit,
-	Component,
-	effect,
-	inject,
-	linkedSignal,
-	type OnDestroy,
-	type OnInit,
-	signal,
-	ViewChild,
+  type AfterViewInit,
+  Component,
+  effect,
+  inject,
+  type OnDestroy,
+  type OnInit,
+  signal,
+  ViewChild,
 } from "@angular/core";
 import { FormsModule } from "@angular/forms";
-import { ItineraryModalService } from "@core/dialog/itinerary-modal.service";
 import { NotificationService } from "@core/notifications/notification.service";
 import type { ItineraryItem, ItineraryItemInsert } from "@core/trips";
 import type { TripDocumentWithUrl } from "@core/trips/models/trip-document.model";
@@ -20,13 +18,14 @@ import { TripDocumentService } from "@core/trips/services/trip-document.service"
 import { TripItineraryStore } from "@core/trips/store/trip-itinerary.store";
 import { MapComponent } from "@shared/components/map/map.component";
 import type {
-	GeocodingResult,
-	MapCoordinates,
+  GeocodingResult,
+  MapCoordinates,
 } from "@shared/components/map/models";
 import { LeafletService } from "@shared/components/map/services/leaflet.service";
 import { ConfirmationService } from "primeng/api";
 import { ConfirmPopupModule } from "primeng/confirmpopup";
 import { DatePickerModule } from "primeng/datepicker";
+import { DialogService, DynamicDialogRef } from "primeng/dynamicdialog";
 import type { Subscription } from "rxjs";
 
 /**
@@ -42,6 +41,36 @@ interface ItineraryFormData {
 	end_date: string;
 	description: string;
 	web: string;
+}
+
+@Component({
+	template: `
+	<div class="flex items-center gap-4">
+			<!-- Icono según modo -->
+			<div
+				class="min-w-12 min-h-12 rounded-full flex items-center justify-center bg-white shadow-sm border border-gray-200"
+			>
+				<i class="pi pi-map-marker" style="font-size: 1.25rem"></i>
+			</div>
+			<!-- Título según modo -->
+			<div>
+				<h2 class="text-xl md:text-2xl font-semibold text-gray-900">
+					@if (mode() === 'create') { Nueva parada } @if (mode() ===
+					'view') { Detalles de la parada } @if (mode() === 'edit') { Editar parada
+					}
+				</h2>
+				<p class="text-sm w-4/5 md:w-full text-gray-500 mt-0.5">
+					@if (mode() === 'create') { Añade un nuevo destino a tu itinerario } @if
+					(mode() === 'view') { Información completa de la parada } @if
+					(mode() === 'edit') { Modifica los detalles de la parada }
+				</p>
+			</div>
+	</div>
+  `,
+})
+export class ItineraryModalHeader {
+	readonly #itineraryStore = inject(TripItineraryStore);
+	mode = this.#itineraryStore.mode;
 }
 
 /**
@@ -61,50 +90,10 @@ interface ItineraryFormData {
  */
 @Component({
 	selector: "app-itinerary-modal",
-	standalone: true,
 	imports: [ConfirmPopupModule, FormsModule, MapComponent, DatePickerModule],
 	template: `
-    <div class="flex flex-col h-full overflow-hidden">
-      <!-- Header -->
-      <div
-        class="flex items-center justify-between px-4 pt-4 md:px-8 md:pt-8 pb-6 shrink-0 relative"
-      >
-        <div class="flex items-center gap-4">
-          <!-- Icono según modo -->
-          <div
-            class="min-w-12 min-h-12 rounded-full flex items-center justify-center bg-white shadow-sm border border-gray-200"
-          >
-            <i class="pi pi-map-marker" style="font-size: 1.25rem"></i>
-          </div>
-
-          <!-- Título según modo -->
-          <div>
-            <h2 class="text-xl md:text-2xl font-semibold text-gray-900">
-              @if (modalService.mode() === 'create') { Nueva parada } @if (modalService.mode() ===
-              'view') { Detalles de la parada } @if (modalService.mode() === 'edit') { Editar parada
-              }
-            </h2>
-            <p class="text-sm w-4/5 md:w-full text-gray-500 mt-0.5">
-              @if (modalService.mode() === 'create') { Añade un nuevo destino a tu itinerario } @if
-              (modalService.mode() === 'view') { Información completa de la parada } @if
-              (modalService.mode() === 'edit') { Modifica los detalles de la parada }
-            </p>
-          </div>
-        </div>
-
-        <!-- Botón cerrar -->
-        <button
-          type="button"
-          (click)="close()"
-          class="min-w-10 min-h-10 absolute right-3 top-3 flex items-center justify-center rounded-full bg-white hover:bg-gray-100 border border-gray-200 transition-colors cursor-pointer"
-          title="Cerrar"
-        >
-          <i class="pi pi-times text-gray-600" style="font-size: 1rem"></i>
-        </button>
-      </div>
-
       <!-- MODO: VIEW -->
-      @if (modalService.mode() === 'view' && currentItem()) {
+      @if (mode() === 'view' && currentItem()) {
       <div class="flex-1 overflow-y-auto px-8 pb-6">
         <!-- Nombre -->
         <div class="mb-8">
@@ -223,7 +212,7 @@ interface ItineraryFormData {
                 (click)="viewItemDocument(doc)"
               >
                 <!-- Vista previa -->
-                @if (documentService.isImage(doc.name)) {
+                @if (doc.isImage) {
                 <img [src]="doc.publicUrl" [alt]="doc.name" class="w-full h-full object-cover" />
                 } @else {
                 <div
@@ -302,7 +291,7 @@ interface ItineraryFormData {
       }
 
       <!-- MODO: CREATE o EDIT -->
-      @if (modalService.mode() === 'create' || modalService.mode() === 'edit') {
+      @if (mode() === 'create' || mode() === 'edit') {
       <div class="flex-1 overflow-y-auto px-8 pb-6">
         <!-- Nombre -->
         <div class="mb-6">
@@ -362,10 +351,10 @@ interface ItineraryFormData {
                 center:
                   tripLatitude() && tripLongitude()
                     ? { lat: tripLatitude()!, lng: tripLongitude()! }
-                    : modalService.trip() &&
-                      modalService.trip()!.latitude &&
-                      modalService.trip()!.longitude
-                    ? { lat: modalService.trip()!.latitude!, lng: modalService.trip()!.longitude! }
+                    : trip() &&
+                      trip()!.latitude &&
+                      trip()!.longitude
+                    ? { lat: trip()?.latitude!, lng: trip()?.longitude! }
                     : { lat: 42.847, lng: -2.673 }
               }"
               (locationSelected)="onMapLocationSelected($event)"
@@ -448,7 +437,7 @@ interface ItineraryFormData {
         <!-- Documentos (CREATE/EDIT) -->
         <div class="mb-6">
           <label class="block text-xs font-semibold text-gray-700 mb-3 uppercase tracking-wide">
-            Documentos asociados @if (modalService.mode() === 'create') {
+            Documentos asociados @if (mode() === 'create') {
             <span class="text-xs font-normal text-gray-500 ml-2">(opcional)</span>
             }
           </label>
@@ -537,7 +526,7 @@ interface ItineraryFormData {
 
       <!-- Footer con botones en modo create/edit -->
       <div class="flex justify-between items-center px-8 py-6 border-t border-gray-200 shrink-0">
-        @if (modalService.mode() === 'edit') {
+        @if (mode() === 'edit') {
         <button
           type="button"
           (click)="cancelEdit()"
@@ -555,11 +544,11 @@ interface ItineraryFormData {
           [disabled]="isSaving()"
           class="px-6 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium cursor-pointer"
         >
-          @if (!isSaving()) { @if (modalService.mode() === 'create') {
+          @if (!isSaving()) { @if (mode() === 'create') {
           <span>Crear parada</span>
           } @else {
           <span>Guardar cambios</span>
-          } } @else { @if (modalService.mode() === 'create') {
+          } } @else { @if (mode() === 'create') {
           <span>Creando...</span>
           } @else {
           <span>Guardando...</span>
@@ -567,7 +556,6 @@ interface ItineraryFormData {
         </button>
       </div>
       }
-    </div>
     <p-confirmpopup />
   `,
 	styles: [
@@ -577,17 +565,25 @@ interface ItineraryFormData {
       }
     `,
 	],
+	host: {
+		class: "h-full flex flex-col",
+	},
 	providers: [ConfirmationService],
 })
 export class ItineraryModalComponent
 	implements OnInit, AfterViewInit, OnDestroy
 {
-	modalService = inject(ItineraryModalService);
 	readonly #tripItineraryStore = inject(TripItineraryStore);
-	private leafletService = inject(LeafletService);
-	private notificationService = inject(NotificationService);
+	readonly #leafletService = inject(LeafletService);
+	readonly #notificationService = inject(NotificationService);
 	readonly #confirmationService = inject(ConfirmationService);
-	documentService = inject(TripDocumentService);
+	readonly #documentService = inject(TripDocumentService);
+	readonly #ref = inject(DynamicDialogRef);
+	readonly #dialogService = inject(DialogService);
+
+	instance = this.#dialogService.getInstance(this.#ref);
+	mode = this.#tripItineraryStore.mode;
+	trip = this.#tripItineraryStore.selectedTrip;
 
 	@ViewChild("mapRef") mapComponent?: MapComponent;
 	@ViewChild("mapViewRef") mapViewComponent?: MapComponent;
@@ -599,7 +595,7 @@ export class ItineraryModalComponent
 	isDraggingDoc = signal(false);
 
 	// Parada actual (en modo view/edit)
-	currentItem = linkedSignal(this.modalService.item);
+	currentItem = signal(this.instance?.data["item"]);
 
 	// Datos del formulario
 	formData: ItineraryFormData = {
@@ -671,8 +667,7 @@ export class ItineraryModalComponent
 
 	ngOnInit(): void {
 		if (
-			(this.modalService.mode() === "edit" ||
-				this.modalService.mode() === "view") &&
+			(this.mode() === "edit" || this.mode() === "view") &&
 			this.currentItem()
 		) {
 			this.loadItemData(this.currentItem()!);
@@ -681,8 +676,8 @@ export class ItineraryModalComponent
 	}
 
 	ngAfterViewInit(): void {
-		if (this.modalService.mode() === "create") {
-			const trip = this.modalService.trip();
+		if (this.mode() === "create") {
+			const trip = this.trip();
 			if (trip && trip.latitude && trip.longitude && this.mapComponent) {
 				setTimeout(() => {
 					if (this.mapComponent) {
@@ -694,7 +689,7 @@ export class ItineraryModalComponent
 				}, 150);
 			}
 		} else if (
-			this.modalService.mode() === "edit" &&
+			this.mode() === "edit" &&
 			this.currentItem() &&
 			this.mapComponent
 		) {
@@ -714,7 +709,7 @@ export class ItineraryModalComponent
 				}, 150);
 			}
 		} else if (
-			this.modalService.mode() === "view" &&
+			this.mode() === "view" &&
 			this.currentItem() &&
 			this.mapViewComponent
 		) {
@@ -747,17 +742,17 @@ export class ItineraryModalComponent
 	 */
 	private async loadItemDocuments(itemId: string): Promise<void> {
 		try {
-			const tripId = this.modalService.tripId();
+			const tripId = this.trip()?.id;
 			if (!tripId) return;
 
-			const docs = await this.documentService.getDocumentsByItineraryItem(
+			const docs = await this.#documentService.getDocumentsByItineraryItem(
 				tripId,
 				itemId,
 			);
 
 			const docsWithUrl = docs.map((doc) => ({
 				...doc,
-				publicUrl: this.documentService.getPublicUrl(doc.file_path),
+				publicUrl: this.#documentService.getPublicUrl(doc.file_path),
 			}));
 
 			this.itemDocuments.set(docsWithUrl);
@@ -821,7 +816,7 @@ export class ItineraryModalComponent
 			this.searchSubscription.unsubscribe();
 		}
 
-		this.searchSubscription = this.leafletService
+		this.searchSubscription = this.#leafletService
 			.searchLocation(query)
 			.subscribe({
 				next: (results) => {
@@ -838,14 +833,14 @@ export class ItineraryModalComponent
 
 						this.locationSearch = "";
 					} else {
-						this.notificationService.error(
+						this.#notificationService.error(
 							"No se encontraron resultados para esa ubicación",
 						);
 					}
 				},
 				error: (error) => {
 					console.error("Error buscando ubicación:", error);
-					this.notificationService.error("Error al buscar la ubicación");
+					this.#notificationService.error("Error al buscar la ubicación");
 				},
 			});
 	}
@@ -854,7 +849,7 @@ export class ItineraryModalComponent
 		this.tripLatitude.set(coordinates.lat);
 		this.tripLongitude.set(coordinates.lng);
 
-		this.leafletService.reverseGeocode(coordinates).subscribe({
+		this.#leafletService.reverseGeocode(coordinates).subscribe({
 			next: (result) => {
 				if (result) {
 					this.extractCityAndCountry(result);
@@ -902,28 +897,28 @@ export class ItineraryModalComponent
 
 	private validateForm(): boolean {
 		if (!this.formData.name.trim()) {
-			this.notificationService.warning(
+			this.#notificationService.warning(
 				"Por favor, introduce un nombre para la parada",
 			);
 			return false;
 		}
 
 		if (!this.formData.start_date) {
-			this.notificationService.warning(
+			this.#notificationService.warning(
 				"Por favor, selecciona la fecha y hora de inicio",
 			);
 			return false;
 		}
 
 		if (!this.formData.end_date) {
-			this.notificationService.warning(
+			this.#notificationService.warning(
 				"Por favor, selecciona la fecha y hora de fin",
 			);
 			return false;
 		}
 
 		if (new Date(this.formData.end_date) < new Date(this.formData.start_date)) {
-			this.notificationService.warning(
+			this.#notificationService.warning(
 				"La fecha/hora de fin debe ser igual o posterior a la de inicio",
 			);
 			return false;
@@ -940,14 +935,14 @@ export class ItineraryModalComponent
 		this.isSaving.set(true);
 
 		try {
-			if (this.modalService.mode() === "create") {
+			if (this.mode() === "create") {
 				await this.createItem();
-			} else if (this.modalService.mode() === "edit") {
+			} else if (this.mode() === "edit") {
 				await this.updateItem();
 			}
 		} catch (error) {
 			console.error("Error guardando parada:", error);
-			this.notificationService.error("Error al guardar la parada");
+			this.#notificationService.error("Error al guardar la parada");
 		} finally {
 			this.isSaving.set(false);
 		}
@@ -974,7 +969,7 @@ export class ItineraryModalComponent
 				itemData,
 			);
 		if (!createdItem) {
-			this.notificationService.error("Error al crear la parada");
+			this.#notificationService.error("Error al crear la parada");
 			return;
 		}
 		// ✅ Actualizar documentos temporales con el ID del item creado
@@ -982,9 +977,9 @@ export class ItineraryModalComponent
 			await this.linkDocumentsToItem(createdItem.id);
 		}
 
-		this.notificationService.success("Parada creada correctamente");
+		this.#notificationService.success("Parada creada correctamente");
 		this.resetForm();
-		this.modalService.close();
+		this.#ref.close();
 	}
 
 	/**
@@ -995,7 +990,7 @@ export class ItineraryModalComponent
 			// Usar el método del servicio para actualizar cada documento
 			for (const docId of this.tempDocumentIds) {
 				// Llamar directamente a Supabase para actualizar el itinerary_item_id
-				const { error } = await this.documentService["supabaseService"].client
+				const { error } = await this.#documentService["supabaseService"].client
 					.from("document")
 					.update({ itinerary_item_id: itemId })
 					.eq("id", docId);
@@ -1030,19 +1025,19 @@ export class ItineraryModalComponent
 		);
 
 		this.currentItem.set(updatedItem);
-		this.notificationService.success("Parada actualizada correctamente");
-		this.modalService.switchToView();
+		this.#notificationService.success("Parada actualizada correctamente");
+		this.#tripItineraryStore.setMode("view");
 	}
 
 	switchToEdit(): void {
-		this.modalService.switchToEdit();
+		this.#tripItineraryStore.setMode("edit");
 		if (this.currentItem()) {
 			this.loadItemData(this.currentItem()!);
 		}
 	}
 
 	cancelEdit(): void {
-		this.modalService.switchToView();
+		this.#tripItineraryStore.setMode("view");
 	}
 
 	async confirmDelete(event: Event): Promise<void> {
@@ -1063,11 +1058,11 @@ export class ItineraryModalComponent
 
 				try {
 					await this.#tripItineraryStore.deleteItineraryItem(item.id);
-					this.notificationService.success("Parada eliminada correctamente");
-					this.modalService.close();
+					this.#notificationService.success("Parada eliminada correctamente");
+					this.#ref.close();
 				} catch (error) {
 					console.error("Error eliminando parada:", error);
-					this.notificationService.error("Error al eliminar la parada");
+					this.#notificationService.error("Error al eliminar la parada");
 				} finally {
 					this.isDeleting.set(false);
 				}
@@ -1077,7 +1072,7 @@ export class ItineraryModalComponent
 
 	close(): void {
 		this.resetForm();
-		this.modalService.close();
+		this.#ref.close();
 	}
 
 	formatDate(dateString: string): string {
@@ -1131,9 +1126,9 @@ export class ItineraryModalComponent
 	 * En modo EDIT: sube con itinerary_item_id directamente
 	 */
 	private async uploadDocFiles(files: File[]): Promise<void> {
-		const tripId = this.modalService.tripId();
+		const tripId = this.trip()?.id;
 		if (!tripId) {
-			this.notificationService.error(
+			this.#notificationService.error(
 				"No se puede subir el documento en este momento",
 			);
 			return;
@@ -1148,28 +1143,28 @@ export class ItineraryModalComponent
 					file,
 					// En modo EDIT: incluir itinerary_item_id
 					// En modo CREATE: NO incluir (se vinculará después)
-					...(this.modalService.mode() === "edit" && this.currentItem()
+					...(this.mode() === "edit" && this.currentItem()
 						? { itineraryItemId: this.currentItem()!.id }
 						: {}),
 				};
 
 				const uploadedDoc =
-					await this.documentService.uploadDocument(uploadData);
+					await this.#documentService.uploadDocument(uploadData);
 
 				// En modo CREATE: guardar el ID para vincularlo después
-				if (this.modalService.mode() === "create") {
+				if (this.mode() === "create") {
 					this.tempDocumentIds.push(uploadedDoc.id);
 				}
 			}
 
-			this.notificationService.success(
+			this.#notificationService.success(
 				files.length === 1
 					? "Documento subido correctamente"
 					: `${files.length} documentos subidos correctamente`,
 			);
 
 			// Recargar documentos
-			if (this.modalService.mode() === "edit" && this.currentItem()) {
+			if (this.mode() === "edit" && this.currentItem()) {
 				await this.loadItemDocuments(this.currentItem()!.id);
 			} else {
 				// En modo CREATE: cargar todos los documentos temporales del viaje sin item asociado
@@ -1177,7 +1172,7 @@ export class ItineraryModalComponent
 			}
 		} catch (error: any) {
 			console.error("Error uploading files:", error);
-			this.notificationService.error(
+			this.#notificationService.error(
 				error.message || "Error al subir los documentos",
 			);
 		} finally {
@@ -1197,7 +1192,7 @@ export class ItineraryModalComponent
 				return;
 			}
 
-			const allDocs = await this.documentService.getTripDocuments(tripId);
+			const allDocs = await this.#documentService.getTripDocuments(tripId);
 
 			// Filtrar SOLO los documentos que se subieron en esta sesión
 			const tempDocs = allDocs.filter((doc) =>
@@ -1206,7 +1201,7 @@ export class ItineraryModalComponent
 
 			const docsWithUrl = tempDocs.map((doc) => ({
 				...doc,
-				publicUrl: this.documentService.getPublicUrl(doc.file_path),
+				publicUrl: this.#documentService.getPublicUrl(doc.file_path),
 			}));
 
 			this.itemDocuments.set(docsWithUrl);
@@ -1230,7 +1225,7 @@ export class ItineraryModalComponent
 		link.click();
 		document.body.removeChild(link);
 
-		this.notificationService.success("Descargando documento...");
+		this.#notificationService.success("Descargando documento...");
 	}
 
 	async deleteItemDocument(
@@ -1250,8 +1245,10 @@ export class ItineraryModalComponent
 			rejectLabel: "Cancelar",
 			accept: async () => {
 				try {
-					await this.documentService.deleteDocument(doc.id);
-					this.notificationService.success("Documento eliminado correctamente");
+					await this.#documentService.deleteDocument(doc.id);
+					this.#notificationService.success(
+						"Documento eliminado correctamente",
+					);
 
 					// Remover de IDs temporales si existe
 					this.tempDocumentIds = this.tempDocumentIds.filter(
@@ -1259,17 +1256,17 @@ export class ItineraryModalComponent
 					);
 
 					// Recargar documentos
-					if (this.modalService.mode() === "edit" && this.currentItem()) {
+					if (this.mode() === "edit" && this.currentItem()) {
 						await this.loadItemDocuments(this.currentItem()!.id);
 					} else {
-						const tripId = this.modalService.tripId();
+						const tripId = this.trip()?.id;
 						if (tripId) {
 							await this.loadTempDocuments(tripId);
 						}
 					}
 				} catch (error: any) {
 					console.error("Error deleting document:", error);
-					this.notificationService.error(
+					this.#notificationService.error(
 						error.message || "No se pudo eliminar el documento",
 					);
 				}

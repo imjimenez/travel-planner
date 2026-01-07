@@ -2,15 +2,14 @@
 
 import { DatePipe } from "@angular/common";
 import {
-	Component,
-	computed,
-	inject,
-	linkedSignal,
-	signal,
+    Component,
+    computed,
+    inject,
+    linkedSignal,
+    signal,
 } from "@angular/core";
 import { Router } from "@angular/router";
 import { AuthService } from "@core/authentication/services/auth.service";
-import { ItineraryModalService } from "@core/dialog/itinerary-modal.service";
 import { DialogService } from "@core/dialog/services/dialog.service";
 import { NotificationService } from "@core/notifications/notification.service";
 import { TripStore } from "@core/trips/store/trips.store";
@@ -21,7 +20,6 @@ import { ExpensesComponent } from "@features/trips/components/expenses/expenses.
 import { ItineraryDetailComponent } from "@features/trips/components/itinerary/itinerary-detail.component";
 // Componentes de la vista
 import { ParticipantWidgetComponent } from "@features/trips/components/participants/participants-widget.component";
-import { ItineraryModalWrapperComponent } from "@shared/components/modal-wrapper/itinerary-modal-wrapper.component";
 import { ConfirmationService } from "primeng/api";
 import { ConfirmPopupModule } from "primeng/confirmpopup";
 
@@ -41,7 +39,6 @@ import { ConfirmPopupModule } from "primeng/confirmpopup";
 		ChecklistWidgetComponent,
 		ExpensesComponent,
 		ItineraryDetailComponent,
-		ItineraryModalWrapperComponent,
 		ConfirmPopupModule,
 	],
 	templateUrl: "./trip-detail.component.html",
@@ -66,7 +63,6 @@ export class TripDetailComponent {
 
 	private authService = inject(AuthService);
 	private notificationService = inject(NotificationService);
-	itineraryModalService = inject(ItineraryModalService);
 
 	trip = this.#tripStore.selectedTrip;
 
