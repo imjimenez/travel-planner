@@ -188,8 +188,7 @@
     </ng-template>
   </p-timeline>
 </div>
-}
-
+} @if(upcomingTrips().length <= 0) {
 <!-- Add New Trip Button -->
 <div class="flex justify-center mb-4 md:mb-8">
   <p-button
@@ -199,3 +198,4 @@
     styleClass="p-button-lg shadow-lg"
   />
 </div>
+}

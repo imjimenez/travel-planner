@@ -1,22 +1,19 @@
 // src/app/features/trips/components/itinerary/itinerary-detail.component.ts
 
-import { Component, computed, inject } from "@angular/core";
-import { DialogService } from "@core/dialog/services/dialog.service";
-import type { ItineraryItem, ItineraryItemWithDetails } from "@core/trips";
-import { TripItineraryStore } from "@core/trips/store/trip-itinerary.store";
-import { MapComponent } from "@shared/components/map/map.component";
-import type { MapMarker } from "@shared/components/map/models";
-import {
-	ItineraryModalComponent,
-	ItineraryModalHeader,
-} from "./itinerary-modal.component";
+import { Component, computed, inject } from '@angular/core';
+import { DialogService } from '@core/dialog/services/dialog.service';
+import type { ItineraryItem, ItineraryItemWithDetails } from '@core/trips';
+import { TripItineraryStore } from '@core/trips/store/trip-itinerary.store';
+import { MapComponent } from '@shared/components/map/map.component';
+import type { MapMarker } from '@shared/components/map/models';
+import { ItineraryModalComponent, ItineraryModalHeader } from './itinerary-modal.component';
 
 /**
  * Grupo de paradas por fecha
  */
 interface DateGroup {
-	date: string; // YYYY-MM-DD
-	items: ItineraryItemWithDetails[];
+  date: string; // YYYY-MM-DD
+  items: ItineraryItemWithDetails[];
 }
 
 /**
@@ -34,9 +31,9 @@ interface DateGroup {
  * - Línea verde conectando todas las paradas en orden cronológico
  */
 @Component({
-	selector: "app-itinerary-detail",
-	imports: [MapComponent],
-	template: `
+  selector: 'app-itinerary-detail',
+  imports: [MapComponent],
+  template: `
     <div class="h-full flex flex-col overflow-hidden">
       <!-- Loading state -->
       @if (isLoading()) {
@@ -130,7 +127,6 @@ interface DateGroup {
                         <p class="text-lg font-semibold text-gray-900">
                           {{ extractTime(item.start_date) }}
                         </p>
-
                       </div>
                     </div>
                   </div>
@@ -173,7 +169,7 @@ interface DateGroup {
       } }
     </div>
   `,
-	styles: `
+  styles: `
   /* Ocultar scrollbars en todos los navegadores */
 .hide-scrollbar {
   scrollbar-width: none;        /* Firefox */
@@ -186,245 +182,237 @@ interface DateGroup {
 `,
 })
 export class ItineraryDetailComponent {
-	readonly #itineraryStore = inject(TripItineraryStore);
-	readonly #dialogService = inject(DialogService);
+  readonly #itineraryStore = inject(TripItineraryStore);
+  readonly #dialogService = inject(DialogService);
 
-	// Signals del servicio
-	items = this.#itineraryStore.itinerary;
-	isLoading = this.#itineraryStore.isLoading;
+  // Signals del servicio
+  items = this.#itineraryStore.itinerary;
+  isLoading = this.#itineraryStore.isLoading;
 
-	/**
-	 * Agrupa las paradas por fecha y las ordena por hora
-	 */
-	groupedItems = computed(() => {
-		const allItems = this.items();
-		if (!allItems || allItems.length === 0) return [];
+  /**
+   * Agrupa las paradas por fecha y las ordena por hora
+   */
+  groupedItems = computed(() => {
+    const allItems = this.items();
+    if (!allItems || allItems.length === 0) return [];
 
-		// Agrupar por fecha de inicio
-		const groups = new Map<string, ItineraryItemWithDetails[]>();
+    // Agrupar por fecha de inicio
+    const groups = new Map<string, ItineraryItemWithDetails[]>();
 
-		allItems.forEach((item) => {
-			const dateKey = item.start_date.split("T")[0];
+    allItems.forEach((item) => {
+      const dateKey = item.start_date.split('T')[0];
 
-			if (!groups.has(dateKey)) {
-				groups.set(dateKey, []);
-			}
-			groups.get(dateKey)!.push(item);
-		});
+      if (!groups.has(dateKey)) {
+        groups.set(dateKey, []);
+      }
+      groups.get(dateKey)!.push(item);
+    });
 
-		// Convertir a array y ordenar
-		const dateGroups: DateGroup[] = Array.from(groups.entries())
-			.map(([date, items]) => ({
-				date,
-				items: items.sort((a, b) => {
-					const timeA = new Date(a.start_date).getTime();
-					const timeB = new Date(b.start_date).getTime();
-					return timeA - timeB;
-				}),
-			}))
-			.sort((a, b) => {
-				return new Date(a.date).getTime() - new Date(b.date).getTime();
-			});
+    // Convertir a array y ordenar
+    const dateGroups: DateGroup[] = Array.from(groups.entries())
+      .map(([date, items]) => ({
+        date,
+        items: items.sort((a, b) => {
+          const timeA = new Date(a.start_date).getTime();
+          const timeB = new Date(b.start_date).getTime();
+          return timeA - timeB;
+        }),
+      }))
+      .sort((a, b) => {
+        return new Date(a.date).getTime() - new Date(b.date).getTime();
+      });
 
-		return dateGroups;
-	});
+    return dateGroups;
+  });
 
-	/**
-	 * Convierte las paradas en markers para el mapa
-	 */
-	mapMarkers = computed(() => {
-		const allItems = this.items();
-		if (!allItems || allItems.length === 0) return [];
+  /**
+   * Convierte las paradas en markers para el mapa
+   */
+  mapMarkers = computed(() => {
+    const allItems = this.items();
+    if (!allItems || allItems.length === 0) return [];
 
-		return allItems
-			.filter((item) => item.latitude && item.longitude)
-			.map((item) => ({
-				id: item.id,
-				coordinates: {
-					lat: item.latitude!,
-					lng: item.longitude!,
-				},
-				title: item.name,
-				description: `
+    return allItems
+      .filter((item) => item.latitude && item.longitude)
+      .map((item) => ({
+        id: item.id,
+        coordinates: {
+          lat: item.latitude!,
+          lng: item.longitude!,
+        },
+        title: item.name,
+        description: `
           <div class="text-sm">
             <p class="font-semibold mb-1">${item.city}, ${item.country}</p>
             <p class="text-gray-600">${this.extractTime(item.start_date)}</p>
-            ${item.description ? `<p class="mt-2 text-gray-700">${item.description}</p>` : ""}
+            ${item.description ? `<p class="mt-2 text-gray-700">${item.description}</p>` : ''}
           </div>
         `,
-			}));
-	});
+      }));
+  });
 
-	/**
-	 * Abre el modal para crear la primera parada
-	 */
-	createFirstStop(): void {
-		this.#itineraryStore.setMode("create");
-		this.#dialogService.openCustomDialog(ItineraryModalComponent, {
-			styleClass:
-				"w-screen h-screen lg:w-[85vw] lg:h-[85vh] lg:max-w-5xl lg:max-h-[90vh]",
-			contentStyle: {
-				height: "100%",
-			},
-			data: {
-				mode: "create",
-			},
-			closable: true,
-			draggable: false,
-			dismissableMask: true,
-			templates: {
-				header: ItineraryModalHeader,
-			},
-		});
-	}
+  /**
+   * Abre el modal para crear la primera parada
+   */
+  createFirstStop(): void {
+    this.#itineraryStore.setMode('create');
+    this.#dialogService.openCustomDialog(ItineraryModalComponent, {
+      styleClass:
+        'w-screen min-h-screen lg:min-h-auto lg:w-[85vw] lg:h-[85vh] min-h-[85vh] lg:max-w-5xl lg:max-h-[90vh]',
+      contentStyle: {
+        height: '100%',
+      },
+      data: {
+        mode: 'create',
+      },
+      closable: true,
+      draggable: false,
+      dismissableMask: true,
+      templates: {
+        header: ItineraryModalHeader,
+      },
+    });
+  }
 
-	/**
-	 * Abre el modal para crear una nueva parada
-	 */
-	createStop(): void {
-		this.#itineraryStore.setMode("create");
-		this.#dialogService.openCustomDialog(ItineraryModalComponent, {
-			styleClass:
-				"w-screen h-screen lg:w-[85vw] lg:h-[85vh] lg:max-w-5xl lg:max-h-[90vh]",
-			contentStyle: {
-				height: "100%",
-			},
-			data: {
-				mode: "create",
-			},
-			closable: true,
-			draggable: false,
-			dismissableMask: true,
-			templates: {
-				header: ItineraryModalHeader,
-			},
-		});
-	}
+  /**
+   * Abre el modal para crear una nueva parada
+   */
+  createStop(): void {
+    this.#itineraryStore.setMode('create');
+    this.#dialogService.openCustomDialog(ItineraryModalComponent, {
+      styleClass:
+        'w-screen min-h-screen lg:min-h-auto lg:w-[85vw] lg:h-[85vh] min-h-[85vh] lg:max-w-5xl lg:max-h-[90vh]',
+      contentStyle: {
+        height: '100%',
+      },
+      data: {
+        mode: 'create',
+      },
+      closable: true,
+      draggable: false,
+      dismissableMask: true,
+      templates: {
+        header: ItineraryModalHeader,
+      },
+    });
+  }
 
-	/**
-	 * Selecciona una parada desde el timeline
-	 */
-	selectItem(item: ItineraryItemWithDetails): void {
-		this.#itineraryStore.setMode("view");
-		this.#dialogService.openCustomDialog(ItineraryModalComponent, {
-			styleClass:
-				"w-screen h-screen lg:w-[85vw] lg:h-[85vh] lg:max-w-5xl lg:max-h-[90vh]",
-			contentStyle: {
-				height: "100%",
-			},
-			data: {
-				item,
-			},
-			closable: true,
-			draggable: false,
-			dismissableMask: true,
-			templates: {
-				header: ItineraryModalHeader,
-			},
-		});
-	}
+  /**
+   * Selecciona una parada desde el timeline
+   */
+  selectItem(item: ItineraryItemWithDetails): void {
+    this.#itineraryStore.setMode('view');
+    this.#dialogService.openCustomDialog(ItineraryModalComponent, {
+      styleClass:
+        'w-screen min-h-screen lg:min-h-auto lg:w-[85vw] lg:h-[85vh] min-h-[85vh] lg:max-w-5xl lg:max-h-[90vh]',
+      contentStyle: {
+        height: '100%',
+      },
+      data: {
+        item,
+      },
+      closable: true,
+      draggable: false,
+      dismissableMask: true,
+      templates: {
+        header: ItineraryModalHeader,
+      },
+    });
+  }
 
-	/**
-	 * Maneja el click en un marker del mapa
-	 * Resalta en el timeline y abre el modal
-	 */
-	onMarkerClicked(marker: MapMarker): void {
-		const item = this.items().find((i) => i.id === marker.id);
-		if (item) {
-			//this.selectedItemId.set(item.id);
-			//this.modalService.openView(item);
-		}
-	}
+  /**
+   * Maneja el click en un marker del mapa
+   * Resalta en el timeline y abre el modal
+   */
+  onMarkerClicked(marker: MapMarker): void {
+    const item = this.items().find((i) => i.id === marker.id);
+    if (item) {
+      //this.selectedItemId.set(item.id);
+      //this.modalService.openView(item);
+    }
+  }
 
-	/**
-	 * Formatea la fecha del grupo
-	 */
-	formatGroupDate(dateString: string): string {
-		const date = new Date(dateString + "T00:00:00");
-		return date.toLocaleDateString("es-ES", {
-			day: "numeric",
-			month: "short",
-			year: "numeric",
-		});
-	}
+  /**
+   * Formatea la fecha del grupo
+   */
+  formatGroupDate(dateString: string): string {
+    const date = new Date(dateString + 'T00:00:00');
+    return date.toLocaleDateString('es-ES', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+  }
 
-	/**
-	 * Extrae la hora de un datetime
-	 */
-	extractTime(dateString: string): string {
-		const date = new Date(dateString);
-		return date.toLocaleTimeString("es-ES", {
-			hour: "2-digit",
-			minute: "2-digit",
-		});
-	}
+  /**
+   * Extrae la hora de un datetime
+   */
+  extractTime(dateString: string): string {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('es-ES', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
 
-	/**
-	 * Calcula la duración entre dos fechas en días
-	 */
-	// calculateDuration(startDate: string, endDate: string): number {
-	// 	return this.#itineraryStore.calculateDuration(startDate, endDate);
-	// }
+  /**
+   * Calcula la duración entre dos fechas en días
+   */
+  // calculateDuration(startDate: string, endDate: string): number {
+  // 	return this.#itineraryStore.calculateDuration(startDate, endDate);
+  // }
 
-	/**
-	 * Devuelve el icono apropiado según el tipo de parada
-	 */
-	getItemIcon(item: ItineraryItem): string {
-		const text = `${item.name ?? ""} ${item.description ?? ""}`.toLowerCase();
+  /**
+   * Devuelve el icono apropiado según el tipo de parada
+   */
+  getItemIcon(item: ItineraryItem): string {
+    const text = `${item.name ?? ''} ${item.description ?? ''}`.toLowerCase();
 
-		const iconMap: { icon: string; keywords: string[] }[] = [
-			{
-				icon: "pi pi-home",
-				keywords: ["hotel", "hostal", "alojamiento", "airbnb"],
-			},
-			{
-				icon: "pi pi-users",
-				keywords: ["restaurante", "comida", "dinner", "lunch", "food"],
-			},
-			{
-				icon: "pi pi-briefcase",
-				keywords: ["work", "negocio", "empresa", "oficina"],
-			},
-			{
-				icon: "pi pi-shopping-bag",
-				keywords: ["tienda", "shopping", "compras"],
-			},
-			{
-				icon: "pi pi-car",
-				keywords: [
-					"coche",
-					"car",
-					"parking",
-					"aparcamiento",
-					"transporte",
-					"autobus",
-					"autobús",
-				],
-			},
-			{
-				icon: "pi pi-ticket",
-				keywords: ["evento", "concierto", "espectáculo", "entrada"],
-			},
-		];
+    const iconMap: { icon: string; keywords: string[] }[] = [
+      {
+        icon: 'pi pi-home',
+        keywords: ['hotel', 'hostal', 'alojamiento', 'airbnb'],
+      },
+      {
+        icon: 'pi pi-users',
+        keywords: ['restaurante', 'comida', 'dinner', 'lunch', 'food'],
+      },
+      {
+        icon: 'pi pi-briefcase',
+        keywords: ['work', 'negocio', 'empresa', 'oficina'],
+      },
+      {
+        icon: 'pi pi-shopping-bag',
+        keywords: ['tienda', 'shopping', 'compras'],
+      },
+      {
+        icon: 'pi pi-car',
+        keywords: ['coche', 'car', 'parking', 'aparcamiento', 'transporte', 'autobus', 'autobús'],
+      },
+      {
+        icon: 'pi pi-ticket',
+        keywords: ['evento', 'concierto', 'espectáculo', 'entrada'],
+      },
+    ];
 
-		for (const entry of iconMap) {
-			if (entry.keywords.some((keyword) => text.includes(keyword))) {
-				return entry.icon;
-			}
-		}
+    for (const entry of iconMap) {
+      if (entry.keywords.some((keyword) => text.includes(keyword))) {
+        return entry.icon;
+      }
+    }
 
-		return "pi pi-map-marker";
-	}
+    return 'pi pi-map-marker';
+  }
 
-	/**
-	 * Calcula la altura de la línea vertical
-	 */
-	getLineHeight(itemCount: number): number {
-		if (itemCount === 0) return 0;
+  /**
+   * Calcula la altura de la línea vertical
+   */
+  getLineHeight(itemCount: number): number {
+    if (itemCount === 0) return 0;
 
-		const gapBetweenItems = 44; // 20px círculo + 24px gap
-		const halfCircle = 10; // hasta centro último círculo
+    const gapBetweenItems = 44; // 20px círculo + 24px gap
+    const halfCircle = 10; // hasta centro último círculo
 
-		return (itemCount - 1) * gapBetweenItems + halfCircle;
-	}
+    return (itemCount - 1) * gapBetweenItems + halfCircle;
+  }
 }
