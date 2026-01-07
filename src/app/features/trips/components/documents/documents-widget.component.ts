@@ -1,11 +1,11 @@
-import { SlicePipe } from "@angular/common";
-import { Component, inject, signal } from "@angular/core";
-import { DialogService } from "@core/dialog/services/dialog.service";
-import { NotificationService } from "@core/notifications/notification.service";
-import type { TripDocumentWithUrl } from "@core/trips/models/trip-document.model";
-import { TripDocumentService } from "@core/trips/services/trip-document.service";
-import { TripDocumentStore } from "@core/trips/store/trip-document.store";
-import { DocumentsModalComponent } from "./documents-modal-component";
+import { SlicePipe } from '@angular/common';
+import { Component, inject, signal } from '@angular/core';
+import { DialogService } from '@core/dialog/services/dialog.service';
+import { NotificationService } from '@core/notifications/notification.service';
+import type { TripDocumentWithUrl } from '@core/trips/models/trip-document.model';
+import { TripDocumentService } from '@core/trips/services/trip-document.service';
+import { TripDocumentStore } from '@core/trips/store/trip-document.store';
+import { DocumentsModalComponent } from './documents-modal-component';
 
 /**
  * Widget de documentos para mostrar en el dashboard del viaje
@@ -18,17 +18,21 @@ import { DocumentsModalComponent } from "./documents-modal-component";
  * - Loading solo se muestra en la primera carga
  */
 @Component({
-	selector: "app-document-widget",
-	imports: [SlicePipe],
-	template: `
+  selector: 'app-document-widget',
+  imports: [SlicePipe],
+  template: `
     <div
       class="md:h-62 flex flex-col bg-white border border-gray-200 rounded-xl p-4 shadow-sm transition-shadow"
     >
       <!-- Header -->
       <div class="flex items-center justify-between mb-2 md:mb-4">
         <div>
-          <h3 class="text-sm md:text-base font-medium text-gray-900 uppercase tracking-wide">Documentos</h3>
-          <p class="text-xs md:text-sm text-gray-500">  {{isLoading() ? '?' :  documents().length }} documento(s)</p>
+          <h3 class="text-sm md:text-base font-medium text-gray-900 uppercase tracking-wide">
+            Documentos
+          </h3>
+          <p class="text-xs md:text-sm text-gray-500">
+            {{ isLoading() ? '?' : documents().length }} documento(s)
+          </p>
         </div>
 
         <!-- Menu button -->
@@ -102,7 +106,6 @@ import { DocumentsModalComponent } from "./documents-modal-component";
             ></i>
           </div>
           }
-
         </div>
         <!-- Uploading indicator -->
         @if (isUploading()) {
@@ -134,8 +137,7 @@ import { DocumentsModalComponent } from "./documents-modal-component";
             </p>
           </div>
         </div>
-        }
-      }
+        } }
       </div>
       }
 
@@ -152,124 +154,121 @@ import { DocumentsModalComponent } from "./documents-modal-component";
   `,
 })
 export class DocumentWidgetComponent {
-	readonly #tripDocumentStore = inject(TripDocumentStore);
-	readonly #dialogService = inject(DialogService);
+  readonly #tripDocumentStore = inject(TripDocumentStore);
+  readonly #dialogService = inject(DialogService);
 
-	documents = this.#tripDocumentStore.documents;
-	isLoading = this.#tripDocumentStore.isLoading;
-	isUploading = this.#tripDocumentStore.isUploading;
+  documents = this.#tripDocumentStore.documents;
+  isLoading = this.#tripDocumentStore.isLoading;
+  isUploading = this.#tripDocumentStore.isUploading;
 
-	documentService = inject(TripDocumentService);
-	private notificationService = inject(NotificationService);
+  documentService = inject(TripDocumentService);
+  private notificationService = inject(NotificationService);
 
-	isDragging = signal(false);
+  isDragging = signal(false);
 
-	/**
-	 * Maneja la selección de archivos desde el input
-	 */
-	async onFileSelected(event: Event): Promise<void> {
-		const input = event.target as HTMLInputElement;
-		const files = input.files;
+  /**
+   * Maneja la selección de archivos desde el input
+   */
+  async onFileSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const files = input.files;
 
-		if (files && files.length > 0) {
-			await this.uploadFiles(Array.from(files));
-			input.value = ""; // Reset input
-		}
-	}
+    if (files && files.length > 0) {
+      await this.uploadFiles(Array.from(files));
+      input.value = ''; // Reset input
+    }
+  }
 
-	/**
-	 * Maneja el evento dragover
-	 */
-	onDragOver(event: DragEvent): void {
-		event.preventDefault();
-		event.stopPropagation();
-		this.isDragging.set(true);
-	}
+  /**
+   * Maneja el evento dragover
+   */
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging.set(true);
+  }
 
-	/**
-	 * Maneja el evento dragleave
-	 */
-	onDragLeave(event: DragEvent): void {
-		event.preventDefault();
-		event.stopPropagation();
-		this.isDragging.set(false);
-	}
+  /**
+   * Maneja el evento dragleave
+   */
+  onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging.set(false);
+  }
 
-	/**
-	 * Maneja el drop de archivos
-	 */
-	async onDrop(event: DragEvent): Promise<void> {
-		event.preventDefault();
-		event.stopPropagation();
-		this.isDragging.set(false);
+  /**
+   * Maneja el drop de archivos
+   */
+  async onDrop(event: DragEvent): Promise<void> {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging.set(false);
 
-		const files = event.dataTransfer?.files;
-		if (files && files.length > 0) {
-			await this.uploadFiles(Array.from(files));
-		}
-	}
+    const files = event.dataTransfer?.files;
+    if (files && files.length > 0) {
+      await this.uploadFiles(Array.from(files));
+    }
+  }
 
-	/**
-	 * Sube uno o más archivos
-	 */
-	private async uploadFiles(files: File[]): Promise<void> {
-		try {
-			await this.#tripDocumentStore.uploadDocumentsIntoSelectedTrip(files);
-			this.notificationService.success(
-				files.length === 1
-					? "Documento subido correctamente"
-					: `${files.length} documentos subidos correctamente`,
-			);
-		} catch (error) {
-			console.error("Error uploading files:", error);
-			this.notificationService.error(
-				error instanceof Error
-					? error.message
-					: "Error al subir los documentos",
-			);
-		}
-	}
+  /**
+   * Sube uno o más archivos
+   */
+  private async uploadFiles(files: File[]): Promise<void> {
+    try {
+      await this.#tripDocumentStore.uploadDocumentsIntoSelectedTrip(files);
+      this.notificationService.success(
+        files.length === 1
+          ? 'Documento subido correctamente'
+          : `${files.length} documentos subidos correctamente`
+      );
+    } catch (error) {
+      console.error('Error uploading files:', error);
+      this.notificationService.error(
+        error instanceof Error ? error.message : 'Error al subir los documentos'
+      );
+    }
+  }
 
-	/**
-	 * Visualiza un documento (abre en nueva pestaña)
-	 */
-	viewDocument(doc: TripDocumentWithUrl): void {
-		window.open(doc.publicUrl, "_blank");
-	}
+  /**
+   * Visualiza un documento (abre en nueva pestaña)
+   */
+  viewDocument(doc: TripDocumentWithUrl): void {
+    window.open(doc.publicUrl, '_blank');
+  }
 
-	/**
-	 * Formatea la fecha de subida
-	 */
-	formatDate(dateString: string | null): string {
-		if (!dateString) return "fecha desconocida";
+  /**
+   * Formatea la fecha de subida
+   */
+  formatDate(dateString: string | null): string {
+    if (!dateString) return 'fecha desconocida';
 
-		const date = new Date(dateString);
-		const now = new Date();
-		const diffInDays = Math.floor(
-			(now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24),
-		);
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
 
-		if (diffInDays === 0) return "hoy";
-		if (diffInDays === 1) return "ayer";
-		if (diffInDays < 7) return `hace ${diffInDays} días`;
+    if (diffInDays === 0) return 'hoy';
+    if (diffInDays === 1) return 'ayer';
+    if (diffInDays < 7) return `hace ${diffInDays} días`;
 
-		return date.toLocaleDateString("es-ES", { day: "numeric", month: "short" });
-	}
+    return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+  }
 
-	/**
-	 * Abre el modal con todos los documentos
-	 */
-	openDocumentsModal(): void {
-		this.#dialogService.openCustomDialog(DocumentsModalComponent, {
-			header: "Documentos",
-			styleClass:
-				"w-screen h-screen lg:w-[85vw] lg:h-[85vh] lg:max-w-5xl lg:max-h-[90vh]",
-			contentStyle: {
-				height: "100%",
-			},
-			closable: true,
-			draggable: false,
-			dismissableMask: true,
-		});
-	}
+  /**
+   * Abre el modal con todos los documentos
+   */
+  openDocumentsModal(): void {
+    this.#dialogService.openCustomDialog(DocumentsModalComponent, {
+      header: 'Documentos',
+      styleClass:
+        'w-screen min-h-screen lg:min-h-auto lg:w-[85vw] lg:h-[85vh] min-h-[85vh] lg:max-w-5xl lg:max-h-[90vh]',
+
+      contentStyle: {
+        height: '100%',
+      },
+      closable: true,
+      draggable: false,
+      dismissableMask: true,
+    });
+  }
 }

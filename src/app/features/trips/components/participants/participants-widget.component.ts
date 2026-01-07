@@ -1,32 +1,34 @@
 // src/app/features/trips/components/participants/components/participant-widget.component.ts
 
-import { SlicePipe } from "@angular/common";
-import { Component, inject } from "@angular/core";
-import { DialogService } from "@core/dialog/services/dialog.service";
-import { NotificationService } from "@core/notifications/notification.service";
-import type { ParticipantWithUser } from "@core/trips";
-import { TripParticipantStore } from "@core/trips/store/trip-participant.store";
-import { ConfirmationService } from "primeng/api";
-import { ConfirmPopupModule } from "primeng/confirmpopup";
-import { ParticipantsModalComponent } from "./participants-modal-component";
+import { SlicePipe } from '@angular/common';
+import { Component, inject } from '@angular/core';
+import { DialogService } from '@core/dialog/services/dialog.service';
+import { NotificationService } from '@core/notifications/notification.service';
+import type { ParticipantWithUser } from '@core/trips';
+import { TripParticipantStore } from '@core/trips/store/trip-participant.store';
+import { ConfirmationService } from 'primeng/api';
+import { ConfirmPopupModule } from 'primeng/confirmpopup';
+import { ParticipantsModalComponent } from './participants-modal-component';
 
 /**
  * Widget de participantes para mostrar en el detalle del viaje
  * Muestra la lista de participantes con avatar, nombre y rol
  */
 @Component({
-	selector: "app-participant-widget",
-	imports: [SlicePipe, ConfirmPopupModule],
-	template: `
+  selector: 'app-participant-widget',
+  imports: [SlicePipe, ConfirmPopupModule],
+  template: `
     <div
       class="md:h-62 flex flex-col bg-white border border-gray-200 rounded-xl p-4 shadow-sm transition-shadow"
     >
       <!-- Header -->
       <div class="flex items-center justify-between mb-2 md:mb-4">
         <div>
-          <h3 class="text-sm md:text-base font-medium text-gray-900 uppercase tracking-wide">Participantes</h3>
+          <h3 class="text-sm md:text-base font-medium text-gray-900 uppercase tracking-wide">
+            Participantes
+          </h3>
           <p class="text-xs md:text-sm text-gray-500">
-              {{isLoading() ? '?' : participants().length }} acompañante(s)
+            {{ isLoading() ? '?' : participants().length }} acompañante(s)
           </p>
         </div>
 
@@ -60,6 +62,7 @@ import { ParticipantsModalComponent } from "./participants-modal-component";
                 [src]="participant.avatarUrl"
                 [alt]="participant.fullName"
                 class="w-full h-full object-cover"
+                (error)="onImageError($event)"
               />
             </div>
             } @else {
@@ -98,67 +101,76 @@ import { ParticipantsModalComponent } from "./participants-modal-component";
       }
     </div>
   `,
-	providers: [ConfirmationService],
+  providers: [ConfirmationService],
 })
 export class ParticipantWidgetComponent {
-	readonly #tripParticipantStore = inject(TripParticipantStore);
-	readonly #notificationService = inject(NotificationService);
-	readonly #confirmationService = inject(ConfirmationService);
-	readonly #dialogService = inject(DialogService);
+  readonly #tripParticipantStore = inject(TripParticipantStore);
+  readonly #notificationService = inject(NotificationService);
+  readonly #confirmationService = inject(ConfirmationService);
+  readonly #dialogService = inject(DialogService);
 
-	participants = this.#tripParticipantStore.participants;
+  participants = this.#tripParticipantStore.participants;
 
-	isLoading = this.#tripParticipantStore.isLoading;
+  isLoading = this.#tripParticipantStore.isLoading;
 
-	/**
-	 * Elimina un participante del viaje
-	 */
-	async removeParticipant(
-		event: Event,
-		participant: ParticipantWithUser,
-	): Promise<void> {
-		this.#confirmationService.confirm({
-			target: event.currentTarget as EventTarget,
-			header: "Eliminar participante",
-			message: `¿Estás seguro de que quieres eliminar a ${participant.fullName !== "Usuario" ? participant.fullName : participant.email} del viaje?`,
-			icon: "pi pi-exclamation-triangle",
-			acceptButtonStyleClass: "p-button-danger",
-			rejectButtonStyleClass: "p-button-secondary",
-			acceptLabel: "Eliminar",
-			rejectLabel: "Cancelar",
-			accept: async () => {
-				try {
-					await this.#tripParticipantStore.removeParticipantFromSelectedTrip(
-						participant.user_id,
-					);
-					this.#notificationService.success(
-						"Participante eliminado correctamente",
-					);
-				} catch (error) {
-					console.error("Error al eliminar participante:", error);
-					this.#notificationService.error(
-						error instanceof Error
-							? error.message
-							: "No se pudo eliminar el participante.",
-					);
-				}
-			},
-		});
-	}
+  /**
+   * Maneja el error de carga de imagen
+   * Oculta la imagen y muestra el ícono por defecto
+   */
+  onImageError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    // Oculta la imagen que falló
+    img.style.display = 'none';
+    // Muestra el ícono por defecto en su lugar
+    const parent = img.parentElement;
+    if (parent) {
+      parent.innerHTML = '<i class="pi pi-user text-gray-600" style="font-size: 1.1rem"></i>';
+    }
+  }
 
-	/**
-	 * Abre el modal con todos los participantes
-	 */
-	openParticipantsModal(): void {
-		this.#dialogService.openCustomDialog(ParticipantsModalComponent, {
-			header: "Participantes",
-			styleClass: "w-screen h-screen lg:w-[85vw] lg:h-[85vh] lg:max-w-5xl lg:max-h-[90vh]",
-			contentStyle: {
-				height: "100%",
-			},
-			closable: true,
-			draggable: false,
-			dismissableMask: true,
-		});
-	}
+  /**
+   * Elimina un participante del viaje
+   */
+  async removeParticipant(event: Event, participant: ParticipantWithUser): Promise<void> {
+    this.#confirmationService.confirm({
+      target: event.currentTarget as EventTarget,
+      header: 'Eliminar participante',
+      message: `¿Estás seguro de que quieres eliminar a ${
+        participant.fullName !== 'Usuario' ? participant.fullName : participant.email
+      } del viaje?`,
+      icon: 'pi pi-exclamation-triangle',
+      acceptButtonStyleClass: 'p-button-danger',
+      rejectButtonStyleClass: 'p-button-secondary',
+      acceptLabel: 'Eliminar',
+      rejectLabel: 'Cancelar',
+      accept: async () => {
+        try {
+          await this.#tripParticipantStore.removeParticipantFromSelectedTrip(participant.user_id);
+          this.#notificationService.success('Participante eliminado correctamente');
+        } catch (error) {
+          console.error('Error al eliminar participante:', error);
+          this.#notificationService.error(
+            error instanceof Error ? error.message : 'No se pudo eliminar el participante.'
+          );
+        }
+      },
+    });
+  }
+
+  /**
+   * Abre el modal con todos los participantes
+   */
+  openParticipantsModal(): void {
+    this.#dialogService.openCustomDialog(ParticipantsModalComponent, {
+      header: 'Participantes',
+      styleClass:
+        'w-screen min-h-screen lg:min-h-auto lg:w-[85vw] lg:h-[85vh] min-h-[85vh] lg:max-w-5xl lg:max-h-[90vh]',
+      contentStyle: {
+        height: '100%',
+      },
+      closable: true,
+      draggable: false,
+      dismissableMask: true,
+    });
+  }
 }

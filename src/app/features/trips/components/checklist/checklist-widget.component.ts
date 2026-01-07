@@ -1,11 +1,11 @@
-import { SlicePipe } from "@angular/common";
-import { Component, computed, inject, signal } from "@angular/core";
-import { FormsModule } from "@angular/forms";
-import { DialogService } from "@core/dialog/services/dialog.service";
-import { NotificationService } from "@core/notifications/notification.service";
-import type { TripTodo } from "@core/trips/models/trip-todo.model";
-import { TripTodoStore } from "@core/trips/store/trip-todo.store";
-import { ChecklistModalComponent } from "./checklist-modal-component";
+import { SlicePipe } from '@angular/common';
+import { Component, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { DialogService } from '@core/dialog/services/dialog.service';
+import { NotificationService } from '@core/notifications/notification.service';
+import type { TripTodo } from '@core/trips/models/trip-todo.model';
+import { TripTodoStore } from '@core/trips/store/trip-todo.store';
+import { ChecklistModalComponent } from './checklist-modal-component';
 
 /**
  * Widget de checklist para mostrar en el dashboard del viaje
@@ -19,16 +19,18 @@ import { ChecklistModalComponent } from "./checklist-modal-component";
  * - Loading solo se muestra en la primera carga
  */
 @Component({
-	selector: "app-checklist-widget",
-	imports: [SlicePipe, FormsModule],
-	template: `
+  selector: 'app-checklist-widget',
+  imports: [SlicePipe, FormsModule],
+  template: `
     <div
       class="md:h-62 flex flex-col bg-white border border-gray-200 rounded-xl p-4 shadow-sm transition-shadow"
     >
       <!-- Header -->
       <div class="flex items-center justify-between mb-2 md:mb-4">
         <div>
-          <h3 class="text-sm md:text-base font-medium text-gray-900 uppercase tracking-wide">Checklist</h3>
+          <h3 class="text-sm md:text-base font-medium text-gray-900 uppercase tracking-wide">
+            Checklist
+          </h3>
           <p class="text-xs md:text-sm text-gray-500">{{ todoStats() }} completadas</p>
         </div>
 
@@ -53,9 +55,9 @@ import { ChecklistModalComponent } from "./checklist-modal-component";
       <div class="flex-1 flex flex-col justify-between">
         <!-- Empty state simple -->
         @if (pendingTodos().length === 0) {
-          <div class="flex items-center gap-2 h-13 justify-center text-gray-500 mb-3">
-            <p class="text-sm">No hay tareas pendientes</p>
-          </div>
+        <div class="flex items-center gap-2 h-13 justify-center text-gray-500 mb-3">
+          <p class="text-sm">No hay tareas pendientes</p>
+        </div>
         }
 
         <!-- Lista de tareas y input -->
@@ -96,113 +98,108 @@ import { ChecklistModalComponent } from "./checklist-modal-component";
           }
 
           <!-- Input para nueva tarea (siempre visible) -->
-
         </div>
         <div
-            class="flex items-center mt-2 gap-2 border-2 border-dashed border-gray-300 hover:border-gray-400 rounded-lg transition-colors"
-          >
-            <div class="shrink-0 w-10 h-10 rounded flex items-center justify-center">
-              <i class="pi pi-plus text-gray-400" style="font-size: 1.25rem"></i>
-            </div>
-            <input
-              type="text"
-              [(ngModel)]="newTodoTitle"
-              (keyup.enter)="addTodo()"
-              (blur)="onInputBlur()"
-              placeholder="Agregar tarea..."
-              class="flex-1 text-sm bg-transparent border-none outline-none text-gray-900 placeholder-gray-400"
-            />
+          class="flex items-center mt-2 gap-2 border-2 border-dashed border-gray-300 hover:border-gray-400 rounded-lg transition-colors"
+        >
+          <div class="shrink-0 w-10 h-10 rounded flex items-center justify-center">
+            <i class="pi pi-plus text-gray-400" style="font-size: 1.25rem"></i>
           </div>
+          <input
+            type="text"
+            [(ngModel)]="newTodoTitle"
+            (keyup.enter)="addTodo()"
+            (blur)="onInputBlur()"
+            placeholder="Agregar tarea..."
+            class="flex-1 text-sm bg-transparent border-none outline-none text-gray-900 placeholder-gray-400"
+          />
+        </div>
       </div>
       }
     </div>
   `,
 })
 export class ChecklistWidgetComponent {
-	readonly #tripTodoStore = inject(TripTodoStore);
-	readonly #notificationService = inject(NotificationService);
-	readonly #dialogService = inject(DialogService);
+  readonly #tripTodoStore = inject(TripTodoStore);
+  readonly #notificationService = inject(NotificationService);
+  readonly #dialogService = inject(DialogService);
 
-	pendingTodos = computed(() =>
-		this.#tripTodoStore.todos().filter((todo) => todo.status === "pending"),
-	);
-	isLoading = this.#tripTodoStore.isLoading;
-	todoStats = computed(() => {
-		if (this.#tripTodoStore.isLoading()) {
-			return "?/?";
-		}
-		const todos = this.#tripTodoStore.todos();
-		const completedCount = todos.filter(
-			(todo) => todo.status === "completed",
-		).length;
-		const totalCount = todos.length;
-		return `${completedCount}/${totalCount}`;
-	});
+  pendingTodos = computed(() =>
+    this.#tripTodoStore.todos().filter((todo) => todo.status === 'pending')
+  );
+  isLoading = this.#tripTodoStore.isLoading;
+  todoStats = computed(() => {
+    if (this.#tripTodoStore.isLoading()) {
+      return '?/?';
+    }
+    const todos = this.#tripTodoStore.todos();
+    const completedCount = todos.filter((todo) => todo.status === 'completed').length;
+    const totalCount = todos.length;
+    return `${completedCount}/${totalCount}`;
+  });
 
-	newTodoTitle = signal("");
+  newTodoTitle = signal('');
 
-	/**
-	 * Marca/desmarca una tarea como completada
-	 */
-	async toggleTodo(todo: TripTodo): Promise<void> {
-		const newStatus = todo.status === "completed" ? "pending" : "completed";
+  /**
+   * Marca/desmarca una tarea como completada
+   */
+  async toggleTodo(todo: TripTodo): Promise<void> {
+    const newStatus = todo.status === 'completed' ? 'pending' : 'completed';
 
-		try {
-			await this.#tripTodoStore.updateTodo(todo.id, { status: newStatus });
-		} catch (error) {
-			console.error("Error updating todo:", error);
-			this.#notificationService.error(
-				error instanceof Error
-					? error.message
-					: "No se pudo actualizar la tarea",
-			);
-		}
-	}
+    try {
+      await this.#tripTodoStore.updateTodo(todo.id, { status: newStatus });
+    } catch (error) {
+      console.error('Error updating todo:', error);
+      this.#notificationService.error(
+        error instanceof Error ? error.message : 'No se pudo actualizar la tarea'
+      );
+    }
+  }
 
-	/**
-	 * Agrega una nueva tarea
-	 */
-	async addTodo(): Promise<void> {
-		const title = this.newTodoTitle().trim();
-		if (!title) return;
+  /**
+   * Agrega una nueva tarea
+   */
+  async addTodo(): Promise<void> {
+    const title = this.newTodoTitle().trim();
+    if (!title) return;
 
-		try {
-			await this.#tripTodoStore.createTodoForSelectedTrip({ title });
+    try {
+      await this.#tripTodoStore.createTodoForSelectedTrip({ title });
 
-			this.newTodoTitle.set("");
-			this.#notificationService.success("Tarea agregada");
-		} catch (error) {
-			console.error("Error creating todo:", error);
-			this.#notificationService.error(
-				error instanceof Error ? error.message : "No se pudo agregar la tarea",
-			);
-		}
-	}
+      this.newTodoTitle.set('');
+      this.#notificationService.success('Tarea agregada');
+    } catch (error) {
+      console.error('Error creating todo:', error);
+      this.#notificationService.error(
+        error instanceof Error ? error.message : 'No se pudo agregar la tarea'
+      );
+    }
+  }
 
-	/**
-	 * Maneja el blur del input
-	 */
-	onInputBlur(): void {
-		// Si hay texto y el usuario sale del input, agregar la tarea
-		if (this.newTodoTitle().trim()) {
-			this.addTodo();
-		}
-	}
+  /**
+   * Maneja el blur del input
+   */
+  onInputBlur(): void {
+    // Si hay texto y el usuario sale del input, agregar la tarea
+    if (this.newTodoTitle().trim()) {
+      this.addTodo();
+    }
+  }
 
-	/**
-	 * Abre el modal con todas las tareas
-	 */
-	openChecklistModal(): void {
-		this.#dialogService.openCustomDialog(ChecklistModalComponent, {
-			header: "Checklist",
-			styleClass:
-				"w-screen h-screen lg:w-[85vw] lg:h-[85vh] lg:max-w-5xl lg:max-h-[90vh]",
-			contentStyle: {
-				height: "100%",
-			},
-			closable: true,
-			draggable: false,
-			dismissableMask: true,
-		});
-	}
+  /**
+   * Abre el modal con todas las tareas
+   */
+  openChecklistModal(): void {
+    this.#dialogService.openCustomDialog(ChecklistModalComponent, {
+      header: 'Checklist',
+      styleClass:
+        'w-screen min-h-screen lg:min-h-auto lg:w-[85vw] lg:h-[85vh] min-h-[85vh] lg:max-w-5xl lg:max-h-[90vh]',
+      contentStyle: {
+        height: '100%',
+      },
+      closable: true,
+      draggable: false,
+      dismissableMask: true,
+    });
+  }
 }
