@@ -16,17 +16,22 @@ import type {
 import { ItineraryService } from "../services";
 import { TripStore } from "./trips.store";
 
+type ItineraryModalMode = "create" | "edit" | "view";
+
 type TripItineraryState = {
 	isLoading: boolean;
 	itinerary: ItineraryItemWithDetails[];
+	mode: ItineraryModalMode | null;
 };
 
 const initialState: TripItineraryState = {
 	isLoading: false,
 	itinerary: [],
+	mode: null,
 };
 
 export const TripItineraryStore = signalStore(
+	{ providedIn: "root" },
 	withState(initialState),
 	withProps(() => ({
 		selectedTrip: inject(TripStore).selectedTrip,
@@ -37,6 +42,9 @@ export const TripItineraryStore = signalStore(
 			itineraryServie = inject(ItineraryService),
 			notificationService = inject(NotificationService),
 		) => ({
+			setMode(mode: ItineraryModalMode | null) {
+				patchState(store, { mode });
+			},
 			loadItinerary: async () => {
 				patchState(store, { isLoading: true });
 				const trip = store.selectedTrip();
