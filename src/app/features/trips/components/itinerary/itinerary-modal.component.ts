@@ -1,19 +1,17 @@
 // src/core/trips/components/itinerary-modal/itinerary-modal.component.ts
 
-import { CommonModule } from "@angular/common";
 import {
-    type AfterViewInit,
-    Component,
-    effect,
-    inject,
-    linkedSignal,
-    type OnDestroy,
-    type OnInit,
-    signal,
-    ViewChild,
+	type AfterViewInit,
+	Component,
+	effect,
+	inject,
+	linkedSignal,
+	type OnDestroy,
+	type OnInit,
+	signal,
+	ViewChild,
 } from "@angular/core";
 import { FormsModule } from "@angular/forms";
-import { ConfirmModalService } from "@core/dialog/confirm-modal.service";
 import { ItineraryModalService } from "@core/dialog/itinerary-modal.service";
 import { NotificationService } from "@core/notifications/notification.service";
 import type { ItineraryItem, ItineraryItemInsert } from "@core/trips";
@@ -22,10 +20,12 @@ import { TripDocumentService } from "@core/trips/services/trip-document.service"
 import { TripItineraryStore } from "@core/trips/store/trip-itinerary.store";
 import { MapComponent } from "@shared/components/map/map.component";
 import type {
-    GeocodingResult,
-    MapCoordinates,
+	GeocodingResult,
+	MapCoordinates,
 } from "@shared/components/map/models";
 import { LeafletService } from "@shared/components/map/services/leaflet.service";
+import { ConfirmationService } from "primeng/api";
+import { ConfirmPopupModule } from "primeng/confirmpopup";
 import { DatePickerModule } from "primeng/datepicker";
 import type { Subscription } from "rxjs";
 
@@ -62,7 +62,7 @@ interface ItineraryFormData {
 @Component({
 	selector: "app-itinerary-modal",
 	standalone: true,
-	imports: [CommonModule, FormsModule, MapComponent, DatePickerModule],
+	imports: [ConfirmPopupModule, FormsModule, MapComponent, DatePickerModule],
 	template: `
     <div class="flex flex-col h-full overflow-hidden">
       <!-- Header -->
@@ -280,7 +280,7 @@ interface ItineraryFormData {
       <div class="flex justify-between items-center px-8 py-6 border-t border-gray-200 shrink-0">
         <button
           type="button"
-          (click)="confirmDelete()"
+          (click)="confirmDelete($event)"
           [disabled]="isDeleting()"
           class="px-5 py-2.5 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium border border-red-200 cursor-pointer"
         >
@@ -568,6 +568,7 @@ interface ItineraryFormData {
       </div>
       }
     </div>
+    <p-confirmpopup />
   `,
 	styles: [
 		`
@@ -576,6 +577,7 @@ interface ItineraryFormData {
       }
     `,
 	],
+	providers: [ConfirmationService],
 })
 export class ItineraryModalComponent
 	implements OnInit, AfterViewInit, OnDestroy
@@ -584,7 +586,7 @@ export class ItineraryModalComponent
 	readonly #tripItineraryStore = inject(TripItineraryStore);
 	private leafletService = inject(LeafletService);
 	private notificationService = inject(NotificationService);
-	private confirmModalService = inject(ConfirmModalService);
+	readonly #confirmationService = inject(ConfirmationService);
 	documentService = inject(TripDocumentService);
 
 	@ViewChild("mapRef") mapComponent?: MapComponent;
@@ -1043,14 +1045,20 @@ export class ItineraryModalComponent
 		this.modalService.switchToView();
 	}
 
-	async confirmDelete(): Promise<void> {
+	async confirmDelete(event: Event): Promise<void> {
 		const item = this.currentItem();
 		if (!item) return;
 
-		this.confirmModalService.open(
-			"Eliminar parada",
-			"¿Estás seguro de que quieres eliminar esta parada?",
-			async () => {
+		this.#confirmationService.confirm({
+			target: event.currentTarget as EventTarget,
+			header: "Eliminar parada",
+			message: "¿Estás seguro de que quieres eliminar esta parada?",
+			icon: "pi pi-exclamation-triangle",
+			acceptButtonStyleClass: "p-button-danger",
+			rejectButtonStyleClass: "p-button-secondary",
+			acceptLabel: "Eliminar",
+			rejectLabel: "Cancelar",
+			accept: async () => {
 				this.isDeleting.set(true);
 
 				try {
@@ -1064,8 +1072,7 @@ export class ItineraryModalComponent
 					this.isDeleting.set(false);
 				}
 			},
-			"Eliminar",
-		);
+		});
 	}
 
 	close(): void {
@@ -1232,10 +1239,16 @@ export class ItineraryModalComponent
 	): Promise<void> {
 		event.stopPropagation();
 
-		this.confirmModalService.open(
-			"Eliminar documento",
-			`¿Estás seguro de que quieres eliminar "${doc.name}"?`,
-			async () => {
+		this.#confirmationService.confirm({
+			target: event.currentTarget as EventTarget,
+			header: "Eliminar documento",
+			message: `¿Estás seguro de que quieres eliminar "${doc.name}"?`,
+			icon: "pi pi-exclamation-triangle",
+			acceptButtonStyleClass: "p-button-danger",
+			rejectButtonStyleClass: "p-button-secondary",
+			acceptLabel: "Eliminar",
+			rejectLabel: "Cancelar",
+			accept: async () => {
 				try {
 					await this.documentService.deleteDocument(doc.id);
 					this.notificationService.success("Documento eliminado correctamente");
@@ -1261,8 +1274,7 @@ export class ItineraryModalComponent
 					);
 				}
 			},
-			"Eliminar",
-		);
+		});
 	}
 
 	formatDocDate(dateString: string | null): string {

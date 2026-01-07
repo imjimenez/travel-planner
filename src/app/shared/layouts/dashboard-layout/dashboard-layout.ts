@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from "@angular/core";
 import { RouterOutlet } from "@angular/router";
 import { AuthService } from "@core/authentication";
-import { ConfirmModalService } from "@core/dialog/confirm-modal.service";
 import { ItineraryModalService } from "@core/dialog/itinerary-modal.service";
 import { WidgetModalService } from "@core/dialog/widget-modal.service";
 import { TripStore } from "@core/trips/store/trips.store";
@@ -20,8 +19,6 @@ export default class DashboardLayout {
 
 	trips = this.#tripStore.trips;
 	isLoadingTrips = this.#tripStore.isLoading;
-
-	confirmModalService = inject(ConfirmModalService);
 	widgetModalService = inject(WidgetModalService);
 	itineraryModalService = inject(ItineraryModalService);
 	user = this.#auth.currentUser;

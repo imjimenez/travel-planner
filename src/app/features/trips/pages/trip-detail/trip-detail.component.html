@@ -54,7 +54,6 @@
           <span class="sm:hidden">Eliminar</span>
         </button>
       </div>
-      <p-confirmpopup />
       } @else {
       <!-- Botón para participantes no-owner -->
       <div class="w-full md:max-w-60">
@@ -69,6 +68,7 @@
         </button>
       </div>
       }
+      <p-confirmpopup />
     </div>
 
     <!-- SECCIÓN 2: Tres widgets (Participantes, Documentos, Checklist) -->
@@ -140,23 +140,7 @@
     </p>
   </div>
   }
-
-  <!-- Modales para los widgets -->
-  @if (widgetModalService.type() === 'participants') {
-  <app-widget-modal-wrapper title="Participantes">
-    <app-participants-modal />
-  </app-widget-modal-wrapper>
-  } @if (widgetModalService.type() === 'documents') {
-  <app-widget-modal-wrapper title="Documentos">
-    <app-documents-modal />
-  </app-widget-modal-wrapper>
-  } @if (widgetModalService.type() === 'checklist') {
-  <app-widget-modal-wrapper title="Checklist">
-    <app-checklist-modal />
-  </app-widget-modal-wrapper>
-  } @if (itineraryModalService.isOpen()) {
+  @if (itineraryModalService.isOpen()) {
   <app-itinerary-modal-wrapper />
-  } @if (confirmModalService.isOpen()) {
-  <app-confirm-modal (closed)="confirmModalService.close()"></app-confirm-modal>
   }
 </div>

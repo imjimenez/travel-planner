@@ -22,6 +22,7 @@ const initialState: TripTodosState = {
 };
 
 export const TripTodoStore = signalStore(
+	{ providedIn: "root" },
 	withState(initialState),
 	withProps(() => ({
 		selectedTrip: inject(TripStore).selectedTrip,

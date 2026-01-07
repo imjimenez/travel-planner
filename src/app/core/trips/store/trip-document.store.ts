@@ -24,6 +24,7 @@ const initialState: TripDocumentState = {
 };
 
 export const TripDocumentStore = signalStore(
+	{ providedIn: "root" },
 	withState(initialState),
 	withProps(() => ({
 		selectedTrip: inject(TripStore).selectedTrip,

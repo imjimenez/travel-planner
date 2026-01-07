@@ -8,25 +8,28 @@ import {
 	withState,
 } from "@ngrx/signals";
 import type { ParticipantWithUser } from "../models";
-import { TripParticipantService } from "../services";
+import { TripInviteService, TripParticipantService } from "../services";
 import { TripStore } from "./trips.store";
 
 type TripParticipantState = {
 	isLoading: boolean;
 	participants: ParticipantWithUser[];
+	pendingInvitations: { id: string; email: string; created_at: string | null }[];
 };
 
 const initialState: TripParticipantState = {
 	isLoading: false,
 	participants: [],
+	pendingInvitations: [],
 };
 
 export const TripParticipantStore = signalStore(
+  {providedIn: 'root'},
 	withState(initialState),
 	withProps(() => ({
 		selectedTrip: inject(TripStore).selectedTrip,
 	})),
-	withMethods((store, participantService = inject(TripParticipantService)) => ({
+	withMethods((store, participantService = inject(TripParticipantService), inviteService = inject(TripInviteService)) => ({
 		loadParticipants: async () => {
 			patchState(store, { isLoading: true });
 			const trip = store.selectedTrip();
@@ -54,6 +57,16 @@ export const TripParticipantStore = signalStore(
 				});
 			} finally {
 				patchState(store, { isLoading: false });
+			}
+		},
+		loadPendingInvitations: async () => {
+			const trip = store.selectedTrip();
+			if (!trip) return;
+			try {
+				const pendingInvitations = await inviteService.getPendingInvites(trip.id);
+				patchState(store, { pendingInvitations });
+			} catch (error) {
+				console.error("Error loading pending invitations:", error);
 			}
 		},
 	})),

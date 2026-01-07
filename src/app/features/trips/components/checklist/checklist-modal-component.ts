@@ -1,10 +1,11 @@
 import { Component, computed, inject, signal } from "@angular/core";
 import { FormsModule } from "@angular/forms";
-import { ConfirmModalService } from "@core/dialog/confirm-modal.service";
 import { NotificationService } from "@core/notifications/notification.service";
 import type { TripTodo } from "@core/trips/models/trip-todo.model";
 import { TripParticipantStore } from "@core/trips/store/trip-participant.store";
 import { TripTodoStore } from "@core/trips/store/trip-todo.store";
+import { ConfirmationService } from "primeng/api";
+import { ConfirmPopupModule } from "primeng/confirmpopup";
 
 /**
  * Modal de gestión de checklist
@@ -19,9 +20,8 @@ import { TripTodoStore } from "@core/trips/store/trip-todo.store";
  */
 @Component({
 	selector: "app-checklist-modal",
-	imports: [FormsModule],
+	imports: [FormsModule, ConfirmPopupModule],
 	template: `
-    <div class="h-full flex flex-col">
       <!-- Contenido scrolleable -->
       <div
         class="flex-1 overflow-y-auto p-6"
@@ -163,7 +163,7 @@ import { TripTodoStore } from "@core/trips/store/trip-todo.store";
                   </button>
                   <button
                     type="button"
-                    (click)="deleteTodo(todo)"
+                    (click)="deleteTodo($event, todo)"
                     class="w-7 h-7 flex items-center justify-center text-red-600 hover:bg-red-100 rounded transition-colors cursor-pointer"
                     title="Eliminar tarea"
                   >
@@ -225,7 +225,7 @@ import { TripTodoStore } from "@core/trips/store/trip-todo.store";
                 <div class="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     type="button"
-                    (click)="deleteTodo(todo)"
+                    (click)="deleteTodo($event, todo)"
                     class="w-7 h-7 flex items-center justify-center text-red-600 hover:bg-red-100 rounded transition-colors cursor-pointer"
                     title="Eliminar tarea"
                   >
@@ -308,14 +308,18 @@ import { TripTodoStore } from "@core/trips/store/trip-todo.store";
           </form>
         </div>
       </div>
-    </div>
+      <p-confirmpopup />
   `,
+	host: {
+		class: "h-full flex flex-col",
+	},
+	providers: [ConfirmationService],
 })
 export class ChecklistModalComponent {
 	readonly #tripTodoStore = inject(TripTodoStore);
 	readonly #tripParticipantStore = inject(TripParticipantStore);
 	readonly #notificationService = inject(NotificationService);
-	readonly #confirmModalService = inject(ConfirmModalService);
+	readonly #confirmationService = inject(ConfirmationService);
 
 	todos = this.#tripTodoStore.todos;
 	participants = this.#tripParticipantStore.participants;
@@ -421,11 +425,17 @@ export class ChecklistModalComponent {
 	/**
 	 * Elimina una tarea
 	 */
-	async deleteTodo(todo: TripTodo): Promise<void> {
-		this.#confirmModalService.open(
-			"Eliminar tarea",
-			`¿Estás seguro de que quieres eliminar "${todo.title}"?`,
-			async () => {
+	async deleteTodo(event: Event, todo: TripTodo): Promise<void> {
+		this.#confirmationService.confirm({
+			target: event.currentTarget as EventTarget,
+			header: "Eliminar tarea",
+			message: `¿Estás seguro de que quieres eliminar "${todo.title}"?`,
+			icon: "pi pi-exclamation-triangle",
+			acceptButtonStyleClass: "p-button-danger",
+			rejectButtonStyleClass: "p-button-secondary",
+			acceptLabel: "Eliminar",
+			rejectLabel: "Cancelar",
+			accept: async () => {
 				try {
 					await this.#tripTodoStore.deleteTodoFromSelectedTrip(todo.id);
 					this.#notificationService.success("Tarea eliminada correctamente");
@@ -438,8 +448,7 @@ export class ChecklistModalComponent {
 					);
 				}
 			},
-			"Eliminar",
-		);
+		});
 	}
 
 	/**
