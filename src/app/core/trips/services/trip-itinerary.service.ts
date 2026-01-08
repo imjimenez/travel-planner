@@ -26,17 +26,6 @@ export class ItineraryService {
 	private supabase = inject(SupabaseService);
 	private authService = inject(AuthService);
 
-	// Lista de paradas del viaje actual
-	private itemsSignal = signal<ItineraryItem[]>([]);
-	items = this.itemsSignal.asReadonly();
-
-	// ID del viaje actual
-	private currentTripIdSignal = signal<string | null>(null);
-	currentTripId = this.currentTripIdSignal.asReadonly();
-
-	// Estado de carga
-	private loadingSignal = signal<boolean>(false);
-	loading = this.loadingSignal.asReadonly();
 
 	/**
 	 * Carga todas las paradas de un viaje y actualiza el signal
