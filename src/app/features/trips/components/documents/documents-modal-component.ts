@@ -121,7 +121,7 @@ import { ConfirmPopupModule } from 'primeng/confirmpopup';
     </div>
 
     <!-- Formulario fijo abajo -->
-    <div class="shrink-0 border-t border-gray-200 pt-6 lg:pt-0 lg:p-6 bg-white">
+    <div class="shrink-0 border-t border-gray-200 pt-6 lg:pb-6 lg:px-6 bg-white">
       <h3 class="text-sm font-semibold text-gray-900 mb-3">Subir nuevo documento</h3>
 
       <!-- Drag & drop zone -->

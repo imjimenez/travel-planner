@@ -1,20 +1,20 @@
 // src/app/features/settings/pages/settings/settings.component.ts
 
-import { Component, inject, type OnInit, signal } from "@angular/core";
-import { FormsModule } from "@angular/forms";
-import { Router } from "@angular/router";
-import { AuthService } from "@core/authentication";
-import { NotificationService } from "@core/notifications/notification.service";
-import { TripInviteService } from "@core/trips";
-import { TripStore } from "@core/trips/store/trips.store";
-import { ConfirmationService } from "primeng/api";
-import { ConfirmPopupModule } from "primeng/confirmpopup";
+import { Component, inject, type OnInit, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { AuthService } from '@core/authentication';
+import { NotificationService } from '@core/notifications/notification.service';
+import { TripInviteService } from '@core/trips';
+import { TripStore } from '@core/trips/store/trips.store';
+import { ConfirmationService } from 'primeng/api';
+import { ConfirmPopupModule } from 'primeng/confirmpopup';
 
 @Component({
-	selector: "app-settings",
-	standalone: true,
-	imports: [ConfirmPopupModule, FormsModule],
-	template: `
+  selector: 'app-settings',
+  standalone: true,
+  imports: [ConfirmPopupModule, FormsModule],
+  template: `
     <div class="w-full mx-auto max-w-6xl">
       <!-- Header con avatar centrado (sin fondo) -->
       <div class="flex flex-col items-center mb-12 pt-8">
@@ -209,7 +209,7 @@ import { ConfirmPopupModule } from "primeng/confirmpopup";
 
       <!-- Zona de peligro -->
       <div
-        class="bg-linear-to-br from-red-50 to-red-100/50 backdrop-blur-sm rounded-2xl border-2 border-red-200 shadow-sm p-6"
+        class="bg-linear-to-br from-red-50 to-red-100/50 backdrop-blur-sm rounded-2xl border-2 border-red-200 shadow-sm p-6 mb-6 lg:mb-4"
       >
         <div class="flex items-start gap-4 mb-6">
           <div class="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center shrink-0">
@@ -267,192 +267,180 @@ import { ConfirmPopupModule } from "primeng/confirmpopup";
     </div>
     <p-confirmpopup />
   `,
-	providers: [ConfirmationService],
+  providers: [ConfirmationService],
 })
 export default class SettingsComponent implements OnInit {
-	readonly #confirmationService = inject(ConfirmationService);
-	private authService = inject(AuthService);
-	private inviteService = inject(TripInviteService);
-	readonly #tripStore = inject(TripStore);
-	private notificationService = inject(NotificationService);
-	private router = inject(Router);
+  readonly #confirmationService = inject(ConfirmationService);
+  private authService = inject(AuthService);
+  private inviteService = inject(TripInviteService);
+  readonly #tripStore = inject(TripStore);
+  private notificationService = inject(NotificationService);
+  private router = inject(Router);
 
-	user = signal<any>(null);
-	pendingInvites = signal<any[]>([]);
+  user = signal<any>(null);
+  pendingInvites = signal<any[]>([]);
 
-	newPassword = "";
-	confirmPassword = "";
+  newPassword = '';
+  confirmPassword = '';
 
-	isChangingPassword = signal(false);
-	acceptingInviteToken = signal<string | null>(null);
+  isChangingPassword = signal(false);
+  acceptingInviteToken = signal<string | null>(null);
 
-	async ngOnInit() {
-		// Cargar usuario
-		const authUser = await this.authService.getAuthUser();
-		this.user.set(authUser);
+  async ngOnInit() {
+    // Cargar usuario
+    const authUser = await this.authService.getAuthUser();
+    this.user.set(authUser);
 
-		// Cargar invitaciones pendientes
-		try {
-			const invites = await this.inviteService.getMyInvites();
-			this.pendingInvites.set(invites);
-			console.log(invites);
-		} catch (error) {
-			console.error("Error loading invites:", error);
-		}
-	}
+    // Cargar invitaciones pendientes
+    try {
+      const invites = await this.inviteService.getMyInvites();
+      this.pendingInvites.set(invites);
+      console.log(invites);
+    } catch (error) {
+      console.error('Error loading invites:', error);
+    }
+  }
 
-	getDisplayName(): string {
-		const metadata = this.user()?.user_metadata;
-		return metadata?.["full_name"] || metadata?.["name"] || "Usuario";
-	}
+  getDisplayName(): string {
+    const metadata = this.user()?.user_metadata;
+    return metadata?.['full_name'] || metadata?.['name'] || 'Usuario';
+  }
 
-	getInitials(): string {
-		const name = this.getDisplayName();
-		return name.charAt(0).toUpperCase();
-	}
+  getInitials(): string {
+    const name = this.getDisplayName();
+    return name.charAt(0).toUpperCase();
+  }
 
-	getAvatarUrl(): string | null {
-		const metadata = this.user()?.user_metadata;
-		return metadata?.["avatar_url"] || metadata?.["picture"] || null;
-	}
+  getAvatarUrl(): string | null {
+    const metadata = this.user()?.user_metadata;
+    return metadata?.['avatar_url'] || metadata?.['picture'] || null;
+  }
 
-	authProvider(): string | null {
-		const provider = this.user()?.app_metadata?.provider;
-		if (provider === "email") return null;
-		if (provider === "google") return "Google";
-		if (provider === "github") return "GitHub";
-		if (provider === "apple") return "Apple";
-		return null;
-	}
+  authProvider(): string | null {
+    const provider = this.user()?.app_metadata?.provider;
+    if (provider === 'email') return null;
+    if (provider === 'google') return 'Google';
+    if (provider === 'github') return 'GitHub';
+    if (provider === 'apple') return 'Apple';
+    return null;
+  }
 
-	canChangePassword(): boolean {
-		return this.user()?.app_metadata?.provider === "email";
-	}
+  canChangePassword(): boolean {
+    return this.user()?.app_metadata?.provider === 'email';
+  }
 
-	formatDate(dateString: string | null | undefined): string {
-		if (!dateString) return "Desconocido";
-		const date = new Date(dateString);
-		return date.toLocaleDateString("es-ES", {
-			day: "numeric",
-			month: "long",
-			year: "numeric",
-		});
-	}
+  formatDate(dateString: string | null | undefined): string {
+    if (!dateString) return 'Desconocido';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-ES', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+  }
 
-	async changePassword(event: Event) {
-		event.preventDefault();
+  async changePassword(event: Event) {
+    event.preventDefault();
 
-		if (this.newPassword !== this.confirmPassword) {
-			this.notificationService.warning("Las contraseñas no coinciden");
-			return;
-		}
+    if (this.newPassword !== this.confirmPassword) {
+      this.notificationService.warning('Las contraseñas no coinciden');
+      return;
+    }
 
-		if (this.newPassword.length < 6) {
-			this.notificationService.warning(
-				"La contraseña debe tener al menos 6 caracteres",
-			);
-			return;
-		}
+    if (this.newPassword.length < 6) {
+      this.notificationService.warning('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
 
-		this.isChangingPassword.set(true);
+    this.isChangingPassword.set(true);
 
-		try {
-			const response = await this.authService.updatePassword(this.newPassword);
+    try {
+      const response = await this.authService.updatePassword(this.newPassword);
 
-			if (response.error) {
-				this.notificationService.error(response.error);
-			} else {
-				this.notificationService.success(
-					"Contraseña actualizada correctamente",
-				);
-				this.newPassword = "";
-				this.confirmPassword = "";
-			}
-		} catch (error) {
-			this.notificationService.error(
-				error instanceof Error
-					? error.message
-					: "Error al cambiar la contraseña",
-			);
-		} finally {
-			this.isChangingPassword.set(false);
-		}
-	}
+      if (response.error) {
+        this.notificationService.error(response.error);
+      } else {
+        this.notificationService.success('Contraseña actualizada correctamente');
+        this.newPassword = '';
+        this.confirmPassword = '';
+      }
+    } catch (error) {
+      this.notificationService.error(
+        error instanceof Error ? error.message : 'Error al cambiar la contraseña'
+      );
+    } finally {
+      this.isChangingPassword.set(false);
+    }
+  }
 
-	async acceptInvite(token: string) {
-		this.acceptingInviteToken.set(token);
+  async acceptInvite(token: string) {
+    this.acceptingInviteToken.set(token);
 
-		try {
-			const result = await this.inviteService.acceptInvite(token);
-			this.notificationService.success("Te has unido al viaje correctamente");
+    try {
+      const result = await this.inviteService.acceptInvite(token);
+      this.notificationService.success('Te has unido al viaje correctamente');
 
-			// Recargar invitaciones
-			const invites = await this.inviteService.getMyInvites();
-			this.pendingInvites.set(invites);
+      // Recargar invitaciones
+      const invites = await this.inviteService.getMyInvites();
+      this.pendingInvites.set(invites);
 
-			// Emitir evento personalizado para que el sidebar se actualice
-			window.dispatchEvent(
-				new CustomEvent("inviteAccepted", { detail: invites.length }),
-			);
-			await this.#tripStore.loadTrips();
-			// Redirigir al viaje
-			this.router.navigate(["/app/trips", result.tripId]);
-		} catch (error) {
-			this.notificationService.error(
-				error instanceof Error
-					? error.message
-					: "Error al aceptar la invitación",
-			);
-		} finally {
-			this.acceptingInviteToken.set(null);
-		}
-	}
+      // Emitir evento personalizado para que el sidebar se actualice
+      window.dispatchEvent(new CustomEvent('inviteAccepted', { detail: invites.length }));
+      await this.#tripStore.loadTrips();
+      // Redirigir al viaje
+      this.router.navigate(['/app/trips', result.tripId]);
+    } catch (error) {
+      this.notificationService.error(
+        error instanceof Error ? error.message : 'Error al aceptar la invitación'
+      );
+    } finally {
+      this.acceptingInviteToken.set(null);
+    }
+  }
 
-	async logout(event: Event) {
-		this.#confirmationService.confirm({
-			target: event.currentTarget as EventTarget,
-			header: "Cerrar sesión",
-			message: `¿Estás seguro de que quieres cerrar sesión?`,
-			acceptButtonStyleClass: "p-button-danger",
-			rejectButtonStyleClass: "p-button-secondary",
-			acceptLabel: "Cerrar sesión",
-			rejectLabel: "Cancelar",
-			accept: async () => {
-				await this.authService.signOut();
-				sessionStorage.setItem("onboardingDismissed", "false");
-				this.router.navigate(["/"]);
-			},
-		});
-	}
+  async logout(event: Event) {
+    this.#confirmationService.confirm({
+      target: event.currentTarget as EventTarget,
+      header: 'Cerrar sesión',
+      message: `¿Estás seguro de que quieres cerrar sesión?`,
+      acceptButtonStyleClass: 'p-button-danger',
+      rejectButtonStyleClass: 'p-button-secondary',
+      acceptLabel: 'Cerrar sesión',
+      rejectLabel: 'Cancelar',
+      accept: async () => {
+        await this.authService.signOut();
+        sessionStorage.setItem('onboardingDismissed', 'false');
+        this.router.navigate(['/']);
+      },
+    });
+  }
 
-	async deleteAccount(event: Event) {
-		this.#confirmationService.confirm({
-			target: event.currentTarget as EventTarget,
-			header: "Eliminar cuenta",
-			message: `¿Estás seguro de que quieres eliminar tu cuenta?\n\nEsta acción es irreversible, no se puede deshacer.`,
-			icon: "pi pi-exclamation-circle",
-			acceptIcon: "pi pi-trash",
-			acceptButtonStyleClass: "p-button-danger",
-			rejectButtonStyleClass: "p-button-secondary",
-			acceptLabel: "Eliminar",
-			rejectLabel: "Cancelar",
-			accept: async () => {
-				try {
-					const response = await this.authService.deleteAccount();
-					if (response.error) {
-						this.notificationService.error(response.error);
-					} else {
-						this.notificationService.success("Cuenta eliminada correctamente");
-						this.router.navigate(["/"]);
-					}
-				} catch (error) {
-					this.notificationService.error(
-						error instanceof Error
-							? error.message
-							: "Error al eliminar la cuenta",
-					);
-				}
-			},
-		});
-	}
+  async deleteAccount(event: Event) {
+    this.#confirmationService.confirm({
+      target: event.currentTarget as EventTarget,
+      header: 'Eliminar cuenta',
+      message: `¿Estás seguro de que quieres eliminar tu cuenta?\n\nEsta acción es irreversible, no se puede deshacer.`,
+      icon: 'pi pi-exclamation-circle',
+      acceptIcon: 'pi pi-trash',
+      acceptButtonStyleClass: 'p-button-danger',
+      rejectButtonStyleClass: 'p-button-secondary',
+      acceptLabel: 'Eliminar',
+      rejectLabel: 'Cancelar',
+      accept: async () => {
+        try {
+          const response = await this.authService.deleteAccount();
+          if (response.error) {
+            this.notificationService.error(response.error);
+          } else {
+            this.notificationService.success('Cuenta eliminada correctamente');
+            this.router.navigate(['/']);
+          }
+        } catch (error) {
+          this.notificationService.error(
+            error instanceof Error ? error.message : 'Error al eliminar la cuenta'
+          );
+        }
+      },
+    });
+  }
 }
