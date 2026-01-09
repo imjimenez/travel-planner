@@ -3,7 +3,6 @@ import { Component, inject, input, type OnDestroy, type OnInit, signal } from '@
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService, getFullName, getUserInitials, type User } from '@core/authentication';
 import { type Trip, TripInviteService } from '@core/trips';
-import { TripModalService } from '@core/trips/services/trip-modal.service.ts';
 
 /**
  * Componente de barra lateral (sidebar) del dashboard
@@ -32,7 +31,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
 	user = input.required<User | null>();
 
-	private tripModalService = inject(TripModalService);
 	private inviteService = inject(TripInviteService);
 
 
@@ -136,8 +134,4 @@ export class SidebarComponent implements OnInit, OnDestroy {
 	isTripActive(tripId: string): boolean {
 		return this.#router.url.includes(`/trips/${tripId}`);
 	}
-
-  openModal() {
-    this.tripModalService.openCreateTripModal();
-  }
 }
