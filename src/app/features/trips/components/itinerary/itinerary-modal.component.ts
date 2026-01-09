@@ -344,8 +344,8 @@ export class ItineraryModalHeader {
             #mapRef
             [config]="{
               mode: 'select-location',
-              height: '280px',
-              zoom: tripLatitude() && tripLongitude() ? 12 : 6,
+              height: '300px',
+              zoom: tripLatitude() && tripLongitude() ? 12 : 12,
               center:
                 tripLatitude() && tripLongitude()
                   ? { lat: tripLatitude()!, lng: tripLongitude()! }
@@ -521,7 +521,9 @@ export class ItineraryModalHeader {
     </div>
 
     <!-- Footer con botones en modo create/edit -->
-    <div class="flex justify-between items-center lg:px-8 py-6 border-t border-gray-200 shrink-0">
+    <div
+      class="flex justify-between gap-3 items-center lg:px-8 py-6 border-t border-gray-200 shrink-0"
+    >
       @if (mode() === 'edit') {
       <button
         type="button"
@@ -984,9 +986,26 @@ export class ItineraryModalComponent implements OnInit, AfterViewInit, OnDestroy
 
   switchToEdit(): void {
     this.#tripItineraryStore.setMode('edit');
+
+    // Aseguramos que los datos del form están cargados
     if (this.currentItem()) {
       this.loadItemData(this.currentItem()!);
     }
+
+    // setTimeout para dar tiempo a que Angular pinte el <app-map> del modo edición
+    setTimeout(() => {
+      // Verificamos que el componente del mapa exista
+      if (this.mapComponent && this.tripLatitude() && this.tripLongitude()) {
+        // Centramos
+        this.mapComponent.centerMap({ lat: this.tripLatitude()!, lng: this.tripLongitude()! }, 12);
+
+        // Marcador
+        this.mapComponent.addSimpleMarker({
+          lat: this.tripLatitude()!,
+          lng: this.tripLongitude()!,
+        });
+      }
+    }, 150); // 150 suele ser suficiente
   }
 
   cancelEdit(): void {
