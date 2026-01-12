@@ -31,17 +31,17 @@
 
     <!-- Mobile menu -->
     @if (mobileMenuOpen()) {
-    <div class="md:hidden border-t border-gray-100 bg-white">
-      <div class="px-4 py-4 space-y-3">
-        <a href="#features" class="block text-gray-600 hover:text-gray-900">Características</a>
-        <a href="#how-it-works" class="block text-gray-600 hover:text-gray-900">Cómo funciona</a>
-        <p-button
-          routerLink="/auth"
-          label="Comenzar"
-          styleClass="w-full bg-emerald-600 border-emerald-600"
-        />
+      <div class="md:hidden border-t border-gray-100 bg-white">
+        <div class="px-4 py-4 space-y-3">
+          <a href="#features" class="block text-gray-600 hover:text-gray-900">Características</a>
+          <a href="#how-it-works" class="block text-gray-600 hover:text-gray-900">Cómo funciona</a>
+          <p-button
+            routerLink="/auth"
+            label="Comenzar"
+            styleClass="w-full bg-emerald-600 border-emerald-600"
+          />
+        </div>
       </div>
-    </div>
     }
   </nav>
 
@@ -91,8 +91,30 @@
             iconPos="right"
             [outlined]="true"
             severity="secondary"
+            (click)="displayDialog = true"
             styleClass="px-8 py-4 text-lg font-semibold hover:border-emerald-600 hover:text-emerald-600"
           />
+          <p-dialog
+            [(visible)]="displayDialog"
+            [showHeader]="false"
+            [modal]="true"
+            [dismissableMask]="true"
+            [style]="{ width: '80vw', maxWidth: '1000px' }"
+            [contentStyle]="{'padding': '0', 'background': 'transparent', 'border': 'none'}"
+            [draggable]="false"
+            [resizable]="false"
+            (onHide)="displayDialog = false"
+          >
+            <div class="video-container">
+              <iframe
+                src="https://www.youtube.com/embed/CUdjay0x9DA?autoplay=1&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1"
+                frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen
+              >
+              </iframe>
+            </div>
+          </p-dialog>
         </div>
 
         <p class="text-sm text-gray-500">Gratis • Sin tarjeta de crédito • Listo en 2 minutos</p>
@@ -115,21 +137,21 @@
 
       <div class="grid md:grid-cols-2 gap-8">
         @for (feature of features(); track feature.title) {
-        <div
-          class="bg-white p-8 rounded-xl border border-gray-100 hover:shadow-lg transition-shadow"
-        >
           <div
-            class="w-12 h-12 rounded-lg flex items-center justify-center mb-4 bg-emerald-50 text-emerald-600"
+            class="bg-white p-8 rounded-xl border border-gray-100 hover:shadow-lg transition-shadow"
           >
-            <i [class]="'pi ' + feature.icon + ' text-2xl'"></i>
+            <div
+              class="w-12 h-12 rounded-lg flex items-center justify-center mb-4 bg-emerald-50 text-emerald-600"
+            >
+              <i [class]="'pi ' + feature.icon + ' text-2xl'"></i>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-900 mb-3">
+              {{ feature.title }}
+            </h3>
+            <p class="text-gray-600 leading-relaxed">
+              {{ feature.description }}
+            </p>
           </div>
-          <h3 class="text-xl font-semibold text-gray-900 mb-3">
-            {{ feature.title }}
-          </h3>
-          <p class="text-gray-600 leading-relaxed">
-            {{ feature.description }}
-          </p>
-        </div>
         }
       </div>
     </div>
@@ -146,17 +168,17 @@
 
       <div class="grid md:grid-cols-3 gap-8">
         @for (item of steps(); track item.step) {
-        <div class="text-center">
-          <div class="text-6xl font-bold mb-4 opacity-20 text-emerald-600">
-            {{ item.step }}
+          <div class="text-center">
+            <div class="text-6xl font-bold mb-4 opacity-20 text-emerald-600">
+              {{ item.step }}
+            </div>
+            <h3 class="text-xl font-semibold text-gray-900 mb-3">
+              {{ item.title }}
+            </h3>
+            <p class="text-gray-600">
+              {{ item.description }}
+            </p>
           </div>
-          <h3 class="text-xl font-semibold text-gray-900 mb-3">
-            {{ item.title }}
-          </h3>
-          <p class="text-gray-600">
-            {{ item.description }}
-          </p>
-        </div>
         }
       </div>
     </div>
