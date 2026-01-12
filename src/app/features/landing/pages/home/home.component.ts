@@ -1,6 +1,7 @@
 import { Component, signal, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
 
 interface Feature {
   icon: string;
@@ -15,7 +16,7 @@ interface Step {
 }
 
 @Component({
-  imports: [ButtonModule, RouterLink],
+  imports: [ButtonModule, RouterLink, DialogModule],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
@@ -65,6 +66,8 @@ export class HomeComponent {
       description: 'Itinerarios, documentos, tareas. Todo en un solo lugar.',
     },
   ]);
+
+  displayDialog = false;
 
   toggleMobileMenu(): void {
     this.mobileMenuOpen.update((value) => !value);
