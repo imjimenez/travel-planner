@@ -197,7 +197,7 @@ export class ItineraryModalHeader {
         </label>
 
         <!-- Grid de documentos -->
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
           @for (doc of itemDocuments(); track doc.id) {
           <div>
             <!-- Card del documento -->
@@ -724,12 +724,22 @@ export class ItineraryModalComponent implements OnInit, AfterViewInit, OnDestroy
       const docsWithUrl = docs.map((doc) => ({
         ...doc,
         publicUrl: this.#documentService.getPublicUrl(doc.file_path),
+        isImage: this.isImageFile(doc.name),
       }));
 
       this.itemDocuments.set(docsWithUrl);
     } catch (error) {
       console.error('Error loading item documents:', error);
     }
+  }
+
+  /**
+   * Determina si un archivo es una imagen basándose en su extensión
+   */
+  private isImageFile(fileName: string): boolean {
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'];
+    const ext = fileName.toLowerCase().substring(fileName.lastIndexOf('.'));
+    return imageExtensions.includes(ext);
   }
 
   private loadItemData(item: ItineraryItem): void {

@@ -375,7 +375,7 @@ export class ItineraryDetailComponent {
       },
       {
         icon: 'pi pi-users',
-        keywords: ['restaurante', 'comida', 'dinner', 'lunch', 'food'],
+        keywords: ['restaurante', 'comida', 'dinner', 'lunch', 'food', 'cena'],
       },
       {
         icon: 'pi pi-briefcase',
